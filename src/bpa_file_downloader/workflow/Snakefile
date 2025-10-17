@@ -10,8 +10,12 @@ rule download_file:
         file=Path(file_name),
     params:
         url=bioplatforms_url,
+        bpi_apikey=bpi_apikey,
     shell:
-        "wget {params.url} -O {output.file}"
+        "wget "
+        '--header="X-CKAN-API-Key:{params.bpi_apikey}" '
+        "-O {output.file} "
+        "{params.url}"
 
 
 if file_checksum:

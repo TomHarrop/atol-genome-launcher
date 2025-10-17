@@ -6,6 +6,7 @@ from pathlib import Path
 from snakemake.api import SnakemakeApi, ConfigSettings, ResourceSettings, OutputSettings
 from snakemake.logging import logger
 import argparse
+import os
 
 
 def parse_arguments():
@@ -17,6 +18,14 @@ def parse_arguments():
         dest="file_checksum",
         required=False,
     )
+
+    parser.add_argument(
+        "--bpi_apikey",
+        type=str,
+        dest="bpi_apikey",
+        default=os.environ.get("BPI_APIKEY"),
+    )
+
     parser.add_argument(
         "bioplatforms_url",
         type=str,
@@ -26,7 +35,11 @@ def parse_arguments():
         type=str,
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    if not args.bpi_apikey:
+        exit(parser.print_usage())
+
+    return args
 
 
 def main():
