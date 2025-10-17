@@ -20,10 +20,10 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "--bpi_apikey",
+        "--bpa_apikey",
         type=str,
-        dest="bpi_apikey",
-        default=os.environ.get("BPI_APIKEY"),
+        dest="bpa_apikey",
+        default=os.environ.get("BPA_APIKEY"),
     )
 
     parser.add_argument(
