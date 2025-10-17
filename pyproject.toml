@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atol-genome-launcher"
+dynamic = ["version"]
+description = "Draft code for the AToL genome launcher"
+readme = "README.md"
+authors = [{ name = "Tom Harrop", email = "tharrop@unimelb.edu.au" }]
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Private :: Do Not Upload",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.12,<3.13"
+dependencies = ["argparse", "snakemake>=9.11.6,<10"]
+
+[project.urls]
+"Homepage" = "https://github.com/tomharrop/atol-genome-launcher"
+
+[project.scripts]
+bpa-file-downloader = "bpa_file_downloader.bpa_file_downloader:main"
+
+[tool.setuptools_scm]

@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+globals().update(config)
+
+target_files = [Path(file_name)]
+
+
+rule download_file:
+    output:
+        file=Path(file_name),
+    params:
+        url=bioplatforms_url,
+    shell:
+        "wget {params.url} -O {output.file}"
+
+
+if file_checksum:
+    target_files.append(Path(file_name + ".ok"))
+
+    rule checksum:
+        input:
+            file=Path(file_name),
+        output:
+            touch(Path(file_name + ".ok")),
+        params:
+            file_checksum=file_checksum,
+        shell:
+            "printf '%s %s' {params.file_checksum}  {input.file} | md5sum -c -"
+
+
+rule target:
+    default_target: True
+    input:
+        target_files,
