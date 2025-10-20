@@ -40,6 +40,8 @@ def main():
 
     logger.warning(f"{pkg_name} version {pkg_version}")
 
+    args = parse_arguments()
+
     # make sure the API key is available
     if not os.environ.get("BPA_APIKEY"):
         raise EnvironmentError("Set the BPA_APIKEY environment variable.")
@@ -47,11 +49,9 @@ def main():
     # get the snakefile
     snakefile = Path(resources.files(__package__), "workflow", "Snakefile")
     if snakefile.is_file():
-        logger.warning(f"Using snakefile {snakefile}")
+        logger.debug(f"Using snakefile {snakefile}")
     else:
         raise FileNotFoundError("Could not find a Snakefile")
-
-    args = parse_arguments()
 
     # configure the run
     config_settings = ConfigSettings(config=args.__dict__)

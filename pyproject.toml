@@ -18,12 +18,15 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 requires-python = ">=3.12,<3.13"
-dependencies = ["argparse", "snakemake>=9.11.6,<10"]
+dependencies = ["argparse", "snakemake>=9.11.6,<10", "pandas>=2.3.3,<3", "peppy"]
 
 [project.urls]
 "Homepage" = "https://github.com/tomharrop/atol-genome-launcher"
 
 [project.scripts]
 bpa-file-downloader = "bpa_file_downloader.bpa_file_downloader:main"
+rnaseq-manifest-generator = "rnaseq_manifest_generator.rnaseq_manifest_generator:main"
+rnaseq-reads-downloader = "rnaseq_reads_downloader.rnaseq_reads_downloader:main"
+
 
 [tool.setuptools_scm]
