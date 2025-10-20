@@ -20,10 +20,14 @@ import tempfile
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("manifest", type=Path, help="Path to the manifest (PEP format)")
+    parser.add_argument("manifest", type=Path, help="Path to the manifest")
+    parser.add_argument("outdir", type=Path, help="Output directory")
 
     return parser.parse_args()
 
+
+# TODO: multiple samples can have the same dataset id. Need to grab the sample
+# ID from the Packages file too.
 
 def mung_manifest_file(manifest):
     manifest_df = pd.read_csv(manifest)
@@ -34,8 +38,12 @@ def mung_manifest_file(manifest):
     # eg2: 607779
     # Split on the slash, keep the last object, prepend "bpa_dataset_id".
     bpa_dataset_id = manifest_df["bpa_dataset_id"].astype(str)
-    bpa_sample_name = bpa_dataset_id.str.extract("(?P<bpa_sample_name>[0-9]+$)")
-    manifest_df["sample_name"] = "bpa_dataset_id_" + bpa_sample_name.astype(str)
+    bpa_dataset_id_string = bpa_dataset_id.str.extract("(?P<bpa_dataset_id>[0-9]+$)")
+
+    bpa_sample_id = manifest_df["sample.bpa_sample_id"].astype(str)
+    bpa_sample_id_string = bpa_sample_id.str.extract("(?P<bpa_sample_id>[0-9]+$)")
+
+    manifest_df["sample_name"] = "bpa_sample_id_" + bpa_sample_id_string.astype(str)
 
     manifest_df.set_index(["sample_name", "read_number", "lane_number"], inplace=True)
     manifest_file = tempfile.mkstemp(suffix=".csv")

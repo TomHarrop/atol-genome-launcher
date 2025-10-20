@@ -74,7 +74,7 @@ def main():
         )
 
         dag = workflow_api.dag()
-        dag.execute_workflow()
+        dag.execute_workflow(execution_settings=execution_settings)
 
 
 if __name__ == "__main__":

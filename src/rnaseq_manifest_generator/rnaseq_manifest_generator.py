@@ -67,6 +67,15 @@ def main():
         & (all_query_resources["read_number"].notna())
     ]
 
+    # add the `sample.bpa_sample_id` column
+    illumina_resources = illumina_resources.reset_index()
+    packages_df = packages_df.reset_index()
+    illumina_resources = illumina_resources.merge(
+        packages_df[["experiment.bpa_package_id", "sample.bpa_sample_id"]],
+        on="experiment.bpa_package_id",
+        how="left",
+    )
+
     illumina_resources.to_csv(args.manifest)
 
 

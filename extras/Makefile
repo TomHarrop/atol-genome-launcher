@@ -36,7 +36,7 @@ test_rnaseq_reads_downloader: $(outdir)/rnaseq_reads_downloader/file.r1.fastq.gz
 	$(dir_guard)
 	python3 -m cProfile -o $*/cProfile.stats \
 	-m rnaseq_reads_downloader.rnaseq_reads_downloader \
-		$<
+		$< $*
 
 
 
