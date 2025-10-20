@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 from importlib import resources
 from importlib.metadata import metadata
 from pathlib import Path
@@ -11,34 +12,40 @@ from snakemake.api import (
     ExecutionSettings,
 )
 from snakemake.logging import logger
-
 import argparse
-import os
+import pandas as pd
+import tempfile
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--file_checksum",
-        type=str,
-        dest="file_checksum",
-        required=False,
-    )
-
-    parser.add_argument(
-        "bioplatforms_url",
-        type=str,
-    )
-    parser.add_argument(
-        "file_name",
-        type=str,
-    )
+    parser.add_argument("manifest", type=Path, help="Path to the manifest (PEP format)")
 
     return parser.parse_args()
 
 
+def mung_manifest_file(manifest):
+    manifest_df = pd.read_csv(manifest)
+
+    # Handle the BPA dataset ID. It seems to be a static number followed by an
+    # integer identifier, but sometimes it's just the integer.
+    # eg1: 102.100.100/83849
+    # eg2: 607779
+    # Split on the slash, keep the last object, prepend "bpa_dataset_id".
+    bpa_dataset_id = manifest_df["bpa_dataset_id"].astype(str)
+    bpa_sample_name = bpa_dataset_id.str.extract("(?P<bpa_sample_name>[0-9]+$)")
+    manifest_df["sample_name"] = "bpa_dataset_id_" + bpa_sample_name.astype(str)
+
+    manifest_df.set_index(["sample_name", "read_number", "lane_number"], inplace=True)
+    manifest_file = tempfile.mkstemp(suffix=".csv")
+    manifest_df.to_csv(manifest_file[1])
+
+    return Path(manifest_file[1])
+
+
 def main():
+
     # print version info
     pkg_metadata = metadata("atol-genome-launcher")
     pkg_name = pkg_metadata.get("Name")
@@ -48,16 +55,16 @@ def main():
 
     args = parse_arguments()
 
-    # make sure the API key is available
-    if not os.environ.get("BPA_APIKEY"):
-        raise EnvironmentError("Set the BPA_APIKEY environment variable.")
-
     # get the snakefile
     snakefile = Path(resources.files(__package__), "workflow", "Snakefile")
     if snakefile.is_file():
         logger.debug(f"Using snakefile {snakefile}")
     else:
         raise FileNotFoundError("Could not find a Snakefile")
+
+    # configure the manifest file
+    munged_manifest = mung_manifest_file(args.manifest)
+    args._manifest = munged_manifest
 
     # configure the run
     config_settings = ConfigSettings(config=args.__dict__)
@@ -74,7 +81,7 @@ def main():
         )
 
         dag = workflow_api.dag()
-        dag.execute_workflow()
+        dag.execute_workflow(execution_settings=execution_settings)
 
 
 if __name__ == "__main__":

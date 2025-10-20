@@ -28,7 +28,7 @@ test_rnaseq_reads_downloader: $(outdir)/rnaseq_reads_downloader/file.r1.fastq.gz
 	-m rnaseq_manifest_generator.rnaseq_manifest_generator \
 		--packages data/m.packages.csv.gz \
 		--resources data/m.resources.csv.gz \
-		taxid247745 \
+		taxid106636 \
 		$*/manifest.csv
 
 
