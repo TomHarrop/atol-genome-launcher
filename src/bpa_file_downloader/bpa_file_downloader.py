@@ -5,7 +5,9 @@ from importlib.metadata import metadata
 from pathlib import Path
 from snakemake.api import SnakemakeApi, ConfigSettings, ResourceSettings, OutputSettings
 from snakemake.logging import logger
+
 import argparse
+import os
 
 
 def parse_arguments():
@@ -38,6 +40,10 @@ def main():
 
     logger.warning(f"{pkg_name} version {pkg_version}")
 
+    # make sure the API key is available
+    if not os.environ.get("BPA_APIKEY"):
+        raise EnvironmentError("Set the BPA_APIKEY environment variable.")
+
     # get the snakefile
     snakefile = Path(resources.files(__package__), "workflow", "Snakefile")
     if snakefile.is_file():
@@ -59,6 +65,7 @@ def main():
             resource_settings=resource_settings,
             config_settings=config_settings,
         )
+
         dag = workflow_api.dag()
         dag.execute_workflow()
 
