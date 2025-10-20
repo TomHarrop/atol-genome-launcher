@@ -20,6 +20,8 @@ import tempfile
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--parallel_downloads", type=int, help="Number of parallel downloads")
+
     parser.add_argument("manifest", type=Path, help="Path to the manifest")
     parser.add_argument("outdir", type=Path, help="Output directory")
 
@@ -76,7 +78,7 @@ def main():
 
     # configure the run
     config_settings = ConfigSettings(config=args.__dict__)
-    resource_settings = ResourceSettings(cores=1)
+    resource_settings = ResourceSettings(cores=args.parallel_downloads)
     output_settings = OutputSettings(printshellcmds=True)
     execution_settings = ExecutionSettings(lock=False)
 
