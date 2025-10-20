@@ -20,7 +20,9 @@ import tempfile
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--parallel_downloads", type=int, help="Number of parallel downloads")
+    parser.add_argument(
+        "--parallel_downloads", type=int, help="Number of parallel downloads"
+    )
 
     parser.add_argument("manifest", type=Path, help="Path to the manifest")
     parser.add_argument("outdir", type=Path, help="Output directory")
@@ -31,17 +33,15 @@ def parse_arguments():
 # TODO: multiple samples can have the same dataset id. Need to grab the sample
 # ID from the Packages file too.
 
+
 def mung_manifest_file(manifest):
     manifest_df = pd.read_csv(manifest)
 
-    # Handle the BPA dataset ID. It seems to be a static number followed by an
+    # Handle the bpa_sample_id. It seems to be a static number followed by an
     # integer identifier, but sometimes it's just the integer.
     # eg1: 102.100.100/83849
     # eg2: 607779
-    # Split on the slash, keep the last object, prepend "bpa_dataset_id".
-    bpa_dataset_id = manifest_df["bpa_dataset_id"].astype(str)
-    bpa_dataset_id_string = bpa_dataset_id.str.extract("(?P<bpa_dataset_id>[0-9]+$)")
-
+    # Split on the slash, keep the last object, prepend "bpa_sample_id".
     bpa_sample_id = manifest_df["sample.bpa_sample_id"].astype(str)
     bpa_sample_id_string = bpa_sample_id.str.extract("(?P<bpa_sample_id>[0-9]+$)")
 
