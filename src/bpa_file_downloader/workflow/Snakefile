@@ -5,12 +5,16 @@ globals().update(config)
 target_files = [Path(file_name)]
 
 
+envvars:
+    "BPA_APIKEY",
+
+
 rule download_file:
     output:
         file=Path(file_name),
     params:
         url=bioplatforms_url,
-        bpi_apikey=bpi_apikey,
+        bpi_apikey=os.environ.get("BPA_APIKEY"),
     shell:
         "wget "
         '--header="X-CKAN-API-Key:{params.bpi_apikey}" '
@@ -19,17 +23,20 @@ rule download_file:
 
 
 if file_checksum:
-    target_files.append(Path(file_name + ".ok"))
+    check_file = Path(file_name + ".check.txt")
+    target_files.append(check_file)
 
     rule checksum:
         input:
             file=Path(file_name),
         output:
-            touch(Path(file_name + ".ok")),
+            check=check_file,
         params:
             file_checksum=file_checksum,
         shell:
-            "printf '%s %s' {params.file_checksum}  {input.file} | md5sum -c -"
+            "printf '%s %s' {params.file_checksum}  {input.file} "
+            "| md5sum -c - "
+            "&> {output.check}"
 
 
 rule target:
