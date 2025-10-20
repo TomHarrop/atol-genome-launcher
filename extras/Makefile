@@ -22,13 +22,16 @@ test_rnaseq_reads_downloader: $(outdir)/rnaseq_reads_downloader/file.r1.fastq.gz
 		$*/testout.fq.gz
 
 
+# Themeda triandra: taxid106636
+# Acanthornis magna: taxid720576
+
 %/cProfile.stats %/manifest.csv: data/m.packages.csv.gz data/m.resources.csv.gz
 	$(dir_guard)
 	python3 -m cProfile -o $*/cProfile.stats \
 	-m rnaseq_manifest_generator.rnaseq_manifest_generator \
 		--packages data/m.packages.csv.gz \
 		--resources data/m.resources.csv.gz \
-		taxid720576 \
+		taxid106636 \
 		$*/manifest.csv
 
 

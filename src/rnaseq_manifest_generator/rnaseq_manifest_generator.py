@@ -55,13 +55,18 @@ def main():
         args.resources, header=0, index_col="experiment.bpa_package_id"
     )
 
+    # Only grab packages that we know are for rnaseq. This logic needs to be
+    # moved.
     query_packages = packages_df.loc[
-        args.organism_grouping_key, "experiment.bpa_package_id"
-    ]
+        (packages_df.index == args.organism_grouping_key)
+        & (packages_df["experiment.library_strategy"] == "RNA-Seq"),
+        "experiment.bpa_package_id",
+    ].tolist()
 
     all_query_resources = resources_df.loc[query_packages]
 
-    # subset the resources - keep only fastq with a read number
+    # Subset the resources - keep only fastq with a read number. This logic
+    # needs to be moved.
     illumina_resources = all_query_resources[
         (all_query_resources["file_format"] == "fastq")
         & (all_query_resources["read_number"].notna())
