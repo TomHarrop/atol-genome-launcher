@@ -10,7 +10,7 @@ import pandas as pd
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Generate a PEP-formatted manifest of RNAseq data for an organism."
+        description="Generate a manifest of RNAseq data for an organism."
     )
 
     parser.add_argument(
