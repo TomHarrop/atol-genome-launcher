@@ -90,3 +90,4 @@ rule download_file:
         "--file_checksum {params.download_params[file_checksum]} "
         "{params.download_params[bioplatforms_url]} "
         "{output} "
+        "&> {log}"
