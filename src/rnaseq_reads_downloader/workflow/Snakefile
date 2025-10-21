@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+
+import os
+import tempfile
+import pandas as pd
+from functools import cache
+
+
+def get_download_params(wildcards):
+    sample_data = manifest_df[(manifest_df["file_name"] == wildcards.bpa_filename)]
+    if len(sample_data) != 1:
+        raise ValueError(
+            f"Found {len(sample_data)} matching entries for {wildcards.sample_name}, {read_num}, {wildcards.lane}"
+        )
+
+    row = sample_data.iloc[0]
+
+    return row.to_dict()
+
+
+def get_lanes(wildcards):
+    sample_data = get_sample_and_read_data(wildcards)
+    sample_data = sample_data.sort_values(
+        by="lane_number", key=lambda x: x.map(natural_sort_key)
+    )
+
+    file_names = list(sample_data["file_name"])
+    return [f"{download_dir}/{x}" for x in file_names]
+
+
+@cache
+def get_sample_and_read_data(wildcards):
+    read_num = f"R{wildcards.r}"
+    sample_data = manifest_df[
+        (manifest_df["sample_name"] == wildcards.sample_name)
+        & (manifest_df["read_number"] == read_num)
+    ]
+    return sample_data
+
+
+@cache
+def natural_sort_key(s):
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
+
+
+globals().update(config)
+
+download_dir = Path(outdir, "downloads")
+
+manifest_df = pd.read_csv(_manifest)
+all_samples = sorted(set(manifest_df["sample_name"]))
+all_filenames = sorted(set(manifest_df["file_name"]))
+
+
+wildcard_constraints:
+    sample_name="|".join(all_samples),
+    bpa_filename="|".join(all_filenames),
+
+
+rule target:
+    input:
+        expand(
+            Path(outdir, "{sample_name}.r{r}.fq.gz"),
+            sample_name=all_samples,
+            r=["1", "2"],
+        ),
+
+
+rule combine_lanes:
+    input:
+        get_lanes,
+    output:
+        Path(outdir, "{sample_name}.r{r}.fq.gz"),
+    shell:
+        "cat {input} > {output}"
+
+
+rule download_file:
+    output:
+        Path(download_dir, "{bpa_filename}"),
+    params:
+        download_params=get_download_params,
+    shell:
+        "bpa-file-downloader "
+        "--file_checksum {params.download_params[file_checksum]} "
+        "{params.download_params[bioplatforms_url]} "
+        "{output} "
