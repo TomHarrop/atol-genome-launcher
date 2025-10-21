@@ -77,9 +77,14 @@ rule combine_lanes:
 
 rule download_file:
     output:
-        Path(download_dir, "{bpa_filename}"),
+        temp(
+            Path(download_dir, "{bpa_filename}"),
+        ),
+    log:
+        Path(outdir, "logs", "download_file", "{bpa_filename}"),
     params:
         download_params=get_download_params,
+    retries: 3
     shell:
         "bpa-file-downloader "
         "--file_checksum {params.download_params[file_checksum]} "

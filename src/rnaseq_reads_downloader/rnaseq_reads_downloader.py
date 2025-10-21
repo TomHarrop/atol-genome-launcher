@@ -21,17 +21,13 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--parallel_downloads", type=int, help="Number of parallel downloads"
+        "--parallel_downloads", type=int, help="Number of parallel downloads", default=1
     )
 
     parser.add_argument("manifest", type=Path, help="Path to the manifest")
     parser.add_argument("outdir", type=Path, help="Output directory")
 
     return parser.parse_args()
-
-
-# TODO: multiple samples can have the same dataset id. Need to grab the sample
-# ID from the Packages file too.
 
 
 def mung_manifest_file(manifest):
