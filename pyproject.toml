@@ -28,5 +28,9 @@ bpa-file-downloader = "bpa_file_downloader.bpa_file_downloader:main"
 rnaseq-manifest-generator = "rnaseq_manifest_generator.rnaseq_manifest_generator:main"
 rnaseq-reads-downloader = "rnaseq_reads_downloader.rnaseq_reads_downloader:main"
 
+[tool.setuptools.package-data]
+"bpa_file_downloader" = ["workflow/*"]
+"rnaseq_manifest_generator" = ["workflow/*"]
+"rnaseq_reads_downloader" = ["workflow/*"]
 
 [tool.setuptools_scm]
