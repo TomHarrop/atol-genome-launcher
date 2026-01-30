@@ -1,0 +1,312 @@
+#!/usr/bin/env python3
+
+from pathlib import Path
+import re
+
+
+def format_filepath(url, data_type, read_file_name, read_number, lane_number):
+    """Format the output file path for a given read file."""
+    file_ext = get_file_ext(url)
+    return file_path.as_posix().format(
+        data_type=data_type,
+        filename=read_file_name,
+        read_number=read_number,
+        lane_number=lane_number,
+        extension=file_ext,
+    )
+
+
+def get_file_ext(url):
+    """Extract file extension(s) from URL."""
+    return "".join(Path(url).suffixes).lstrip(".")
+
+
+def is_paired_end(read_file_dict):
+    """Check if the read file dictionary represents paired-end data."""
+    return isinstance(read_file_dict, dict) and (
+        "r1" in read_file_dict or "r2" in read_file_dict
+    )
+
+
+def process_read_files(read_files_list, data_type, read_file_name, read_number):
+    """Process a list of read files and return formatted file paths."""
+    output_files = []
+    for file_dict in read_files_list:
+        lane_number = file_dict.get("lane_number", "single_lane")
+        url = file_dict.get("url")
+        output_files.append(
+            format_filepath(url, data_type, read_file_name, read_number, lane_number)
+        )
+    return output_files
+
+
+def process_paired_end_reads(read_file_dict, data_type, read_file_name):
+    """Process paired-end reads (r1 and r2)."""
+    output_files = []
+    for read_number in ["r1", "r2"]:
+        if read_number in read_file_dict:
+            output_files.extend(
+                process_read_files(
+                    read_file_dict[read_number], data_type, read_file_name, read_number
+                )
+            )
+    return output_files
+
+
+def process_single_end_reads(read_file_dict, data_type, read_file_name):
+    """Process single-end reads (could be single file or list with lanes)."""
+    # Normalize to list format
+    reads_list = (
+        read_file_dict if isinstance(read_file_dict, list) else [read_file_dict]
+    )
+    return process_read_files(reads_list, data_type, read_file_name, "single_end")
+
+
+def generate_target(wildcards):
+    """Generate list of target output files from reads configuration."""
+    output_files = []
+
+    for data_type, read_files_dict in reads_config.items():
+        for read_file_name, read_file_dict in read_files_dict.items():
+            if is_paired_end(read_file_dict):
+                # For paired-end, create separate files for r1 and r2
+                for read_number in ["r1", "r2"]:
+                    if read_number in read_file_dict:
+                        # Get extension from first URL in the read list
+                        first_url = read_file_dict[read_number][0]["url"]
+                        file_ext = get_file_ext(first_url)
+                        output_file = Path(
+                            outdir,
+                            data_type,
+                            f"{read_file_name}.{read_number}.{file_ext}",
+                        )
+                        output_files.append(str(output_file))
+            else:
+                # For single-end, create one file
+                # Normalize to list to get first URL
+                reads_list = (
+                    read_file_dict
+                    if isinstance(read_file_dict, list)
+                    else [read_file_dict]
+                )
+                first_url = reads_list[0]["url"]
+                file_ext = get_file_ext(first_url)
+                output_file = Path(
+                    outdir,
+                    data_type,
+                    f"{read_file_name}.{file_ext}",
+                )
+                output_files.append(str(output_file))
+
+    return output_files
+
+
+def iter_read_file_dicts():
+    """Iterator over all read file dictionaries in the configuration."""
+    for read_files_dict in reads_config.values():
+        for read_file_dict in read_files_dict.values():
+            yield read_file_dict
+
+
+def extract_values_from_read_dict(read_file_dict, key, default=None):
+    """Extract values for a given key from various read_file_dict structures."""
+    values = []
+
+    if is_paired_end(read_file_dict):
+        for read_list in [read_file_dict.get("r1", []), read_file_dict.get("r2", [])]:
+            values.extend([f.get(key, default) for f in read_list])
+    elif isinstance(read_file_dict, list):
+        values.extend([f.get(key, default) for f in read_file_dict])
+    else:
+        values.append(read_file_dict.get(key, default))
+
+    return values
+
+
+def get_all_urls():
+    """Extract all URLs from the reads configuration."""
+    urls = []
+    for read_file_dict in iter_read_file_dicts():
+        urls.extend(extract_values_from_read_dict(read_file_dict, "url"))
+    return urls
+
+
+def get_all_lane_numbers():
+    """Extract all unique lane numbers from the reads configuration."""
+    lane_numbers = set()
+    for read_file_dict in iter_read_file_dicts():
+        lane_numbers.update(
+            extract_values_from_read_dict(read_file_dict, "lane_number", "single_lane")
+        )
+    return sorted(lane_numbers)
+
+
+def get_download_params(wildcards):
+    """Get download parameters (URL and MD5) for a specific file."""
+    file_data = reads_config[wildcards.data_type][wildcards.filename]
+
+    # Get read-specific data (for paired-end) or file data itself (for single-end)
+    read_data = file_data.get(wildcards.read_number, file_data)
+
+    # Handle lane-specific data
+    if wildcards.lane_number != "single_lane":
+        lane_data = next(
+            x for x in read_data if x.get("lane_number") == wildcards.lane_number
+        )
+    else:
+        lane_data = read_data if not isinstance(read_data, list) else read_data[0]
+
+    return {
+        "md5sum": lane_data["md5sum"],
+        "url": lane_data["url"],
+    }
+
+
+def get_paired_end_lanes(wildcards):
+    """Get all lane files for paired-end reads (r1 or r2) in natural sort order."""
+    file_data = reads_config[wildcards.data_type][wildcards.filename]
+
+    # Get the specific read data (r1 or r2)
+    read_data = file_data[wildcards.read_number]
+
+    # Build file paths for each lane
+    lane_files = []
+    for read_dict in read_data:
+        lane_number = read_dict.get("lane_number", "single_lane")
+        url = read_dict.get("url")
+        file_ext = get_file_ext(url)
+
+        lane_file = Path(
+            download_dir,
+            wildcards.data_type,
+            wildcards.filename,
+            wildcards.read_number,
+            lane_number,
+            f"reads.{file_ext}",
+        )
+        lane_files.append((lane_number, lane_file))
+
+    # Sort by lane number using natural sort
+    lane_files.sort(key=lambda x: natural_sort_key(x[0]))
+
+    return [str(f[1]) for f in lane_files]
+
+
+def get_single_end_lanes(wildcards):
+    """Get all lane files for single-end reads in natural sort order."""
+    file_data = reads_config[wildcards.data_type][wildcards.filename]
+
+    # Normalize to list
+    reads_list = file_data if isinstance(file_data, list) else [file_data]
+
+    # Extract lane numbers and build file paths
+    lane_files = []
+    for read_dict in reads_list:
+        lane_number = read_dict.get("lane_number", "single_lane")
+        url = read_dict.get("url")
+        file_ext = get_file_ext(url)
+
+        lane_file = Path(
+            download_dir,
+            wildcards.data_type,
+            wildcards.filename,
+            "single_end",
+            lane_number,
+            f"reads.{file_ext}",
+        )
+        lane_files.append((lane_number, lane_file))
+
+    # Sort by lane number using natural sort
+    lane_files.sort(key=lambda x: natural_sort_key(x[0]))
+
+    return [str(f[1]) for f in lane_files]
+
+
+def natural_sort_key(s):
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
+
+
+# Configuration
+reads_config = config.get("reads")
+outdir = Path(config.get("outdir"))
+download_dir = Path(outdir, "downloads")
+
+# Wildcard values
+all_data_types = list(reads_config.keys())
+all_filenames = [k for x in reads_config.values() for k in x.keys()]
+all_read_numbers = ["r1", "r2", "single_end"]
+all_extensions = sorted(set(get_file_ext(x) for x in get_all_urls()))
+all_lane_numbers = get_all_lane_numbers()
+
+# Output file path pattern
+file_path = Path(
+    download_dir,
+    "{data_type}",
+    "{filename}",
+    "{read_number}",
+    "{lane_number}",
+    "reads.{extension}",
+)
+
+
+# Wildcard constraints
+wildcard_constraints:
+    data_type="|".join(all_data_types),
+    filename="|".join(all_filenames),
+    read_number="|".join(all_read_numbers),
+    lane_number="|".join(all_lane_numbers),
+    extension="|".join(all_extensions),
+
+
+rule target:
+    input:
+        generate_target,
+
+
+rule collect_single_end_files:
+    input:
+        get_single_end_lanes,
+    output:
+        Path(
+            outdir,
+            "{data_type}",
+            "{filename}.{extension}",
+        ),
+    shell:
+        "cat {input} > {output}"
+
+
+rule collect_paired_end_files:
+    input:
+        get_paired_end_lanes,
+    output:
+        Path(
+            outdir,
+            "{data_type}",
+            "{filename}.{read_number}.{extension}",
+        ),
+    shell:
+        "cat {input} > {output}"
+
+
+rule download_file:
+    output:
+        temp(file_path),
+    params:
+        params=get_download_params,
+    log:
+        Path(
+            "logs",
+            "download_file",
+            "{data_type}",
+            "{filename}.{read_number}.{lane_number}.{extension}",
+        ),
+    retries: 3
+    container:
+        "docker://quay.io/biocontainers/atol-genome-launcher:0.1.5--pyhdfd78af_0"
+    shell:
+        "bpa-file-downloader "
+        "--file_checksum {params.params[md5sum]} "
+        "{params.params[url]} "
+        "{output} "
+        "&> {log}"
