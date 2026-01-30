@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
 import re
-
-
-def format_filepath(url, data_type, read_file_name, read_number, lane_number):
-    """Format the output file path for a given read file."""
-    file_ext = get_file_ext(url)
-    return file_path.as_posix().format(
-        data_type=data_type,
-        filename=read_file_name,
-        read_number=read_number,
-        lane_number=lane_number,
-        extension=file_ext,
-    )
 
 
 def get_file_ext(url):
@@ -28,40 +15,6 @@ def is_paired_end(read_file_dict):
     )
 
 
-def process_read_files(read_files_list, data_type, read_file_name, read_number):
-    """Process a list of read files and return formatted file paths."""
-    output_files = []
-    for file_dict in read_files_list:
-        lane_number = file_dict.get("lane_number", "single_lane")
-        url = file_dict.get("url")
-        output_files.append(
-            format_filepath(url, data_type, read_file_name, read_number, lane_number)
-        )
-    return output_files
-
-
-def process_paired_end_reads(read_file_dict, data_type, read_file_name):
-    """Process paired-end reads (r1 and r2)."""
-    output_files = []
-    for read_number in ["r1", "r2"]:
-        if read_number in read_file_dict:
-            output_files.extend(
-                process_read_files(
-                    read_file_dict[read_number], data_type, read_file_name, read_number
-                )
-            )
-    return output_files
-
-
-def process_single_end_reads(read_file_dict, data_type, read_file_name):
-    """Process single-end reads (could be single file or list with lanes)."""
-    # Normalize to list format
-    reads_list = (
-        read_file_dict if isinstance(read_file_dict, list) else [read_file_dict]
-    )
-    return process_read_files(reads_list, data_type, read_file_name, "single_end")
-
-
 def generate_target(wildcards):
     """Generate list of target output files from reads configuration."""
     output_files = []
@@ -69,7 +22,7 @@ def generate_target(wildcards):
     for data_type, read_files_dict in reads_config.items():
         for read_file_name, read_file_dict in read_files_dict.items():
             if is_paired_end(read_file_dict):
-                # For paired-end, create separate files for r1 and r2
+                # For paired-end, create separate files for r1 and/or r2 (whichever exists)
                 for read_number in ["r1", "r2"]:
                     if read_number in read_file_dict:
                         # Get extension from first URL in the read list
@@ -223,6 +176,7 @@ def get_single_end_lanes(wildcards):
 
 
 def natural_sort_key(s):
+    """Convert string to list for natural sorting (handles numbers correctly)."""
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
 
 
@@ -238,7 +192,7 @@ all_read_numbers = ["r1", "r2", "single_end"]
 all_extensions = sorted(set(get_file_ext(x) for x in get_all_urls()))
 all_lane_numbers = get_all_lane_numbers()
 
-# Output file path pattern
+# Output file path pattern for downloaded files
 file_path = Path(
     download_dir,
     "{data_type}",
@@ -302,8 +256,6 @@ rule download_file:
             "{filename}.{read_number}.{lane_number}.{extension}",
         ),
     retries: 3
-    container:
-        "docker://quay.io/biocontainers/atol-genome-launcher:0.1.5--pyhdfd78af_0"
     shell:
         "bpa-file-downloader "
         "--file_checksum {params.params[md5sum]} "
