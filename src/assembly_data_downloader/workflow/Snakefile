@@ -24,9 +24,7 @@ def generate_target(wildcards):
             if is_paired_end(read_file_dict):
                 for read_number in ["r1", "r2"]:
                     if read_number in read_file_dict:
-                        file_ext = get_file_ext(
-                            read_file_dict[read_number][0]["url"]
-                        )
+                        file_ext = get_file_ext(read_file_dict[read_number][0]["url"])
                         output_file = Path(
                             outdir,
                             data_type,
@@ -220,11 +218,13 @@ rule collect_paired_end_files:
 
 rule download_file:
     output:
-        temp(file_path),
+        read_file=temp(file_path),
+        check_file=temp(file_path.as_posix() + ".check.txt"),
     params:
         params=get_download_params,
     log:
         Path(
+            outdir,
             "logs",
             "download_file",
             "{data_type}",
@@ -235,5 +235,5 @@ rule download_file:
         "bpa-file-downloader "
         "--file_checksum {params.params[md5sum]} "
         "{params.params[url]} "
-        "{output} "
+        "{output.read_file} "
         "&> {log}"
