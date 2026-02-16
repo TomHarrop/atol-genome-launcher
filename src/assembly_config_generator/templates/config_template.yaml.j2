@@ -1,0 +1,34 @@
+metadata:
+  id: {{ dataset_id }}
+  species: "{{ scientific_name }}"
+  mitochondrial_code: {{ mito_code }}
+sequencing_data:
+  long_reads:
+    platform: "{{ platform }}"
+    reads:
+{%- for reads in long_reads %}
+      - {{ reads }}
+{%- endfor %}
+{%- if hic_reads %}
+  hic:
+    reads:
+{%- for reads in hic_reads %}
+      - {{ reads }}
+{%- endfor %}
+    hic_motif:
+{%- for motif in hic_motif.split(",") %}
+      - {{ motif }}
+{%- endfor %}
+{%- endif %}
+databases:
+  busco:
+    lineage: {{ busco_lineage }}
+{%- if mito_hmm_name or plastid_hmm_name %}
+  oatk:
+{%- endif %}
+{%- if mito_hmm_name %}
+    mito_hmm: https://github.com/c-zhou/OatkDB/raw/main/v20230921/{{mito_hmm_name}}.fam
+{%- endif %}
+{%- if plastid_hmm_name %}
+    pltd_hmm: https://github.com/c-zhou/OatkDB/raw/main/v20230921/{{plastid_hmm_name}}.fam
+{%- endif %}
