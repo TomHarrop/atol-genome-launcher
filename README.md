@@ -94,3 +94,21 @@ options:
   --parallel_downloads PARALLEL_DOWNLOADS
                         Number of parallel downloads
 ```
+
+### assembly_config_generator
+
+Generates config files for sanger-tol/genomeassembly pipeline 
+
+```bash
+usage: assembly-config-generator [-h] --long_reads LONG_READS [--hic_reads HIC_READS] [--template TEMPLATE] config pipeline_config
+
+positional arguments:
+  config
+  pipeline_config
+
+options:
+  -h, --help            show this help message and exit
+  --long_reads LONG_READS
+  --hic_reads HIC_READS
+  --template TEMPLATE
+```
