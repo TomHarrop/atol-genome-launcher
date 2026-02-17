@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
 
-import jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 import yaml
 import argparse
+from pathlib import Path
+import importlib.resources as pkg_resources
+
 
 def parse_arguments():
+    my_files = pkg_resources.files(__package__)
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", required=True)
+    parser.add_argument("config", type=Path)
     parser.add_argument("--long_reads", required=True)
     parser.add_argument("--hic_reads", default=None)
-    parser.add_argument("--template", default=None)
-
+    parser.add_argument(
+        "--template",
+        default=my_files.joinpath("templates/sanger-tol_genomeassembly_0.50.0.yaml.j2"),
+        type=Path,
+    )
+    parser.add_argument("pipeline_config", type=Path)
     args = parser.parse_args()
 
     return args
 
 
-def main(): 
+def main():
 
     args = parse_arguments()
+    template_path = Path(args.template)
+
+    env = Environment(loader=FileSystemLoader(template_path.parent))
+    template = env.get_template(template_path.name)
 
     # load config file
     with open(args.config) as f:
@@ -39,24 +52,17 @@ def main():
     # merge config + CLI args
     context = {
         **config,
-        "platform": platform,                 # everything from config file
-        "long_reads": long_reads,     # override / add CLI values
+        "platform": platform,  # everything from config file
+        "long_reads": long_reads,  # override / add CLI values
         "hic_reads": hic_reads,
     }
 
-    # render template 
-    loader=FileSystemLoader("templates")
-    print("Search path:", loader.searchpath)
-
-    env = Environment(loader=loader)
-    print("Templates found:", env.list_templates())
-
-    template = env.get_template("config_template.yaml.j2")
+    # render template
 
     rendered = template.render(context)
 
     # ---- write output ----
-    with open(f"sanger_config.yaml", "w") as f:
+    with open(args.pipeline_config, "wt") as f:
         f.write(rendered)
 
 
