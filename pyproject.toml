@@ -7,7 +7,10 @@ name = "atol-genome-launcher"
 dynamic = ["version"]
 description = "Draft code for the AToL genome launcher"
 readme = "README.md"
-authors = [{ name = "Tom Harrop", email = "tharrop@unimelb.edu.au" }, { name = "Amy Tims", email = "amy.tims@unimelb.edu.au" }]
+authors = [
+    { name = "Tom Harrop", email = "tharrop@unimelb.edu.au" },
+    { name = "Amy Tims", email = "amy.tims@unimelb.edu.au" },
+]
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 classifiers = [
