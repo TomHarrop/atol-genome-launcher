@@ -43,5 +43,6 @@ rnaseq-reads-downloader = "rnaseq_reads_downloader.rnaseq_reads_downloader:main"
 "assembly_data_downloader" = ["workflow/Snakefile"]
 "bpa_file_downloader" = ["workflow/Snakefile"]
 "rnaseq_reads_downloader" = ["workflow/Snakefile"]
+"yaml_manifest" = ["directory_layout.json"]
 
 [tool.setuptools_scm]

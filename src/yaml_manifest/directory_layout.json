@@ -1,0 +1,9 @@
+{
+    "logs": "logs",
+    "resources": "resources",
+    "results": "results",
+    "qc": "results/qc",
+    "qc_reads": "results/qc/reads",
+    "qc_stats": "results/qc/stats",
+    "downloads": "resources/raw_reads/{data_type}"
+}
