@@ -118,10 +118,32 @@ class Manifest(BaseModel):
             urls.extend(rf.all_urls)
         return urls
 
+    @property
+    def sangertol_genomeassembly_long_read_platform(self) -> str:
+        # TODO: this needs to be adapted to the new sangertol config
+        data_types = self.all_data_types
+        if "PACBIO_SMRT" in data_types:
+            return "pacbio"
+        elif "OXFORD_NANOPORE" in data_types:
+            return "ont"
+        else:
+            raise ValueError("No long reads in Manifest")
+
     # standardised directory structure
     def get_dir(self, name: str, **kwargs) -> Path:
         """Get a standardised directory path by name."""
         return get_dir(name, **kwargs)
+
+    def render_template(self, template_string: str) -> str:
+        from jinja2 import Environment
+
+        env = Environment()
+        template = env.from_string(template_string)
+        return template.render(self.model_dump())
+
+    def render_template_file(self, template_path: Path) -> str:
+        template_string = Path(template_path).read_text()
+        return self.render_template(template_string)
 
 
 def natural_sort_key(s: str) -> list:
