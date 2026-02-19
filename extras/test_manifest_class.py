@@ -22,5 +22,6 @@ print(manifest.render_template_file(template_path))
 print(manifest.sangertol_genomeassembly_long_read_platform)
 
 # or more generic stuff, like
-print(manifest.hic_reads)
-print(manifest.long_reads)
+print([x.name for x in manifest.hic_reads])
+print([x.name for x in manifest.long_reads])
+print([x.all_urls for x in manifest.by_data_type("PACBIO_SMRT")])

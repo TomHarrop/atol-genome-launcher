@@ -58,6 +58,70 @@ class ReadFile(BaseModel):
             yield self.single_end
 
 
+class ReadFileCollection:
+    """A list of ReadFiles with convenience accessors."""
+
+    def __init__(self, read_files: list[ReadFile]):
+        self._read_files = read_files
+
+    def __iter__(self):
+        return iter(self._read_files)
+
+    def __len__(self):
+        return len(self._read_files)
+
+    def __getitem__(self, index):
+        return self._read_files[index]
+
+    def __bool__(self):
+        return len(self._read_files) > 0
+
+    def __add__(self, other: "ReadFileCollection") -> "ReadFileCollection":
+        return ReadFileCollection(self._read_files + other._read_files)
+
+    @property
+    def names(self) -> list[str]:
+        return [rf.name for rf in self._read_files]
+
+    @property
+    def data_types(self) -> list[str]:
+        return sorted(set(rf.data_type for rf in self._read_files))
+
+    @property
+    def all_urls(self) -> list[str]:
+        urls = []
+        for rf in self._read_files:
+            urls.extend(rf.all_urls)
+        return urls
+
+    @property
+    def all_lane_numbers(self) -> list[str]:
+        lane_numbers = set()
+        for rf in self._read_files:
+            lane_numbers.update(rf.all_lane_numbers)
+        return sorted(lane_numbers, key=natural_sort_key)
+
+    @property
+    def all_extensions(self) -> list[str]:
+        return sorted(
+            set(
+                BpaFile.model_validate({"url": u, "md5sum": ""}).file_ext
+                for u in self.all_urls
+            )
+        )
+
+    def by_data_type(self, data_type: str) -> "ReadFileCollection":
+        return ReadFileCollection(
+            [rf for rf in self._read_files if rf.data_type == data_type]
+        )
+
+    def get(self, name: str) -> ReadFile:
+        for rf in self._read_files:
+            if rf.name == name:
+                return rf
+        raise KeyError(f"No read file found: {name}")
+
+
 class Manifest(BaseModel):
 
     # Specimen metadata
@@ -89,42 +153,37 @@ class Manifest(BaseModel):
 
     @property
     def all_data_types(self) -> list[str]:
-        return sorted(set(rf.data_type for rf in self.read_files))
+        return self.reads.data_types
 
     @property
     def all_extensions(self) -> list[str]:
-        return sorted(
-            set(
-                BpaFile.model_validate({"url": u, "md5sum": ""}).file_ext
-                for u in self.all_urls
-            )
-        )
+        return self.reads.all_extensions
 
     @property
     def all_filenames(self) -> list[str]:
-        return [rf.name for rf in self.read_files]
+        return self.reads.names
 
     @property
     def all_lane_numbers(self) -> list[str]:
-        lane_numbers = set()
-        for rf in self.read_files:
-            lane_numbers.update(rf.all_lane_numbers)
-        return sorted(lane_numbers, key=natural_sort_key)
+        return self.reads.all_lane_numbers
 
     @property
     def all_urls(self) -> list[str]:
-        urls = []
-        for rf in self.read_files:
-            urls.extend(rf.all_urls)
-        return urls
+        return self.reads.all_urls
 
     @property
-    def long_reads(self) -> list[ReadFile]:
-        return [rf for rf in self.read_files if rf.data_type in ("PACBIO_SMRT", "ONT")]
+    def reads(self) -> ReadFileCollection:
+        return ReadFileCollection(self.read_files)
+
+    @property
+    def long_reads(self) -> ReadFileCollection:
+        return self.reads.by_data_type("PACBIO_SMRT") + self.reads.by_data_type(
+            "OXFORD_NANOPORE"
+        )
 
     @property
     def hic_reads(self) -> list[ReadFile]:
-        return [rf for rf in self.read_files if rf.data_type == "Hi-C"]
+        return self.reads.by_data_type("Hi-C")
 
     @property
     def sangertol_genomeassembly_long_read_platform(self) -> str:
@@ -152,6 +211,10 @@ class Manifest(BaseModel):
     def render_template_file(self, template_path: Path) -> str:
         template_string = Path(template_path).read_text()
         return self.render_template(template_string)
+
+    def by_data_type(self, data_type: str) -> ReadFileCollection:
+        """Filter read files by data type."""
+        return self.reads.by_data_type(data_type)
 
 
 def natural_sort_key(s: str) -> list:
