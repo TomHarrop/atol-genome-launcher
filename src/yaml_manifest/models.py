@@ -254,28 +254,26 @@ class Manifest(BaseModel):
 
     # Template rendering
 
-    # TODO. This is different for different templates. Maybe provide
-    # convenience methods here and let the user handle it.
-    def template_context(self) -> dict:
-        """Build the full context for Jinja2 template rendering."""
-        return {
-            **self.model_dump(),
-            "long_reads": self.long_reads,
-            "hic_reads": self.hic_reads,
-            "platform": self.sangertol_genomeassembly_long_read_platform,
-        }
-
-    def render_template(self, template_string: str) -> str:
-        """Render a Jinja2 template string using this manifest's data."""
+    def render_template(self, template_string: str, **kwargs) -> str:
+        """
+        Render a Jinja2 template string using this manifest's data. Arbitrary
+        extra variables that don't come from the manifest directly can be
+        passed as kwargs, e.g. platform=long_read_platform
+        """
         from jinja2 import Environment
 
         env = Environment()
         template = env.from_string(template_string)
-        return template.render(self.template_context())
+        context = {**self.model_dump(), **kwargs}
+        return template.render(context)
 
-    def render_template_file(self, template_path: Path) -> str:
-        """Render a Jinja2 template file using this manifest's data."""
-        return self.render_template(Path(template_path).read_text())
+    def render_template_file(self, template_path: Path, **kwargs) -> str:
+        """
+        Render a Jinja2 template file using this manifest's data. Arbitrary
+        extra variables that don't come from the manifest directly can be
+        passed as kwargs, e.g. platform=long_read_platform
+        """
+        return self.render_template(Path(template_path).read_text(), **kwargs)
 
 
 def natural_sort_key(s: str) -> list:
