@@ -9,7 +9,6 @@ _LAYOUT_FILE = "directory_layout.json"
 
 
 def _load_layout() -> dict[str, str]:
-    """Load the directory layout config from the package data."""
     ref = importlib_resources.files("yaml_manifest").joinpath(_LAYOUT_FILE)
     with importlib_resources.as_file(ref) as path:
         with open(path) as fh:
@@ -20,30 +19,29 @@ _LAYOUT = _load_layout()
 
 
 def get_dir(name: str, **kwargs) -> Path:
-    """Get a directory path by name, with optional template substitution.
-
-    Missing placeholders are removed and the path is truncated, e.g.
-    get_dir("downloads") returns Path("resources/raw_reads") even though the
-    template is "resources/raw_reads/{data_type}".
-
-    Args:
-        name: Key from directory_layout.json. **kwargs: Runtime values to
-        substitute into the path template.
-
-    Returns:
-        A relative Path.
-
-    Raises:
-        KeyError: If the directory name is not in the layout config.
-    """
     template = _LAYOUT[name]
     resolved = template.format_map(_EmptyMissing(kwargs))
     resolved = re.sub(r"/+", "/", resolved).strip("/")
     return Path(resolved)
 
 
-class _EmptyMissing(dict):
-    """Return empty string for missing keys, allowing path truncation."""
+def get_stage(name: str) -> dict:
+    return _LAYOUT["stages"][name]
 
+
+def get_stage_ext(stage_name: str, data_type: str) -> str:
+    stage = get_stage(stage_name)
+    ext_config = stage["ext"]
+    if data_type not in ext_config:
+        raise KeyError(
+            f"No extension configured for data type '{data_type}' "
+            f"at stage '{stage_name}'. "
+            f"Configured types: {list(ext_config.keys())}"
+        )
+    return ext_config[data_type]
+
+
+class _EmptyMissing(dict):
+    # Handle optional {data_type} key in paths
     def __missing__(self, key: str) -> str:
         return ""

@@ -17,8 +17,9 @@ long_read_platform = manifest.sangertol_genomeassembly_long_read_platform
 
 # or more generic stuff, like
 qc_reads_dir = manifest.get_dir("qc_reads")
-long_reads = [Path(qc_reads_dir, x.name) for x in manifest.by_data_type("PACBIO_SMRT")]
-hic_reads = [Path(qc_reads_dir, x.name) for x in manifest.by_data_type("Hi-C")]
+pacbio_read_paths = [x.paths("qc") for x in manifest.pacbio_reads]
+hic_reads = [x.paths("qc") for x in manifest.hic_reads]
+
 
 # render any template based on keys in the template that exactly match keys in
 # the config. Pass additional values that don't come directly from the Manifest
@@ -27,7 +28,21 @@ print(
     manifest.render_template_file(
         template_path,
         platform=long_read_platform,
-        long_reads=long_reads,
-        hic_reads=hic_reads,
+        long_reads=[x.get("reads") for x in pacbio_read_paths],
+        hic_reads=[x.get("reads") for x in hic_reads],
     )
 )
+
+# We can get input/output paths for any ReadFile in the Manifest, e.g.
+my_file = manifest.reads.get("353997_AusARG_BRF_HMGMJDRXY")
+
+print(my_file.paths("raw"))
+print(my_file.paths("qc"))
+print(my_file.stats_path("qc"))
+
+# This is all configured in directory_layout.json, e.g. there are no stats for
+# "raw"
+try:
+    print(my_file.stats_path("raw"))
+except ValueError as e:
+    print(e)

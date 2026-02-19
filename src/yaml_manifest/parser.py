@@ -1,5 +1,3 @@
-"""Parse YAML configuration files into Manifest models."""
-
 from pathlib import Path
 from typing import Union
 
@@ -21,14 +19,6 @@ _KNOWN_KEYS = {
 
 
 def load_manifest(manifest_path: Union[str, Path]) -> Manifest:
-    """Load a YAML manifest file and return a validated Manifest.
-
-    Args:
-        manifest_path: Path to the YAML manifest file.
-
-    Returns:
-        A validated Manifest object.
-    """
     manifest_path = Path(manifest_path)
     with open(manifest_path) as fh:
         raw = yaml.safe_load(fh)
@@ -36,19 +26,6 @@ def load_manifest(manifest_path: Union[str, Path]) -> Manifest:
 
 
 def parse_config(raw: dict) -> Manifest:
-    """Parse a raw config dictionary into a validated Manifest.
-
-    Works with both yaml.safe_load output and Snakemake's config dict.
-
-    Args:
-        raw: Dictionary with a top-level 'reads' key and metadata keys.
-
-    Returns:
-        A validated Manifest object.
-
-    Raises:
-        ValueError: If the 'reads' key is missing.
-    """
     reads_raw = raw.get("reads")
     if reads_raw is None:
         raise ValueError("Config must contain a 'reads' key")
@@ -74,7 +51,6 @@ def parse_config(raw: dict) -> Manifest:
 
 
 def _parse_read_file(data_type: str, filename: str, file_data) -> ReadFile:
-    """Parse a single read file entry from the config."""
     if isinstance(file_data, dict) and ("r1" in file_data or "r2" in file_data):
         r1 = [BpaFile(**f) for f in file_data.get("r1", [])] or None
         r2 = [BpaFile(**f) for f in file_data.get("r2", [])] or None

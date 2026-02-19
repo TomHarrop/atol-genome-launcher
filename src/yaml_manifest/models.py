@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-"""Data models for the YAML manifest configuration."""
-
 import re
 from pathlib import Path
 from typing import Any, Optional
@@ -35,12 +33,10 @@ class ReadFile(BaseModel):
 
     @property
     def is_paired_end(self) -> bool:
-        """Check if this read file has paired-end data."""
         return self.r1 is not None or self.r2 is not None
 
     @property
     def all_urls(self) -> list[str]:
-        """All download URLs across all lanes and read numbers."""
         urls = []
         for lane_files in self._iter_lane_file_lists():
             urls.extend(lf.url for lf in lane_files)
@@ -48,14 +44,12 @@ class ReadFile(BaseModel):
 
     @property
     def all_lane_numbers(self) -> list[str]:
-        """All unique lane numbers, naturally sorted."""
         lane_numbers = set()
         for lane_files in self._iter_lane_file_lists():
             lane_numbers.update(lf.lane_number for lf in lane_files)
         return sorted(lane_numbers, key=natural_sort_key)
 
     def lanes_for_read(self, read_number: str) -> list[BpaFile]:
-        """Get lane files for a specific read number, naturally sorted."""
         if read_number == "r1":
             lanes = self.r1 or []
         elif read_number == "r2":
@@ -66,8 +60,35 @@ class ReadFile(BaseModel):
             raise ValueError(f"Unknown read number: {read_number}")
         return sorted(lanes, key=lambda lf: natural_sort_key(lf.lane_number))
 
+    def paths(self, stage: str) -> dict[str, Path]:
+        from yaml_manifest.layout import get_dir, get_stage, get_stage_ext
+
+        stage_config = get_stage(stage)
+        base_dir = get_dir(stage_config["dir"], data_type=self.data_type)
+        ext = get_stage_ext(stage, self.data_type)
+
+        if self.is_paired_end:
+            patterns = stage_config["outputs"]["paired_end"]
+        else:
+            patterns = stage_config["outputs"]["single_end"]
+
+        return {
+            key: base_dir / pattern.format(name=self.name, ext=ext)
+            for key, pattern in patterns.items()
+        }
+
+    def stats_path(self, stage: str) -> Path:
+        from yaml_manifest.layout import get_dir, get_stage
+
+        stage_config = get_stage(stage)
+        stats_config = stage_config.get("stats")
+        if stats_config is None:
+            raise ValueError(f"No stats configuration for '{stage}'")
+
+        stats_dir = get_dir(stats_config["dir"], data_type=self.data_type)
+        return stats_dir / stats_config["pattern"].format(name=self.name)
+
     def _iter_lane_file_lists(self):
-        """Iterate over all non-empty lane file lists."""
         if self.is_paired_end:
             if self.r1:
                 yield self.r1
@@ -144,19 +165,22 @@ class ReadFileCollection:
         )
 
     def get(self, name: str) -> ReadFile:
-        """Look up a read file by name.
-
-        Raises:
-            KeyError: If no read file with the given name exists.
-        """
+        """Look up a read file by name."""
         for rf in self._read_files:
             if rf.name == name:
                 return rf
         raise KeyError(f"No read file found: {name}")
 
+    def paths(self, stage: str) -> list[dict[str, Path]]:
+        return [rf.paths(stage) for rf in self._read_files]
+
+    def stats_paths(self, stage: str) -> list[Path]:
+        return [rf.stats_path(stage) for rf in self._read_files]
+
 
 class Manifest(BaseModel):
-    """Complete manifest parsed from YAML.
+    """
+    Complete manifest parsed from YAML.
 
     Contains both specimen metadata and read file definitions.
     """
@@ -204,12 +228,22 @@ class Manifest(BaseModel):
     @property
     def long_reads(self) -> ReadFileCollection:
         """PacBio and ONT read files."""
-        return self.by_data_type("PACBIO_SMRT") + self.by_data_type("OXFORD_NANOPORE")
+        return self.pacbio_reads + self.ont_reads
 
     @property
     def hic_reads(self) -> ReadFileCollection:
         """Hi-C read files."""
         return self.by_data_type("Hi-C")
+
+    @property
+    def pacbio_reads(self) -> ReadFileCollection:
+        """PacBio read files."""
+        return self.by_data_type("PACBIO_SMRT")
+
+    @property
+    def ont_reads(self) -> ReadFileCollection:
+        """ONT read files."""
+        return self.by_data_type("OXFORD_NANOPORE")
 
     # Convenience delegates
 
