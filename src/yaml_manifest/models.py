@@ -119,6 +119,14 @@ class Manifest(BaseModel):
         return urls
 
     @property
+    def long_reads(self) -> list[ReadFile]:
+        return [rf for rf in self.read_files if rf.data_type in ("PACBIO_SMRT", "ONT")]
+
+    @property
+    def hic_reads(self) -> list[ReadFile]:
+        return [rf for rf in self.read_files if rf.data_type == "Hi-C"]
+
+    @property
     def sangertol_genomeassembly_long_read_platform(self) -> str:
         # TODO: this needs to be adapted to the new sangertol config
         data_types = self.all_data_types

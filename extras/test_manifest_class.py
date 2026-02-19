@@ -2,8 +2,6 @@
 
 from pathlib import Path
 from yaml_manifest import Manifest
-from jinja2 import Environment, FileSystemLoader
-
 
 # testing
 manifest_file = Path("test-data", "rSaiEqu1_at_th.yaml")
@@ -22,3 +20,7 @@ print(manifest.render_template_file(template_path))
 # we can add convenience methods to the Manifest class for anything we need to
 # generate, e.g.
 print(manifest.sangertol_genomeassembly_long_read_platform)
+
+# or more generic stuff, like
+print(manifest.hic_reads)
+print(manifest.long_reads)
