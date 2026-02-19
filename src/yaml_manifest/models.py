@@ -254,6 +254,8 @@ class Manifest(BaseModel):
 
     # Template rendering
 
+    # TODO. This is different for different templates. Maybe provide
+    # convenience methods here and let the user handle it.
     def template_context(self) -> dict:
         """Build the full context for Jinja2 template rendering."""
         return {
