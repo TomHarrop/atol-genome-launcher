@@ -1,12 +1,14 @@
-#!/usr/bin/env python3
+"""Parse YAML configuration files into Manifest models."""
 
 from pathlib import Path
+from typing import Union
+
 import yaml
 
-from yaml_manifest.models import BpaFile, ReadFile, Manifest
+from yaml_manifest.models import BpaFile, Manifest, ReadFile
 
-
-_KNOWN_METADATA_KEYS = {
+# Keys that map to explicit Manifest fields
+_KNOWN_KEYS = {
     "dataset_id",
     "scientific_name",
     "taxon_id",
@@ -18,33 +20,45 @@ _KNOWN_METADATA_KEYS = {
 }
 
 
-def load_manifest(manifest_path: Path) -> Manifest:
+def load_manifest(manifest_path: Union[str, Path]) -> Manifest:
+    """Load a YAML manifest file and return a validated Manifest.
+
+    Args:
+        manifest_path: Path to the YAML manifest file.
+
+    Returns:
+        A validated Manifest object.
     """
-    Load the YAML and return the parsed Manifest
-    """
+    manifest_path = Path(manifest_path)
     with open(manifest_path) as fh:
         raw = yaml.safe_load(fh)
-
     return parse_config(raw)
 
 
 def parse_config(raw: dict) -> Manifest:
-    """
-    Parse the raw manifest dict into Manifest
-    """
-    # parse the non-read data e.g. taxonomy info
+    """Parse a raw config dictionary into a validated Manifest.
 
-    # parse the reads
+    Works with both yaml.safe_load output and Snakemake's config dict.
+
+    Args:
+        raw: Dictionary with a top-level 'reads' key and metadata keys.
+
+    Returns:
+        A validated Manifest object.
+
+    Raises:
+        ValueError: If the 'reads' key is missing.
+    """
     reads_raw = raw.get("reads")
+    if reads_raw is None:
+        raise ValueError("Config must contain a 'reads' key")
 
     read_files = []
-    if reads_raw is not None:
-        for data_type, filenames_dict in reads_raw.items():
-            for filename, file_data in filenames_dict.items():
-                read_file = _parse_read_file(data_type, filename, file_data)
-                read_files.append(read_file)
+    for data_type, filenames_dict in reads_raw.items():
+        for filename, file_data in filenames_dict.items():
+            read_files.append(_parse_read_file(data_type, filename, file_data))
 
-    extra = {k: v for k, v in raw.items() if k not in _KNOWN_METADATA_KEYS}
+    extra = {k: v for k, v in raw.items() if k not in _KNOWN_KEYS}
 
     return Manifest(
         dataset_id=raw.get("dataset_id", ""),
@@ -60,21 +74,11 @@ def parse_config(raw: dict) -> Manifest:
 
 
 def _parse_read_file(data_type: str, filename: str, file_data) -> ReadFile:
+    """Parse a single read file entry from the config."""
     if isinstance(file_data, dict) and ("r1" in file_data or "r2" in file_data):
-        # Paired-end
         r1 = [BpaFile(**f) for f in file_data.get("r1", [])] or None
         r2 = [BpaFile(**f) for f in file_data.get("r2", [])] or None
-        return ReadFile(
-            name=filename,
-            data_type=data_type,
-            r1=r1,
-            r2=r2,
-        )
+        return ReadFile(name=filename, data_type=data_type, r1=r1, r2=r2)
     else:
-        # Single-end (file_data is a list of dicts)
         single_end = [BpaFile(**f) for f in file_data]
-        return ReadFile(
-            name=filename,
-            data_type=data_type,
-            single_end=single_end,
-        )
+        return ReadFile(name=filename, data_type=data_type, single_end=single_end)
