@@ -1,0 +1,44 @@
+{
+    "downloads": "resources/raw_reads/{data_type}",
+    "logs": "logs/{stage}",
+    "qc_reads": "results/qc/reads/{data_type}",
+    "qc_stats": "results/qc/stats/{data_type}",
+    "qc": "results/qc",
+    "resources": "resources",
+    "results": "results",
+    "stages": {
+        "raw": {
+            "dir": "downloads",
+            "logs": "logs/download",
+            "outputs": {
+                "paired_end": {
+                    "r1": "{name}.r1.{ext}",
+                    "r2": "{name}.r2.{ext}"
+                },
+                "single_end": {
+                    "reads": "{name}.{ext}"
+                }
+            }
+        },
+        "qc": {
+            "dir": "qc_reads",
+            "logs": "logs/qc",
+            "outputs": {
+                "paired_end": {
+                    "reads": "{name}.{ext}"
+                },
+                "single_end": {
+                    "reads": "{name}.{ext}"
+                }
+            },
+            "ext": {
+                "Hi-C": "cram",
+                "PACBIO_SMRT": "fastq.gz"
+            },
+            "stats": {
+                "dir": "qc_stats",
+                "pattern": "{name}.json"
+            }
+        }
+    }
+}
