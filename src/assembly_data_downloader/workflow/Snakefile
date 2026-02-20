@@ -46,8 +46,8 @@ def get_single_end_lanes(wildcards):
 
 # Configuration
 manifest = Manifest.from_yaml(config.get("manifest_file"))
-download_dir = manifest.get_dir("downloads")
 logs_dir = manifest.get_stage_logs("raw")
+download_dir = manifest.get_dir("downloads")
 
 # Wildcard constraints
 all_read_numbers = ["r1", "r2", "single_end"]

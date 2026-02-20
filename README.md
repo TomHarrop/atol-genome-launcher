@@ -105,18 +105,15 @@ rendered = manifest.render_template_file(
 
 ### assembly-data-downloader
 
-Read an assembly `manifest_file` and download the raw read files from BPA to
-`outdir`.
+Read an assembly `manifest_file` and download the raw read files from BPA.
 
 #### Usage
 
 ```bash
-atol-genome-launcher version 0.1.6.dev2+g617985b7d.d20260130
-usage: assembly-data-downloader [-h] [-n] [--parallel_downloads PARALLEL_DOWNLOADS] manifest_file outdir
+usage: assembly-data-downloader [-h] [-n] [--parallel_downloads PARALLEL_DOWNLOADS] manifest_file
 
 positional arguments:
   manifest_file         Path to the manifest
-  outdir                Output directory
 
 options:
   -h, --help            show this help message and exit

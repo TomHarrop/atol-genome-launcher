@@ -23,9 +23,7 @@ def parse_arguments():
     parser.add_argument(
         "--parallel_downloads", type=int, help="Number of parallel downloads", default=1
     )
-
     parser.add_argument("manifest_file", type=Path, help="Path to the manifest")
-    parser.add_argument("outdir", type=Path, help="Output directory")
 
     return parser.parse_args()
 
@@ -51,7 +49,6 @@ def main():
     # configure the run
     config_settings = ConfigSettings(
         config=args.__dict__,
-        # configfiles=[vars(args).get("manifest_file", None)],
     )
     resource_settings = ResourceSettings(cores=args.parallel_downloads)
     output_settings = OutputSettings(printshellcmds=True)
