@@ -1,204 +1,77 @@
 #!/usr/bin/env python3
 
-import re
-
-
-def get_file_ext(url):
-    """Extract file extension(s) from URL."""
-    return "".join(Path(url).suffixes).lstrip(".")
-
-
-def is_paired_end(read_file_dict):
-    """Check if the read file dictionary represents paired-end data."""
-    return isinstance(read_file_dict, dict) and (
-        "r1" in read_file_dict or "r2" in read_file_dict
-    )
-
-
-def generate_target(wildcards):
-    """Generate list of target output files from reads configuration."""
-    output_files = []
-
-    for data_type, read_files_dict in reads_config.items():
-        for read_file_name, read_file_dict in read_files_dict.items():
-            if is_paired_end(read_file_dict):
-                for read_number in ["r1", "r2"]:
-                    if read_number in read_file_dict:
-                        file_ext = get_file_ext(read_file_dict[read_number][0]["url"])
-                        output_file = Path(
-                            outdir,
-                            data_type,
-                            f"{read_file_name}.{read_number}.{file_ext}",
-                        )
-                        output_files.append(str(output_file))
-            else:
-                file_ext = get_file_ext(read_file_dict[0]["url"])
-                output_file = Path(
-                    outdir,
-                    data_type,
-                    f"{read_file_name}.{file_ext}",
-                )
-                output_files.append(str(output_file))
-
-    return output_files
-
-
-def iter_read_file_dicts():
-    """Iterator over all read file dictionaries in the configuration."""
-    for read_files_dict in reads_config.values():
-        for read_file_dict in read_files_dict.values():
-            yield read_file_dict
-
-
-def get_all_urls():
-    """Extract all URLs from the reads configuration."""
-    urls = []
-    for read_file_dict in iter_read_file_dicts():
-        if is_paired_end(read_file_dict):
-            for read_number in ["r1", "r2"]:
-                if read_number in read_file_dict:
-                    urls.extend(f["url"] for f in read_file_dict[read_number])
-        else:
-            urls.extend(f["url"] for f in read_file_dict)
-    return urls
-
-
-def get_all_lane_numbers():
-    """Extract all unique lane numbers from the reads configuration."""
-    lane_numbers = set()
-    for read_file_dict in iter_read_file_dicts():
-        if is_paired_end(read_file_dict):
-            for read_number in ["r1", "r2"]:
-                if read_number in read_file_dict:
-                    lane_numbers.update(
-                        f.get("lane_number", "single_lane")
-                        for f in read_file_dict[read_number]
-                    )
-        else:
-            lane_numbers.update(
-                f.get("lane_number", "single_lane") for f in read_file_dict
-            )
-    return sorted(lane_numbers)
+from yaml_manifest import Manifest
 
 
 def get_download_params(wildcards):
-    """Get download parameters (URL and MD5) for a specific file."""
-    file_data = reads_config[wildcards.data_type][wildcards.filename]
-
-    if wildcards.read_number in ("r1", "r2"):
-        read_data = file_data[wildcards.read_number]
-    else:
-        read_data = file_data
-
-    if wildcards.lane_number != "single_lane":
-        lane_data = next(
-            x for x in read_data if x.get("lane_number") == wildcards.lane_number
-        )
-    else:
-        lane_data = read_data[0]
-
-    return {
-        "md5sum": lane_data["md5sum"],
-        "url": lane_data["url"],
-    }
+    my_file = manifest.reads.get(wildcards.filename)
+    lanes = my_file.lanes_for_read(wildcards.read_number)
+    lane = next(lf for lf in lanes if lf.lane_number == wildcards.lane_number)
+    return {"url": lane.url, "md5sum": lane.md5sum}
 
 
 def get_paired_end_lanes(wildcards):
-    """Get all lane files for paired-end reads (r1 or r2) in natural sort order."""
-    file_data = reads_config[wildcards.data_type][wildcards.filename]
-    read_data = file_data[wildcards.read_number]
+    my_file = manifest.reads.get(wildcards.filename)
+    lanes = my_file.lanes_for_read(wildcards.read_number)
 
-    lane_files = []
-    for read_dict in read_data:
-        lane_number = read_dict.get("lane_number", "single_lane")
-        file_ext = get_file_ext(read_dict["url"])
-        lane_file = Path(
+    return [
+        Path(
             download_dir,
             wildcards.data_type,
             wildcards.filename,
             wildcards.read_number,
-            lane_number,
-            f"reads.{file_ext}",
+            lf.lane_number,
+            f"reads.{lf.file_ext}",
         )
-        lane_files.append((lane_number, lane_file))
-
-    lane_files.sort(key=lambda x: natural_sort_key(x[0]))
-    return [str(f[1]) for f in lane_files]
+        for lf in lanes
+    ]
 
 
 def get_single_end_lanes(wildcards):
-    """Get all lane files for single-end reads in natural sort order."""
-    file_data = reads_config[wildcards.data_type][wildcards.filename]
+    my_file = manifest.reads.get(wildcards.filename)
+    lanes = my_file.lanes_for_read("single_end")
 
-    lane_files = []
-    for read_dict in file_data:
-        lane_number = read_dict.get("lane_number", "single_lane")
-        file_ext = get_file_ext(read_dict["url"])
-        lane_file = Path(
+    return [
+        Path(
             download_dir,
             wildcards.data_type,
             wildcards.filename,
             "single_end",
-            lane_number,
-            f"reads.{file_ext}",
+            lf.lane_number,
+            f"reads.{lf.file_ext}",
         )
-        lane_files.append((lane_number, lane_file))
-
-    lane_files.sort(key=lambda x: natural_sort_key(x[0]))
-    return [str(f[1]) for f in lane_files]
-
-
-def natural_sort_key(s):
-    """Convert string to list for natural sorting (handles numbers correctly)."""
-    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
+        for lf in lanes
+    ]
 
 
 # Configuration
-reads_config = config.get("reads")
-outdir = Path(config.get("outdir"))
-download_dir = Path(outdir, "downloads")
-
-# Wildcard values
-all_data_types = list(reads_config.keys())
-all_filenames = [k for x in reads_config.values() for k in x.keys()]
-all_read_numbers = ["r1", "r2", "single_end"]
-all_extensions = sorted(set(get_file_ext(x) for x in get_all_urls()))
-all_lane_numbers = get_all_lane_numbers()
-
-# Output file path pattern for downloaded files
-file_path = Path(
-    download_dir,
-    "{data_type}",
-    "{filename}",
-    "{read_number}",
-    "{lane_number}",
-    "reads.{extension}",
-)
-
+manifest = Manifest.from_yaml(config.get("manifest_file"))
+download_dir = manifest.get_dir("downloads")
+logs_dir = manifest.get_stage_logs("raw")
 
 # Wildcard constraints
+all_read_numbers = ["r1", "r2", "single_end"]
+
+
 wildcard_constraints:
-    data_type="|".join(re.escape(x) for x in all_data_types),
-    filename="|".join(re.escape(x) for x in all_filenames),
+    data_type="|".join(re.escape(x) for x in manifest.all_data_types),
+    filename="|".join(re.escape(x) for x in manifest.reads.names),
     read_number="|".join(all_read_numbers),
-    lane_number="|".join(re.escape(x) for x in all_lane_numbers),
-    extension="|".join(re.escape(x) for x in all_extensions),
+    lane_number="|".join(re.escape(x) for x in manifest.all_lane_numbers),
+    extension="|".join(re.escape(x) for x in manifest.all_extensions),
 
 
+# Workflow
 rule target:
     input:
-        generate_target,
+        manifest.reads.flat_paths("raw"),
 
 
 rule collect_single_end_files:
     input:
         get_single_end_lanes,
     output:
-        Path(
-            outdir,
-            "{data_type}",
-            "{filename}.{extension}",
-        ),
+        Path(download_dir, "{data_type}", "{filename}.{extension}"),
     shell:
         "cat {input} > {output}"
 
@@ -207,29 +80,42 @@ rule collect_paired_end_files:
     input:
         get_paired_end_lanes,
     output:
-        Path(
-            outdir,
-            "{data_type}",
-            "{filename}.{read_number}.{extension}",
-        ),
+        Path(download_dir, "{data_type}", "{filename}.{read_number}.{extension}"),
     shell:
         "cat {input} > {output}"
 
 
 rule download_file:
     output:
-        read_file=temp(file_path),
-        check_file=temp(file_path.as_posix() + ".check.txt"),
-    params:
-        params=get_download_params,
+        read_file=temp(
+            Path(
+                download_dir,
+                "{data_type}",
+                "{filename}",
+                "{read_number}",
+                "{lane_number}",
+                "reads.{extension}",
+            )
+        ),
+        check_file=temp(
+            Path(
+                download_dir,
+                "{data_type}",
+                "{filename}",
+                "{read_number}",
+                "{lane_number}",
+                "reads.{extension}.check.txt",
+            )
+        ),
     log:
         Path(
-            outdir,
-            "logs",
+            logs_dir,
             "download_file",
             "{data_type}",
-            "{filename}.{read_number}.{lane_number}.{extension}",
+            "{filename}.{read_number}.{lane_number}.{extension}.log",
         ),
+    params:
+        params=get_download_params,
     retries: 3
     shell:
         "bpa-file-downloader "

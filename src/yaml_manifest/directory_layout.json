@@ -1,6 +1,6 @@
 {
     "downloads": "resources/raw_reads/{data_type}",
-    "logs": "logs",
+    "logs": "logs/{stage}",
     "qc_reads": "results/qc/reads/{data_type}",
     "qc_stats": "results/qc/stats/{data_type}",
     "qc": "results/qc",
@@ -9,6 +9,7 @@
     "stages": {
         "raw": {
             "dir": "downloads",
+            "logs": "logs/download",
             "outputs": {
                 "paired_end": {
                     "r1": "{name}.r1.{ext}",
@@ -17,14 +18,11 @@
                 "single_end": {
                     "reads": "{name}.{ext}"
                 }
-            },
-            "ext": {
-                "Hi-C": "fastq.gz",
-                "PACBIO_SMRT": "bam"
             }
         },
         "qc": {
             "dir": "qc_reads",
+            "logs": "logs/qc",
             "outputs": {
                 "paired_end": {
                     "reads": "{name}.{ext}"

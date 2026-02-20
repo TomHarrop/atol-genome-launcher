@@ -65,12 +65,16 @@ class ReadFile(BaseModel):
 
         stage_config = get_stage(stage)
         base_dir = get_dir(stage_config["dir"], data_type=self.data_type)
-        ext = get_stage_ext(stage, self.data_type)
 
         if self.is_paired_end:
             patterns = stage_config["outputs"]["paired_end"]
         else:
             patterns = stage_config["outputs"]["single_end"]
+
+        if "ext" in stage_config:
+            ext = get_stage_ext(stage, self.data_type)
+        else:
+            ext = self._raw_ext()
 
         return {
             key: base_dir / pattern.format(name=self.name, ext=ext)
@@ -96,6 +100,12 @@ class ReadFile(BaseModel):
                 yield self.r2
         elif self.single_end:
             yield self.single_end
+
+    def _raw_ext(self) -> str:
+        for lane_files in self._iter_lane_file_lists():
+            if lane_files:
+                return lane_files[0].file_ext
+        raise ValueError(f"No files found for ReadFile '{self.name}'")
 
 
 class ReadFileCollection:
@@ -170,6 +180,12 @@ class ReadFileCollection:
             if rf.name == name:
                 return rf
         raise KeyError(f"No read file found: {name}")
+
+    def flat_paths(self, stage: str) -> list[Path]:
+        flat = []
+        for path_dict in self.paths(stage):
+            flat.extend(path_dict.values())
+        return flat
 
     def paths(self, stage: str) -> list[dict[str, Path]]:
         return [rf.paths(stage) for rf in self._read_files]
@@ -285,6 +301,11 @@ class Manifest(BaseModel):
     def get_dir(self, name: str, **kwargs) -> Path:
         """Get a standardised directory path by name."""
         return get_dir(name, **kwargs)
+
+    def get_stage_logs(self, stage: str) -> Path:
+        from yaml_manifest.layout import get_stage_logs
+
+        return get_stage_logs(stage)
 
     # Template rendering
 

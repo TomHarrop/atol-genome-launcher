@@ -41,6 +41,11 @@ def get_stage_ext(stage_name: str, data_type: str) -> str:
     return ext_config[data_type]
 
 
+def get_stage_logs(stage_name: str) -> Path:
+    stage = get_stage(stage_name)
+    return Path(stage["logs"])
+
+
 class _EmptyMissing(dict):
     # Handle optional {data_type} key in paths
     def __missing__(self, key: str) -> str:
