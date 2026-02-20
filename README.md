@@ -33,7 +33,7 @@ manifest = Manifest.from_dict(config)
 
 #### Specimen metadata
 
-Available as Manifest properties, e.g.
+Available as `Manifest` properties, e.g.
 
 ```python3
 manifest.dataset_id
@@ -45,7 +45,7 @@ manifest.hic_motif
 
 #### Read file information
 
-Available as ReadFile objects, which can be queried for processing.
+Available as `ReadFile` objects, which can be queried for processing.
 
 ```python3
 
@@ -62,9 +62,10 @@ hic_reads.all_urls
 Standardised directory layout for each stage of read file processing is
 [configured in json](src/yaml_manifest/directory_layout.json).
 
-This includes `raw` and `qc` for now.
+We've configured *raw* and *qc* for now.
 
-`ReadFile` objects can be queried to get the appropriate Paths for each stage.
+`ReadFile` objects can be queried to get the appropriate `Paths` for each
+stage.
 
 ```python3
 my_file = manifest.reads.get("353997_AusARG_BRF_HMGMJDRXY")
@@ -83,7 +84,6 @@ manifest.get_dir("downloads")
 # Specific directories are available by data_type
 manifest.get_dir("downloads", data_type="Hi-C") 
 ```
-
 
 #### Automatic `jinja2` template rendering
 
