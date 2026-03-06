@@ -203,6 +203,7 @@ class Manifest(BaseModel):
 
     # Specimen metadata
     dataset_id: str
+    assembly_version: str = ""
     scientific_name: str
     taxon_id: int
     busco_lineage: Optional[str] = None
@@ -299,8 +300,18 @@ class Manifest(BaseModel):
     # Standardised directory structure
 
     def get_dir(self, name: str, **kwargs) -> Path:
-        """Get a standardised directory path by name."""
-        return get_dir(name, **kwargs)
+        """Get a standardised directory path by name.
+
+        Manifest-level fields (dataset_id, assembly_version) are
+        automatically available as template variables but can be
+        overridden via kwargs.
+        """
+        defaults = {
+            "dataset_id": self.dataset_id,
+            "assembly_version": self.assembly_version,
+        }
+        defaults.update(kwargs)
+        return get_dir(name, **defaults)
 
     def get_stage_logs(self, stage: str) -> Path:
         from yaml_manifest.layout import get_stage_logs

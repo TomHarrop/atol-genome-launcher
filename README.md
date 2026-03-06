@@ -142,6 +142,42 @@ options:
   --file_checksum FILE_CHECKSUM
 ```
 
+### result-file-uploader
+
+Upload a result file to object storage. 
+
+> [!WARNING]
+>
+> Uses `rclone copyto`, so **destination files will be overwritten**.
+
+
+#### Required environment variables
+
+ | Variable                                 | Description                | Example |
+ | ---------------------------------------- | -------------------------- | ------- |
+ | `RCLONE_CONFIG_UPLOAD_TYPE`              | Rclone backend type        | "s3"    |
+ | `RCLONE_CONFIG_UPLOAD_PROVIDER`          | S3-compatible provider     | "Ceph"  |
+ | `RCLONE_CONFIG_UPLOAD_ACCESS_KEY_ID`     | S3 access key              |         |
+ | `RCLONE_CONFIG_UPLOAD_SECRET_ACCESS_KEY` | S3 secret key              |         |
+ | `RCLONE_CONFIG_UPLOAD_ENDPOINT`          | S3-compatible endpoint URL |         |
+
+#### Usage
+
+```bash
+usage: result-file-uploader [-h] --bucket BUCKET local_file remote_path
+
+Upload a single file to S3-compatible object storage using rclone.
+
+positional arguments:
+  local_file       Path to the local file to upload.
+  remote_path      Destination key/path within the bucket.
+
+options:
+  -h, --help       show this help message and exit
+  --bucket BUCKET  Name of the S3 bucket.
+```
+
+
 ### rnaseq_manifest_generator
 
 Queries the mapped metadata for an organism (`organism_grouping_key`) and

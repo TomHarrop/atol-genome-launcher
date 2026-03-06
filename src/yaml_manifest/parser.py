@@ -7,6 +7,7 @@ from yaml_manifest.models import BpaFile, Manifest, ReadFile
 
 # Keys that map to explicit Manifest fields
 _KNOWN_KEYS = {
+    "assembly_version",
     "dataset_id",
     "scientific_name",
     "taxon_id",
@@ -39,6 +40,7 @@ def parse_config(raw: dict) -> Manifest:
 
     return Manifest(
         dataset_id=raw.get("dataset_id", ""),
+        assembly_version=raw.get("assembly_version", ""),
         scientific_name=raw.get("scientific_name", ""),
         taxon_id=raw.get("taxon_id", 0),
         busco_lineage=raw.get("busco_lineage"),

@@ -40,6 +40,9 @@ print(my_file.paths("raw"))
 print(my_file.paths("qc"))
 print(my_file.stats_path("qc"))
 
+# We can get output folders for pipelines
+print(manifest.get_dir("pipeline_output", pipeline="genomeassembly"))
+
 # This is all configured in directory_layout.json, e.g. there are no stats for
 # "raw"
 try:
