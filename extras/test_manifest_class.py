@@ -4,7 +4,7 @@ from pathlib import Path
 from yaml_manifest import Manifest
 
 # testing
-manifest_file = Path("test-data", "rSaiEqu1_at_th.yaml")
+manifest_file = Path("test-data", "dummy.yaml")
 template_path = Path(
     "src/assembly_config_generator/templates/sanger-tol_genomeassembly_0.50.0.yaml.j2"
 )
@@ -42,6 +42,12 @@ print(my_file.stats_path("qc"))
 
 # We can get output folders for pipelines
 print(manifest.get_dir("pipeline_output", pipeline="genomeassembly"))
+
+files = manifest.collect_upload_files("genomeassembly")
+print(f"upload:   {files['upload']}")
+print(f"compress: {files['compress']}")
+print(f"exclude:  {files['exclude']}")
+
 
 # This is all configured in directory_layout.json, e.g. there are no stats for
 # "raw"

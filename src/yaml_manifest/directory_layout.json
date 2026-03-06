@@ -43,11 +43,25 @@
         },
         "genomeassembly": {
             "dir": "pipeline_output",
-            "logs": "logs/genomeassembly"
+            "logs": "logs/genomeassembly",
+            "upload": {
+                "exclude_patterns": [
+                    "*.bin",
+                    "*.ktab.*"
+                ],
+                "compress_extensions": [
+                    ".bed",
+                    ".paf"
+                ]
+            }
         },
         "ascc": {
             "dir": "pipeline_output",
-            "logs": "logs/ascc"
+            "logs": "logs/ascc",
+            "upload": {
+                "exclude_patterns": [],
+                "compress_extensions": []
+            }
         }
     }
 }

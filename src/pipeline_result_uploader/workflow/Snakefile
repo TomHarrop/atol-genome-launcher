@@ -1,0 +1,69 @@
+"""
+Snakemake workflow for pipeline_result_uploader.
+
+Loads the manifest, classifies pipeline output files, compresses where
+needed, and uploads each file using result-file-uploader.
+"""
+
+from pathlib import Path
+
+from yaml_manifest.layout import collect_upload_files
+from yaml_manifest.parser import load_manifest
+
+globals().update(config)
+
+# Load the manifest and classify files
+manifest = load_manifest(Path(manifest))
+output_dir = manifest.get_dir("pipeline_output", pipeline=stage)
+classified = collect_upload_files(stage, output_dir)
+
+upload_files = classified["upload"]
+compress_files_list = classified["compress"]
+
+# Build the list of all files to upload with their remote paths.
+# The remote path mirrors the local path.
+all_uploads = {}
+for f in upload_files:
+    all_uploads[str(f)] = str(f)
+
+compress_targets = {}
+for f in compress_files_list:
+    gz = f.with_name(f.name + ".gz")
+    compress_targets[str(f)] = {
+        "gz": str(gz),
+        "remote": str(gz),
+    }
+
+
+rule target:
+    default_target: True
+    input:
+        [f"{f}.uploaded" for f in all_uploads],
+        [f"{v['gz']}.uploaded" for v in compress_targets.values()],
+
+
+rule compress_file:
+    input:
+        original="{filepath}",
+    output:
+        gz="{filepath}.gz",
+    shell:
+        "gzip --keep --force {input.original}"
+
+
+rule upload_file:
+    input:
+        local_file="{filepath}",
+    output:
+        done=touch("{filepath}.uploaded"),
+    params:
+        remote=lambda wc: (
+            all_uploads.get(wc.filepath)
+            or compress_targets[wc.filepath.removesuffix(".gz")]["remote"]
+        ),
+        bucket=bucket,
+    shell:
+        "result-file-uploader "
+        "{input.local_file} "
+        "{params.remote} "
+        "--bucket {params.bucket} "

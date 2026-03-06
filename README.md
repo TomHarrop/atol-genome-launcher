@@ -142,6 +142,38 @@ options:
   --file_checksum FILE_CHECKSUM
 ```
 
+### pipeline-result-uploader
+
+Reads the YAML `manifest` and walks the output directory to find result files
+for a `stage`, e.g. "genomeassembly".
+
+Uploads the files to the given `bucket`, under the same path as the result
+file. If the files are specified for compression in the
+[config](src/yaml_manifest/directory_layout.json), they will be compressed
+before upload.
+
+**Requires the same [environment
+variables](https://github.com/TomHarrop/atol-genome-launcher?tab=readme-ov-file#required-environment-variables)
+as result-file-uploader**.
+
+#### Usage
+
+```
+usage: pipeline-result-uploader [-h] --stage STAGE --bucket BUCKET [-n] manifest
+
+Collect pipeline result files and upload them to S3-compatible object storage using rclone.
+
+positional arguments:
+  manifest         Path to the YAML manifest file.
+
+options:
+  -h, --help       show this help message and exit
+  --stage STAGE    Pipeline stage to collect results from (e.g. 'genomeassembly', 'ascc').
+  --bucket BUCKET  Name of the S3 bucket.
+  -n               Dry run
+```
+
+
 ### result-file-uploader
 
 Upload a result file to object storage. 

@@ -1,7 +1,9 @@
 """Standardised output directory structure loaded from config."""
 
 import json
-import re
+import gzip
+import shutil
+from fnmatch import fnmatch
 from importlib import resources as importlib_resources
 from pathlib import Path
 
@@ -21,6 +23,9 @@ _LAYOUT = _load_layout()
 def get_dir(name: str, **kwargs) -> Path:
     template = _LAYOUT[name]
     resolved = template.format_map(_EmptyMissing(kwargs))
+    # collapse repeated slashes and strip leading/trailing
+    import re
+
     resolved = re.sub(r"/+", "/", resolved).strip("/")
     return Path(resolved)
 
@@ -44,6 +49,59 @@ def get_stage_ext(stage_name: str, data_type: str) -> str:
 def get_stage_logs(stage_name: str) -> Path:
     stage = get_stage(stage_name)
     return Path(stage["logs"])
+
+
+def _is_excluded(file_path: Path, base_dir: Path, patterns: list[str]) -> bool:
+    """Check if a file matches any exclusion pattern."""
+    rel = str(file_path.relative_to(base_dir))
+    name = file_path.name
+    return any(fnmatch(rel, p) or fnmatch(name, p) for p in patterns)
+
+
+def _should_compress(file_path: Path, extensions: list[str]) -> bool:
+    """Check if a file should be compressed before upload."""
+    return any(file_path.name.endswith(ext) for ext in extensions)
+
+
+def compress_file(file_path: Path) -> Path:
+    """Gzip a file in place, returning the path to the compressed file."""
+    gz_path = file_path.with_name(file_path.name + ".gz")
+    with open(file_path, "rb") as f_in:
+        with gzip.open(gz_path, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    return gz_path
+
+
+def collect_upload_files(
+    stage_name: str,
+    output_dir: Path,
+) -> dict[str, list[Path]]:
+    """Collect files from a pipeline output directory for upload.
+
+    Returns a dict with keys:
+        - "upload": files to upload as-is
+        - "compress": files that need compression before upload
+        - "exclude": files that will be skipped
+    """
+    stage = get_stage(stage_name)
+    upload_config = stage.get("upload", {})
+    exclude_patterns = upload_config.get("exclude_patterns", [])
+    compress_extensions = upload_config.get("compress_extensions", [])
+
+    result = {"upload": [], "compress": [], "exclude": []}
+
+    for file_path in sorted(output_dir.rglob("*")):
+        if not file_path.is_file():
+            continue
+
+        if _is_excluded(file_path, output_dir, exclude_patterns):
+            result["exclude"].append(file_path)
+        elif _should_compress(file_path, compress_extensions):
+            result["compress"].append(file_path)
+        else:
+            result["upload"].append(file_path)
+
+    return result
 
 
 class _EmptyMissing(dict):
