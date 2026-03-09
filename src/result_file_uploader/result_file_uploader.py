@@ -76,7 +76,7 @@ def main():
 
     config_settings = ConfigSettings(config=config_dict)
     resource_settings = ResourceSettings(cores=1)
-    output_settings = OutputSettings(printshellcmds=True)
+    output_settings = OutputSettings(printshellcmds=True, stdout=False)
     execution_settings = ExecutionSettings(lock=False)
 
     # run

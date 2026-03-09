@@ -176,7 +176,8 @@ options:
 
 ### result-file-uploader
 
-Upload a result file to object storage. 
+Uploads a result file to object storage. Prints the bucket, remote path and
+sha256sum to stdout.
 
 > [!WARNING]
 >

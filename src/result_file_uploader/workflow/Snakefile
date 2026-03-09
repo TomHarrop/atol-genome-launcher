@@ -1,12 +1,17 @@
 import tempfile
+import sys
 
 globals().update(config)
 
 local_path = Path(local_file)
 tempdir = tempfile.mkdtemp()
 upload_done = Path(tempdir, f"{local_path.name}.uploaded")
+checksum_file = Path(tempdir, f"{local_path.name}.sha256")
+checksum_verified = Path(tempdir, f"{local_path.name}.verified")
 
 remote_dest = f"{rclone_remote}:{bucket}/{remote_path}"
+remote_parent = f"{rclone_remote}:{bucket}/{str(Path(remote_path).parent)}"
+remote_filename = Path(remote_path).name
 
 
 envvars:
@@ -15,6 +20,17 @@ envvars:
     f"RCLONE_CONFIG_{rclone_remote}_ACCESS_KEY_ID",
     f"RCLONE_CONFIG_{rclone_remote}_SECRET_ACCESS_KEY",
     f"RCLONE_CONFIG_{rclone_remote}_ENDPOINT",
+
+
+rule generate_checksum:
+    input:
+        file=local_path,
+    output:
+        checksum=checksum_file,
+    params:
+        remote_filename=remote_filename,
+    shell:
+        "sha256sum {input.file} | sed 's|  .*|  {params.remote_filename}|' > {output.checksum}"
 
 
 rule upload_file:
@@ -33,7 +49,32 @@ rule upload_file:
         "--verbose "
 
 
+rule verify_checksum:
+    input:
+        checksum=checksum_file,
+        uploaded=upload_done,
+    output:
+        verified=touch(checksum_verified),
+    params:
+        remote_parent=remote_parent,
+        remote_filename=remote_filename,
+    shell:
+        "rclone checksum sha256 "
+        "{input.checksum} "
+        "{params.remote_parent} "
+        "--download "
+        "--include '{params.remote_filename}' "
+        "--verbose "
+
+
 rule target:
     default_target: True
     input:
-        upload_done,
+        checksum=checksum_file,
+        verified=checksum_verified,
+
+
+onsuccess:
+    with open(checksum_file, "rt") as f:
+        sha256sum = f.read().strip().split()[0]
+    print(f'{{"{bucket}", "{remote_path}", "{sha256sum}"}}', file=sys.stdout)
