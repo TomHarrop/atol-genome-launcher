@@ -1,15 +1,10 @@
-"""
-Snakemake workflow for pipeline_result_uploader.
-
-Loads the manifest, classifies pipeline output files, compresses where
-needed, and uploads each file using result-file-uploader.
-"""
-
 from pathlib import Path
-
 from yaml_manifest.layout import collect_upload_files
 from yaml_manifest.parser import load_manifest
+import tempfile
 
+
+tempdir = tempfile.mkdtemp()
 globals().update(config)
 
 # Load the manifest and classify files
@@ -35,13 +30,6 @@ for f in compress_files_list:
     }
 
 
-rule target:
-    default_target: True
-    input:
-        [f"{f}.uploaded" for f in all_uploads],
-        [f"{v['gz']}.uploaded" for v in compress_targets.values()],
-
-
 rule compress_file:
     input:
         original="{filepath}",
@@ -55,7 +43,7 @@ rule upload_file:
     input:
         local_file="{filepath}",
     output:
-        done=touch("{filepath}.uploaded"),
+        receipt=Path(tempdir, "{filepath}.receipt.jsonl"),
     params:
         remote=lambda wc: (
             all_uploads.get(wc.filepath)
@@ -67,3 +55,39 @@ rule upload_file:
         "{input.local_file} "
         "{params.remote} "
         "--bucket {params.bucket} "
+        "> {output.receipt}"
+
+
+# raise ValueError()
+# raise ValueError(
+#     expand(rules.upload_file.output, filepath=compress_targets.values()),
+# )
+
+upload_receipts = sorted(set(expand(rules.upload_file.output, filepath=all_uploads)))
+compressed_file_upload_receipts = sorted(
+    set(
+        expand(
+            rules.upload_file.output,
+            filepath=[x.get("gz", None) for x in compress_targets.values()],
+        )
+    )
+)
+
+
+rule target:
+    default_target: True
+    input:
+        upload_receipts,
+        compressed_file_upload_receipts,
+
+
+onsuccess:
+    output_jsonl = Path(tempdir, "upload_manifest.jsonl")
+    all_receipts = sorted(set(upload_receipts + compressed_file_upload_receipts))
+    with open(output_jsonl, "w") as out:
+        for receipt_path in all_receipts:
+            with open(receipt_path, "rt") as f:
+                line = f.read().strip()
+            if line:
+                out.write(line + "\n")
+    print(f"Upload manifest written to {output_jsonl}")
