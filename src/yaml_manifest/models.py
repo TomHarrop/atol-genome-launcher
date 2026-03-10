@@ -11,8 +11,9 @@ from yaml_manifest.layout import (
     get_stage,
     get_stage_ext,
     get_stage_logs,
-    collect_upload_files,
+    _collect_upload_files,
 )
+
 
 class BpaFile(BaseModel):
     """A single remote file on the Bioplatforms Australia data portal."""
@@ -319,7 +320,7 @@ class Manifest(BaseModel):
 
     def collect_upload_files(self, stage: str) -> dict[str, list[Path]]:
         output_dir = self.get_dir("pipeline_output", pipeline=stage)
-        return collect_upload_files(stage, output_dir)
+        return _collect_upload_files(stage, output_dir)
 
     # Template rendering
 
@@ -348,4 +349,3 @@ class Manifest(BaseModel):
 def natural_sort_key(s: str) -> list:
     """Convert string to list for natural sorting (handles embedded numbers)."""
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
-

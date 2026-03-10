@@ -72,7 +72,7 @@ def compress_file(file_path: Path) -> Path:
     return gz_path
 
 
-def collect_upload_files(
+def _collect_upload_files(
     stage_name: str,
     output_dir: Path,
 ) -> dict[str, list[Path]]:

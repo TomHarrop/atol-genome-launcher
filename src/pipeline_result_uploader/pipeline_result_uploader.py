@@ -33,6 +33,12 @@ def parse_arguments():
     )
 
     parser.add_argument(
+        "receipts_file",
+        type=str,
+        help="jsonl file to store the upload receipts",
+    )
+
+    parser.add_argument(
         "--stage",
         type=str,
         required=True,
@@ -48,13 +54,21 @@ def parse_arguments():
         help="Name of the S3 bucket.",
     )
 
+    parser.add_argument(
+        "--parallel_downloads", type=int, help="Number of parallel downloads", default=1
+    )
+
     parser.add_argument("-n", help="Dry run", dest="dry_run", action="store_true")
 
+    # rclone remote name — env vars must match this
+    parser.add_argument(
+        "--rclone_remote_name",
+        dest="RCLONE_REMOTE",
+        help=argparse.SUPPRESS,
+        default="UPLOAD",
+    )
+
     return parser.parse_args()
-
-
-# rclone remote name — env vars must match this
-RCLONE_REMOTE = "UPLOAD"
 
 
 def main():
@@ -80,15 +94,8 @@ def main():
         raise FileNotFoundError("Could not find a Snakefile")
 
     # configure the run
-    config_dict = {
-        "manifest": str(manifest_path.resolve()),
-        "stage": args.stage,
-        "bucket": args.bucket,
-        "rclone_remote": RCLONE_REMOTE,
-    }
-
-    config_settings = ConfigSettings(config=config_dict)
-    resource_settings = ResourceSettings(cores=1)
+    config_settings = ConfigSettings(config=vars(args))
+    resource_settings = ResourceSettings(cores=args.parallel_downloads)
     output_settings = OutputSettings(printshellcmds=True)
     execution_settings = ExecutionSettings(lock=False)
 

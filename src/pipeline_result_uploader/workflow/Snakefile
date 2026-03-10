@@ -1,40 +1,44 @@
 from pathlib import Path
-from yaml_manifest.layout import collect_upload_files
-from yaml_manifest.parser import load_manifest
+from yaml_manifest.models import Manifest
 import tempfile
+
+
+def write_receipts(receipts, output_jsonl):
+    with open(output_jsonl, "w") as out:
+        for receipt_path in receipts:
+            if Path(receipt_path).exists:
+                with open(receipt_path, "rt") as f:
+                    line = f.read().strip()
+                if line:
+                    out.write(line + "\n")
+    print(f"Upload manifest written to {output_jsonl}")
 
 
 tempdir = tempfile.mkdtemp()
 globals().update(config)
 
 # Load the manifest and classify files
-manifest = load_manifest(Path(manifest))
-output_dir = manifest.get_dir("pipeline_output", pipeline=stage)
-classified = collect_upload_files(stage, output_dir)
+manifest = Manifest.from_yaml(Path(manifest))
+classified = manifest.collect_upload_files(stage)
 
 upload_files = classified["upload"]
 compress_files_list = classified["compress"]
 
 # Build the list of all files to upload with their remote paths.
 # The remote path mirrors the local path.
-all_uploads = {}
-for f in upload_files:
-    all_uploads[str(f)] = str(f)
+all_uploads = {str(f): str(f) for f in upload_files}
 
-compress_targets = {}
-for f in compress_files_list:
-    gz = f.with_name(f.name + ".gz")
-    compress_targets[str(f)] = {
-        "gz": str(gz),
-        "remote": str(gz),
-    }
+# Map original path → compressed path for files that need gzipping
+compress_targets = {
+    str(f): str(f.with_name(f.name + ".gz")) for f in compress_files_list
+}
 
 
 rule compress_file:
     input:
         original="{filepath}",
     output:
-        gz="{filepath}.gz",
+        gz=Path(tempdir, "{filepath}.gz"),
     shell:
         "gzip --keep --force {input.original}"
 
@@ -47,7 +51,7 @@ rule upload_file:
     params:
         remote=lambda wc: (
             all_uploads.get(wc.filepath)
-            or compress_targets[wc.filepath.removesuffix(".gz")]["remote"]
+            or compress_targets[wc.filepath.removesuffix(".gz")]
         ),
         bucket=bucket,
     shell:
@@ -58,36 +62,23 @@ rule upload_file:
         "> {output.receipt}"
 
 
-# raise ValueError()
-# raise ValueError(
-#     expand(rules.upload_file.output, filepath=compress_targets.values()),
-# )
-
-upload_receipts = sorted(set(expand(rules.upload_file.output, filepath=all_uploads)))
-compressed_file_upload_receipts = sorted(
-    set(
-        expand(
-            rules.upload_file.output,
-            filepath=[x.get("gz", None) for x in compress_targets.values()],
-        )
-    )
+upload_receipts = expand(rules.upload_file.output, filepath=all_uploads)
+compressed_file_upload_receipts = expand(
+    rules.upload_file.output,
+    filepath=compress_targets.values(),
 )
+all_receipts = sorted(set(upload_receipts + compressed_file_upload_receipts))
 
 
 rule target:
     default_target: True
     input:
-        upload_receipts,
-        compressed_file_upload_receipts,
+        all_receipts,
 
 
 onsuccess:
-    output_jsonl = Path(tempdir, "upload_manifest.jsonl")
-    all_receipts = sorted(set(upload_receipts + compressed_file_upload_receipts))
-    with open(output_jsonl, "w") as out:
-        for receipt_path in all_receipts:
-            with open(receipt_path, "rt") as f:
-                line = f.read().strip()
-            if line:
-                out.write(line + "\n")
-    print(f"Upload manifest written to {output_jsonl}")
+    write_receipts(all_receipts, receipts_file)
+
+
+onerror:
+    write_receipts(all_receipts, receipts_file)
