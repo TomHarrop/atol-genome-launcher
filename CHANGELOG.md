@@ -1,6 +1,19 @@
 Changelog
 =========
 
+0.5.0 (2026-03-10)
+------------------
+
+New
+
+~~~
+- Pipeline-result-uploader and result-file-uploader. [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Result_file_uploader prints checksum. [Tom Harrop]
+
 0.4.1 (2026-02-20)
 ------------------
 
