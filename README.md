@@ -173,11 +173,10 @@ options:
   -n               Dry run
 ```
 
-
 ### result-file-uploader
 
-Uploads a result file to object storage. Prints the bucket, remote path and
-sha256sum to stdout.
+Uploads a result file to object storage. Prints the remote path and sha256sum
+to stdout.
 
 > [!WARNING]
 >
