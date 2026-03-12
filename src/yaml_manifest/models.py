@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from yaml_manifest.layout import (
     get_dir,
@@ -21,6 +21,15 @@ class BpaFile(BaseModel):
     url: str
     md5sum: str
     lane_number: Optional[str] = "single_lane"
+
+    @field_validator("lane_number")
+    @classmethod
+    def _validate_lane_number(cls, v):
+        if v == "single_lane":
+            return v
+        if not re.match(r"^L\d+$", v):
+            raise ValueError(f"Invalid lane number: {v}")
+        return v
 
     @property
     def file_ext(self) -> str:

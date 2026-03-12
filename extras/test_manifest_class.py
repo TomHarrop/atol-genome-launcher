@@ -20,6 +20,8 @@ qc_reads_dir = manifest.get_dir("qc_reads")
 pacbio_read_paths = [x.paths("qc") for x in manifest.pacbio_reads]
 hic_reads = [x.paths("qc") for x in manifest.hic_reads]
 
+raise ValueError(manifest.get_dir("pipeline_output", pipeline="genomeassembly"))
+
 
 # render any template based on keys in the template that exactly match keys in
 # the config. Pass additional values that don't come directly from the Manifest
