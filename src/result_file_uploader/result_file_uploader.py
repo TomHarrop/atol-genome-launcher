@@ -75,8 +75,10 @@ def main():
     # will fail.
     default_verify_paths = get_default_verify_paths()
     openssl_capath_env = default_verify_paths.openssl_capath_env
+
     if not os.getenv(openssl_capath_env, None):
-        os.environ[openssl_capath_env] = default_verify_paths.openssl_capath
+        ssl_path = Path(default_verify_paths.openssl_cafile).parent.as_posix()
+        os.environ[openssl_capath_env] = ssl_path
 
     # configure the run
     config_settings = ConfigSettings(config=vars(args))

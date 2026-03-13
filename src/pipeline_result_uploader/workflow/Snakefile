@@ -106,7 +106,3 @@ rule target:
 
 onsuccess:
     write_receipts(all_receipts, receipts_file)
-
-
-onerror:
-    write_receipts(all_receipts, receipts_file)
