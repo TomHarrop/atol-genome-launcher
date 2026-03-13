@@ -1,11 +1,20 @@
 Changelog
 =========
 
+0.5.1 (2026-03-13)
+------------------
+
+Changes
+
+~~~~~~~
+- Allow manual override of result directory. [Tom Harrop]
+- Enforce lane number format (fixes #9) [Tom Harrop]
+
+
 0.5.0 (2026-03-10)
 ------------------
 
 New
-
 ~~~
 - Pipeline-result-uploader and result-file-uploader. [Tom Harrop]
 
