@@ -159,22 +159,26 @@ as result-file-uploader**.
 #### Usage
 
 ```
-usage: pipeline-result-uploader [-h] --stage STAGE --bucket BUCKET [-n] manifest
+usage: pipeline-result-uploader [-h] --stage STAGE --bucket BUCKET [--parallel_downloads PARALLEL_DOWNLOADS] [-n] manifest receipts_file
 
 Collect pipeline result files and upload them to S3-compatible object storage using rclone.
 
 positional arguments:
-  manifest         Path to the YAML manifest file.
+  manifest              Path to the YAML manifest file.
+  receipts_file         jsonl file to store the upload receipts
 
 options:
-  -h, --help       show this help message and exit
-  --stage STAGE    Pipeline stage to collect results from (e.g. 'genomeassembly', 'ascc').
-  --bucket BUCKET  Name of the S3 bucket.
-  -n               Dry run
+  -h, --help            show this help message and exit
+  --stage STAGE         Pipeline stage to collect results from (e.g. 'genomeassembly', 'ascc').
+  --bucket BUCKET       Name of the S3 bucket.
+  --parallel_downloads PARALLEL_DOWNLOADS
+                        Number of parallel downloads
+  -n                    Dry run
 ```
 
-For testing, the rclone remote name can be set by `--rclone_remote_name`, and
-the directory to search for files to upload can be set by `--result_dir`.
+For testing, the rclone remote name can be set using `--rclone_remote_name`,
+and the directory to search for files to upload can be set using
+`--result_dir`.
 
 ### result-file-uploader
 
