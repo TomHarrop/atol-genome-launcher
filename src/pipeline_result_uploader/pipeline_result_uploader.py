@@ -16,6 +16,7 @@ from snakemake.api import (
 from snakemake.logging import logger
 
 import argparse
+import os
 
 
 def parse_arguments():

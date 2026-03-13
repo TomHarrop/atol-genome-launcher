@@ -60,8 +60,10 @@ rule compress_file:
         original="{filepath}",
     output:
         gz=Path(tempdir, "{filepath}.gz"),
+    threads: max(workflow.cores - 2, 1)
     shell:
         "pigz -c "
+        "--processes {threads} "
         "{input.original} "
         "> {output.gz}"
 

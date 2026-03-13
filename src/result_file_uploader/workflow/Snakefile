@@ -1,5 +1,6 @@
 import tempfile
 import sys
+from ssl import get_default_verify_paths
 
 globals().update(config)
 
@@ -9,17 +10,18 @@ upload_done = Path(tempdir, f"{local_path.name}.uploaded")
 checksum_file = Path(tempdir, f"{local_path.name}.sha256")
 checksum_verified = Path(tempdir, f"{local_path.name}.verified")
 
-remote_dest = f"{rclone_remote}:{bucket}/{remote_path}"
-remote_parent = f"{rclone_remote}:{bucket}/{str(Path(remote_path).parent)}"
+remote_dest = f"{RCLONE_REMOTE}:{bucket}/{remote_path}"
+remote_parent = f"{RCLONE_REMOTE}:{bucket}/{str(Path(remote_path).parent)}"
 remote_filename = Path(remote_path).name
 
 
 envvars:
-    f"RCLONE_CONFIG_{rclone_remote}_TYPE",
-    f"RCLONE_CONFIG_{rclone_remote}_PROVIDER",
-    f"RCLONE_CONFIG_{rclone_remote}_ACCESS_KEY_ID",
-    f"RCLONE_CONFIG_{rclone_remote}_SECRET_ACCESS_KEY",
-    f"RCLONE_CONFIG_{rclone_remote}_ENDPOINT",
+    f"RCLONE_CONFIG_{RCLONE_REMOTE}_TYPE",
+    f"RCLONE_CONFIG_{RCLONE_REMOTE}_PROVIDER",
+    f"RCLONE_CONFIG_{RCLONE_REMOTE}_ACCESS_KEY_ID",
+    f"RCLONE_CONFIG_{RCLONE_REMOTE}_SECRET_ACCESS_KEY",
+    f"RCLONE_CONFIG_{RCLONE_REMOTE}_ENDPOINT",
+    get_default_verify_paths().openssl_capath_env,
 
 
 rule generate_checksum:

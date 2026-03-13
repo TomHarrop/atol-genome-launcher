@@ -9,8 +9,9 @@ from snakemake.api import (
     ExecutionSettings,
 )
 from snakemake.logging import logger
-
+from ssl import get_default_verify_paths
 import argparse
+import os
 
 
 def parse_arguments():
@@ -37,11 +38,15 @@ def parse_arguments():
         help="Name of the S3 bucket.",
     )
 
+    # rclone remote name — env vars must match this
+    parser.add_argument(
+        "--rclone_remote_name",
+        dest="RCLONE_REMOTE",
+        help=argparse.SUPPRESS,
+        default="UPLOAD",
+    )
+
     return parser.parse_args()
-
-
-# rclone remote name — env vars must match this
-RCLONE_REMOTE = "UPLOAD"
 
 
 def main():
@@ -66,15 +71,15 @@ def main():
     else:
         raise FileNotFoundError("Could not find a Snakefile")
 
-    # configure the run
-    config_dict = {
-        "local_file": str(args.local_file),
-        "remote_path": args.remote_path,
-        "bucket": args.bucket,
-        "rclone_remote": RCLONE_REMOTE,
-    }
+    # try to get the Certificate directory at runtime. Without this, RCLONE
+    # will fail.
+    default_verify_paths = get_default_verify_paths()
+    openssl_capath_env = default_verify_paths.openssl_capath_env
+    if not os.getenv(openssl_capath_env, None):
+        os.environ[openssl_capath_env] = default_verify_paths.openssl_capath
 
-    config_settings = ConfigSettings(config=config_dict)
+    # configure the run
+    config_settings = ConfigSettings(config=vars(args))
     resource_settings = ResourceSettings(cores=1)
     output_settings = OutputSettings(printshellcmds=True, stdout=False)
     execution_settings = ExecutionSettings(lock=False)
