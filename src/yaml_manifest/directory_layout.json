@@ -1,7 +1,7 @@
 {
     "downloads": "resources/raw_reads/{data_type}",
     "logs": "logs/{stage}",
-    "pipeline_output": "results/{pipeline}/{dataset_id}{assembly_version}",
+    "pipeline_output": "results/{pipeline}/{dataset_id}.{assembly_version}",
     "qc_reads": "results/qc/reads/{data_type}",
     "qc_stats": "results/qc/stats/{data_type}",
     "qc": "results/qc",

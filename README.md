@@ -173,6 +173,9 @@ options:
   -n               Dry run
 ```
 
+For testing, the rclone remote name can be set by `--rclone_remote_name`, and
+the directory to search for files to upload can be set by `--result_dir`.
+
 ### result-file-uploader
 
 Uploads a result file to object storage. Prints the remote path and sha256sum

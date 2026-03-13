@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-base="results/genomeassembly/dummyv6"
+base="results/genomeassembly/aBcDe1.6"
 rm -rf "$base"
 
 # Seed the RNG for reproducibility

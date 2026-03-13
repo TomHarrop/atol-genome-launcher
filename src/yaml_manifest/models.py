@@ -190,7 +190,7 @@ class ReadFileCollection:
         for rf in self._read_files:
             if rf.name == name:
                 return rf
-        raise KeyError(f"No read file found: {name}")
+        raise KeyError(f"Read file {name} not found in {self}")
 
     def flat_paths(self, stage: str) -> list[Path]:
         flat = []
@@ -214,7 +214,7 @@ class Manifest(BaseModel):
 
     # Specimen metadata
     dataset_id: str
-    assembly_version: str = ""
+    assembly_version: int = 0
     scientific_name: str
     taxon_id: int
     busco_lineage: Optional[str] = None

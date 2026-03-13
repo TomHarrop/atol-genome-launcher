@@ -68,6 +68,8 @@ def parse_arguments():
         default="UPLOAD",
     )
 
+    parser.add_argument("--result_dir", help=argparse.SUPPRESS, type=Path)
+
     return parser.parse_args()
 
 

@@ -3,6 +3,17 @@ from yaml_manifest.models import Manifest
 import tempfile
 
 
+def get_local_file(wildcards):
+    filepath = wildcards.filepath
+    if filepath in compress_targets.values():
+        return Path(tempdir, f"{filepath}")
+
+    if Path(filepath) in upload_files:
+        return Path(filepath)
+
+    raise ValueError(f"get_local_file did not recognise filepath {filepath}")
+
+
 def write_receipts(receipts, output_jsonl):
     with open(output_jsonl, "w") as out:
         for receipt_path in receipts:
@@ -19,7 +30,17 @@ globals().update(config)
 
 # Load the manifest and classify files
 manifest = Manifest.from_yaml(Path(manifest))
-classified = manifest.collect_upload_files(stage)
+
+# Allow overriding the result_dir for testing.
+if result_dir is not None:
+    logger.warning(
+        f"Looking for output files in {result_dir}.\nDon't do this in production."
+    )
+    from yaml_manifest.layout import _collect_upload_files
+
+    classified = _collect_upload_files(stage, result_dir)
+else:
+    classified = manifest.collect_upload_files(stage)
 
 upload_files = classified["upload"]
 compress_files_list = classified["compress"]
@@ -40,18 +61,22 @@ rule compress_file:
     output:
         gz=Path(tempdir, "{filepath}.gz"),
     shell:
-        "gzip --keep --force {input.original}"
+        "pigz -c "
+        "{input.original} "
+        "> {output.gz}"
 
 
 rule upload_file:
     input:
-        local_file="{filepath}",
+        local_file=get_local_file,
     output:
         receipt=Path(tempdir, "{filepath}.receipt.jsonl"),
+    log:
+        Path(tempdir, "{filepath}.upload_file.log"),
     params:
-        remote=lambda wc: (
-            all_uploads.get(wc.filepath)
-            or compress_targets[wc.filepath.removesuffix(".gz")]
+        remote=lambda wildcards: (
+            all_uploads.get(wildcards.filepath)
+            or compress_targets[wildcards.filepath.removesuffix(".gz")]
         ),
         bucket=bucket,
     shell:
@@ -59,7 +84,8 @@ rule upload_file:
         "{input.local_file} "
         "{params.remote} "
         "--bucket {params.bucket} "
-        "> {output.receipt}"
+        "> {output.receipt} "
+        "2> {log}"
 
 
 upload_receipts = expand(rules.upload_file.output, filepath=all_uploads)

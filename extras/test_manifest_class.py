@@ -20,9 +20,6 @@ qc_reads_dir = manifest.get_dir("qc_reads")
 pacbio_read_paths = [x.paths("qc") for x in manifest.pacbio_reads]
 hic_reads = [x.paths("qc") for x in manifest.hic_reads]
 
-raise ValueError(manifest.get_dir("pipeline_output", pipeline="genomeassembly"))
-
-
 # render any template based on keys in the template that exactly match keys in
 # the config. Pass additional values that don't come directly from the Manifest
 # as kwargs
@@ -36,11 +33,18 @@ print(
 )
 
 # We can get input/output paths for any ReadFile in the Manifest, e.g.
-my_file = manifest.reads.get("353997_AusARG_BRF_HMGMJDRXY")
+my_file = manifest.reads.get("bpa-ausarg-pacbio-hifi-350822-da095606")
 
 print(my_file.paths("raw"))
 print(my_file.paths("qc"))
 print(my_file.stats_path("qc"))
+
+# looking up files that don't exist raises a KeyError
+try:
+    my_file = manifest.reads.get("353997_AusARG_BRF_HMGMJDRXY")
+except KeyError as e:
+    print(e)
+
 
 # We can get output folders for pipelines
 print(manifest.get_dir("pipeline_output", pipeline="genomeassembly"))
