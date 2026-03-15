@@ -54,6 +54,11 @@ compress_targets = {
     str(f): str(f.with_name(f.name + ".gz")) for f in compress_files_list
 }
 
+# Write receipts and logs into the parent directory
+receipts_parent = Path(receipts_file).parent
+logdir = Path(receipts_parent, "logs")
+receipt_dir = Path(receipts_parent, "receipts")
+
 
 rule compress_file:
     input:
@@ -72,15 +77,16 @@ rule upload_file:
     input:
         local_file=get_local_file,
     output:
-        receipt=Path(tempdir, "{filepath}.receipt.jsonl"),
+        receipt=Path(receipt_dir, "{filepath}.receipt.jsonl"),
     log:
-        Path(tempdir, "{filepath}.upload_file.log"),
+        Path(logdir, "{filepath}.upload_file.log"),
     params:
         remote=lambda wildcards: (
             all_uploads.get(wildcards.filepath)
             or compress_targets[wildcards.filepath.removesuffix(".gz")]
         ),
         bucket=bucket,
+    retries: 3
     shell:
         "result-file-uploader "
         "{input.local_file} "
