@@ -1,16 +1,8 @@
-from importlib import resources
-from importlib.metadata import metadata
+from snakemake_setup import generate_parser, log_version, get_snakefile, run_workflow
+
+
 from pathlib import Path
-from snakemake.api import (
-    SnakemakeApi,
-    ConfigSettings,
-    ResourceSettings,
-    OutputSettings,
-    ExecutionSettings,
-)
-from snakemake.logging import logger
 from ssl import get_default_verify_paths
-import argparse
 import os
 
 

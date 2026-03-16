@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-from snakemake_setup import generate_parser, log_version, get_snakefile, run_workflow
+from snakemake_setup import get_snakefile, run_workflow
+from common import generate_parser, log_version
 
 
 def parse_arguments():

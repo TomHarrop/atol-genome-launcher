@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from importlib import resources
-from importlib.metadata import metadata
 from pathlib import Path
 from snakemake.api import (
     SnakemakeApi,
@@ -11,28 +10,6 @@ from snakemake.api import (
     ExecutionSettings,
 )
 from snakemake.logging import logger
-import argparse
-
-
-def log_version():
-    """Log the package name and version."""
-    pkg_metadata = metadata("atol-genome-launcher")
-    pkg_name = pkg_metadata.get("Name")
-    pkg_version = pkg_metadata.get("Version")
-    logger.warning(f"{pkg_name} version {pkg_version}")
-
-
-def generate_parser():
-    parser = argparse.ArgumentParser()
-    inputs_parser = parser.add_argument_group("Inputs")
-    outputs_parser = parser.add_argument_group("Outputs")
-    settings_parser = parser.add_argument_group("Settings")
-
-    settings_parser.add_argument(
-        "-n", help="Dry run", dest="dry_run", action="store_true"
-    )
-
-    return parser, inputs_parser, outputs_parser, settings_parser
 
 
 def get_snakefile(package: str) -> Path:
