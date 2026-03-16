@@ -26,7 +26,7 @@ def run_workflow(
     config: dict,
     cores: int = 1,
     dry_run: bool = False,
-    stdout: bool = True,
+    stdout: bool = False,
 ):
     """Run a Snakemake workflow with the given configuration."""
     config_settings = ConfigSettings(config=config)
