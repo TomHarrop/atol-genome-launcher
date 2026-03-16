@@ -1,6 +1,40 @@
 Changelog
 =========
 
+0.6.0 (2026-03-16)
+------------------
+
+New
+
+~~~
+- Add ascc and curationpretext directory layouts. [Tom Harrop]
+
+
+0.5.5 (2026-03-15)
+------------------
+
+Changes
+~~~~~~~
+
+- Collect logs for pipeline_result_uploader. [Tom Harrop]
+
+0.5.4 (2026-03-13)
+------------------
+
+Changes
+
+~~~~~~~
+- Better handling of SSL_CERT_DIR. [Tom Harrop]
+
+
+0.5.3 (2026-03-13)
+------------------
+
+Changes
+~~~~~~~
+
+- Handle SSL certificate path in biocontainer. [Tom Harrop]
+
 0.5.1 (2026-03-13)
 ------------------
 
