@@ -1,13 +1,14 @@
-from snakemake_setup import generate_parser, log_version, get_snakefile, run_workflow
+from snakemake_setup import get_snakefile, run_workflow
+from common import generate_parser, log_version
 
-
+from argparse import SUPPRESS
 from pathlib import Path
 from ssl import get_default_verify_paths
 import os
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
+    parser, inputs_parser, outputs_parser, settings_parser = generate_parser(
         description="Upload a single file to S3-compatible object storage using rclone.",
     )
 
@@ -23,7 +24,7 @@ def parse_arguments():
         help="Destination key/path within the bucket.",
     )
 
-    parser.add_argument(
+    settings_parser.add_argument(
         "--bucket",
         type=str,
         required=True,
@@ -31,10 +32,10 @@ def parse_arguments():
     )
 
     # rclone remote name — env vars must match this
-    parser.add_argument(
+    settings_parser.add_argument(
         "--rclone_remote_name",
         dest="RCLONE_REMOTE",
-        help=argparse.SUPPRESS,
+        help=SUPPRESS,
         default="UPLOAD",
     )
 
@@ -42,26 +43,10 @@ def parse_arguments():
 
 
 def main():
-    # print version info
-    pkg_metadata = metadata("atol-genome-launcher")
-    pkg_name = pkg_metadata.get("Name")
-    pkg_version = pkg_metadata.get("Version")
 
-    logger.warning(f"{pkg_name} version {pkg_version}")
-
+    log_version()
     args = parse_arguments()
-
-    # Validate local file exists
-    local_file = Path(args.local_file)
-    if not local_file.is_file():
-        raise FileNotFoundError(f"Local file not found: {local_file}")
-
-    # get the snakefile
-    snakefile = Path(resources.files(__package__), "workflow", "Snakefile")
-    if snakefile.is_file():
-        logger.debug(f"Using snakefile {snakefile}")
-    else:
-        raise FileNotFoundError("Could not find a Snakefile")
+    snakefile = get_snakefile(__package__)
 
     # try to get the Certificate directory at runtime. Without this, RCLONE
     # will fail.
@@ -72,22 +57,12 @@ def main():
         ssl_path = Path(default_verify_paths.openssl_cafile).parent.as_posix()
         os.environ[openssl_capath_env] = ssl_path
 
-    # configure the run
-    config_settings = ConfigSettings(config=vars(args))
-    resource_settings = ResourceSettings(cores=1)
-    output_settings = OutputSettings(printshellcmds=True, stdout=False)
-    execution_settings = ExecutionSettings(lock=False)
-
-    # run
-    with SnakemakeApi(output_settings) as snakemake_api:
-        workflow_api = snakemake_api.workflow(
-            snakefile=snakefile,
-            resource_settings=resource_settings,
-            config_settings=config_settings,
-        )
-
-        dag = workflow_api.dag()
-        dag.execute_workflow(execution_settings=execution_settings)
+    run_workflow(
+        snakefile=snakefile,
+        config=vars(args),
+        cores=1,
+        dry_run=args.dry_run,
+    )
 
 
 if __name__ == "__main__":
