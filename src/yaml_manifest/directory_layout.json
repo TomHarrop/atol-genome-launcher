@@ -60,6 +60,16 @@
             "logs": "logs/ascc",
             "upload": {
                 "exclude_patterns": [],
+                "compress_extensions": [
+                    ".fasta"
+                ]
+            }
+        },
+        "curationpretext": {
+            "dir": "pipeline_output",
+            "logs": "logs/ascc",
+            "upload": {
+                "exclude_patterns": [],
                 "compress_extensions": []
             }
         }
