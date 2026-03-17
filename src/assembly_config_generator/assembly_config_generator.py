@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
 
+from common import generate_parser
 from jinja2 import Environment, FileSystemLoader
-import yaml
-import argparse
 from pathlib import Path
 import importlib.resources as pkg_resources
+import yaml
 
 
 def parse_arguments():
     my_files = pkg_resources.files(__package__)
 
-    parser = argparse.ArgumentParser()
+    parser, inputs_parser, outputs_parser, settings_parser = generate_parser()
+
     parser.add_argument("config", type=Path)
-    parser.add_argument("--long_reads", required=True)
-    parser.add_argument("--hic_reads", default=None)
-    parser.add_argument(
+    parser.add_argument("pipeline_config", type=Path)
+
+    inputs_parser.add_argument("--long_reads", required=True)
+    inputs_parser.add_argument("--hic_reads", default=None)
+    inputs_parser.add_argument(
         "--template",
         default=my_files.joinpath("templates/sanger-tol_genomeassembly_0.50.0.yaml.j2"),
         type=Path,
     )
-    parser.add_argument("pipeline_config", type=Path)
-    args = parser.parse_args()
 
-    return args
+    return parser.parse_args()
 
 
 def main():
