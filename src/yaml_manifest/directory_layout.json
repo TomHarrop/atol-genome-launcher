@@ -73,5 +73,17 @@
                 "compress_extensions": []
             }
         }
+        "treeval": {
+            "dir": "pipeline_output",
+            "logs": "logs/ascc",
+            "upload": {
+                "exclude_patterns": [
+                    "*.ktab.*"
+                ],
+                "compress_extensions": [
+                    ".bed"
+                ]
+            }
+        }
     }
 }
