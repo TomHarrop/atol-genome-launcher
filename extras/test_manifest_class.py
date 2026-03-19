@@ -16,7 +16,11 @@ manifest = Manifest.from_yaml(manifest_file)
 long_read_platform = manifest.sangertol_genomeassembly_long_read_platform
 
 # or more generic stuff, like
-qc_reads_dir = manifest.get_dir("qc_reads")
+qc_reads_dir = manifest.get_dir("qc")
+
+ascc_dir = manifest.get_dir("pipeline_output", pipeline = "ascc")
+raise ValueError(ascc_dir)
+
 pacbio_read_paths = [x.paths("qc") for x in manifest.pacbio_reads]
 hic_reads = [x.paths("qc") for x in manifest.hic_reads]
 
