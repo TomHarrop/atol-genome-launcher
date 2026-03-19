@@ -1,6 +1,19 @@
 Changelog
 =========
 
+0.7.1 (2026-03-19)
+------------------
+
+New
+
+~~~
+- Treeval output. [Tom Harrop]
+
+Other
+~~~~~
+
+- Find pipeline output. [Tom Harrop]
+
 0.7.0 (2026-03-17)
 ------------------
 
