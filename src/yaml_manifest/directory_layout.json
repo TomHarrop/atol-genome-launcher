@@ -72,7 +72,7 @@
                 "exclude_patterns": [],
                 "compress_extensions": []
             }
-        }
+        },
         "treeval": {
             "dir": "pipeline_output",
             "logs": "logs/ascc",
