@@ -8,8 +8,10 @@ dynamic = ["version"]
 description = "Draft code for the AToL genome launcher"
 readme = "README.md"
 authors = [
-    { name = "Tom Harrop", email = "tharrop@unimelb.edu.au" },
     { name = "Amy Tims", email = "amy.tims@unimelb.edu.au" },
+    { name = "Emily Marshall", email = "emily@biocommons.org.au" },
+    { name = "Keeva Connolly", email = "keeva.connolly@qcif.edu.au" },
+    { name = "Tom Harrop", email = "tharrop@unimelb.edu.au" },
 ]
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
