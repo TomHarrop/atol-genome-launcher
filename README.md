@@ -103,6 +103,50 @@ rendered = manifest.render_template_file(
 )
 ```
 
+### deploy-pipline
+
+Deploy the AToL Genome Launcher's pipelines. This prepares a `run-dir` to run
+jobs for an assembly `manifest`. 
+
+The suggested usage is to have a single working directory for each assembly
+manifest, so you can run `deploy-pipeline manifest.yaml`. The deployed
+workflow, runscripts and manifest could then be committed to a private
+repository.
+
+> [!NOTE]
+> TODO:
+>   - Format the runscripts and pipeline configs
+>   - Generate a directory structure?
+>   - git push?
+
+#### Usage
+
+```bash
+usage: deploy-pipeline [-h] [-n] [--workflow_url WORKFLOW_URL] [--workflow_tag WORKFLOW_TAG]
+                       [--force] [--run-dir RUN_DIR]
+                       manifest_file
+
+positional arguments:
+  manifest_file         Path to the manifest
+
+options:
+  -h, --help            show this help message and exit
+
+Outputs:
+  --run-dir RUN_DIR     Run directory for the assembly (default: /home/tharrop/Projects/atol-
+                        genome-launcher)
+
+Settings:
+  -n                    Dry run (default: False)
+  --workflow_url WORKFLOW_URL
+                        genome-launcher-workflow URL (default: SplitResult(scheme='https',
+                        netloc='github.com', path='/AToL-Bioinformatics/genome-launcher-
+                        workflow', query='', fragment=''))
+  --workflow_tag WORKFLOW_TAG
+                        genome-launcher-workflow tag (default: 0.0.3)
+  --force               Passed to snakedeploy (default: False)
+```
+
 ### assembly-data-downloader
 
 Read an assembly `manifest_file` and download the raw read files from BPA.

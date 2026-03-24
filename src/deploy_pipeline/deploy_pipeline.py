@@ -4,7 +4,7 @@ from common import generate_parser, log_version
 from pathlib import Path
 from snakedeploy.deploy import deploy
 from snakemake.logging import logger
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 import argparse
 
 
@@ -24,7 +24,7 @@ def parse_arguments():
 
     settings_parser.add_argument(
         "--workflow_url",
-        default=urlparse(
+        default=urlsplit(
             "https://github.com/AToL-Bioinformatics/genome-launcher-workflow"
         ),
         help=(
@@ -32,7 +32,7 @@ def parse_arguments():
         genome-launcher-workflow URL
         """
         ),
-        type=urlparse,
+        type=urlsplit,
     )
 
     settings_parser.add_argument(
@@ -42,11 +42,13 @@ def parse_arguments():
         default="0.0.3",
     )
 
-    settings_parser.add_argument("--force", action="store_true")
+    settings_parser.add_argument(
+        "--force", help="Passed to snakedeploy", action="store_true"
+    )
 
     outputs_parser.add_argument(
         "--run-dir",
-        help="Run directory for the assembly (Default: CWD)",
+        help="Run directory for the assembly",
         default=Path().cwd(),
         type=Path,
     )
