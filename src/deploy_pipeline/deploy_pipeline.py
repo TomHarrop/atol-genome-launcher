@@ -39,7 +39,7 @@ def parse_arguments():
         "--workflow_tag",
         help="genome-launcher-workflow tag",
         type=str,
-        default="0.0.3",
+        default="0.0.6",
     )
 
     settings_parser.add_argument(
@@ -69,6 +69,12 @@ def main():
         force=args.force,
         branch=None,
     )
+
+    # TODO: replace config with manifest file
+
+    # TODO: sbatch config for genome launcher workflow
+
+    # TODO: format the sanger-tol configs
 
 
 if __name__ == "__main__":
