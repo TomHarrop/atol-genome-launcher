@@ -1,25 +1,34 @@
 Changelog
 =========
 
-0.7.1 (2026-03-19)
-------------------
-
-New
-
-~~~
-- Treeval output. [Tom Harrop]
-
-Other
-~~~~~
-
-- Find pipeline output. [Tom Harrop]
-
-0.7.0 (2026-03-17)
+0.7.3 (2026-03-26)
 ------------------
 
 Changes
 
 ~~~~~~~
+- Add template keys, directories and file paths to manifest. [Tom
+  Harrop]
+
+
+0.7.1 (2026-03-19)
+------------------
+
+New
+~~~
+- Treeval output. [Tom Harrop]
+
+Other
+~~~~~
+- Find pipeline output. [Tom Harrop]
+
+
+0.7.0 (2026-03-17)
+------------------
+
+Changes
+~~~~~~~
+
 - Move pipeline-result-uploader to shared setup. [Tom Harrop]
 - Move result-file-uploader to shared setup. [Tom Harrop]
 - Move assembly-config-generator to shared setup. [Tom Harrop]
@@ -27,6 +36,7 @@ Changes
 - Move assembly-data-downloader to shared setup. [Tom Harrop]
 
 Other
+
 ~~~~~
 - Merge pull request #10 from TomHarrop/shared_setup. [Tom Harrop]
 
