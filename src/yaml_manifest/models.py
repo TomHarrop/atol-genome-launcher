@@ -4,13 +4,15 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, computed_field
 
 from yaml_manifest.layout import (
     get_dir,
     get_stage,
     get_stage_ext,
     get_stage_logs,
+    get_pipeline_input,
+    get_pipeline_runscript,
     _collect_upload_files,
 )
 
@@ -102,6 +104,14 @@ class ReadFile(BaseModel):
 
         stats_dir = get_dir(stats_config["dir"], data_type=self.data_type)
         return stats_dir / stats_config["pattern"].format(name=self.name)
+
+    def log_path(self, stage: str) -> Path:
+        stage_config = get_stage(stage)
+        logs_dir = stage_config.get("logs")
+        if logs_dir is None:
+            raise ValueError(f"No logs_dir for '{stage}'")
+
+        return Path(logs_dir, self.data_type, f"{self.name}.log")
 
     def _iter_lane_file_lists(self):
         if self.is_paired_end:
@@ -296,9 +306,9 @@ class Manifest(BaseModel):
         return self.reads.all_urls
 
     # Pipeline-specific derived values
-
+    @computed_field
     @property
-    def sangertol_genomeassembly_long_read_platform(self) -> str:
+    def genomeassembly_long_read_platform(self) -> str:
         # TODO: this needs to be adapted to the new sangertol config
         data_types = self.all_data_types
         if "PACBIO_SMRT" in data_types:
@@ -307,6 +317,15 @@ class Manifest(BaseModel):
             return "ont"
         else:
             raise ValueError("No long reads in Manifest")
+
+    @computed_field
+    @property
+    def ascc_long_read_platform(self) -> str:
+        return (
+            "hifi"
+            if self.genomeassembly_long_read_platform == "pacbio"
+            else self.genomeassembly_long_read_platform
+        )
 
     # Standardised directory structure
 
@@ -330,6 +349,12 @@ class Manifest(BaseModel):
     def collect_upload_files(self, stage: str) -> dict[str, list[Path]]:
         output_dir = self.get_dir("pipeline_output", pipeline=stage)
         return _collect_upload_files(stage, output_dir)
+
+    def pipeline_input(self, stage: str) -> Path:
+        return get_pipeline_input(stage)
+
+    def pipeline_runscript(self, stage: str) -> Path:
+        return get_pipeline_runscript(stage)
 
     # Template rendering
 

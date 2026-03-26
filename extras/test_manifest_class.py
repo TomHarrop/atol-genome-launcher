@@ -13,7 +13,17 @@ manifest = Manifest.from_yaml(manifest_file)
 
 # we can add convenience methods to the Manifest class for anything we need to
 # generate, e.g.
-long_read_platform = manifest.sangertol_genomeassembly_long_read_platform
+long_read_platform = manifest.genomeassembly_long_read_platform
+
+# however, if we decorate them with `@computed_field`, they are automatically
+# available.
+print(
+    f"genomeassembly_long_read_platform: {manifest.model_dump().get("genomeassembly_long_read_platform")}"
+)
+
+print(
+    f"ascc_long_read_platform: {manifest.model_dump().get("ascc_long_read_platform")}"
+)
 
 # or more generic stuff, like
 qc_reads_dir = manifest.get_dir("qc")
@@ -30,11 +40,14 @@ hic_reads = [x.paths("qc") for x in manifest.hic_reads]
 print(
     manifest.render_template_file(
         template_path,
-        platform=long_read_platform,
-        long_reads=[x.get("reads") for x in pacbio_read_paths],
-        hic_reads=[x.get("reads") for x in hic_reads],
+        long_reads=manifest.long_reads.flat_paths("qc"),
+        hic_reads=manifest.hic_reads.flat_paths("qc"),
     )
 )
+
+# the config and runscript paths are configured in directory_layout.json, e.g.
+print(f"genomeassembly pipeline_input: {manifest.pipeline_input("genomeassembly")}")
+print(f"ascc pipeline_runscript: {manifest.pipeline_runscript("ascc")}")
 
 # We can get input/output paths for any ReadFile in the Manifest, e.g.
 my_file = manifest.reads.get("bpa-ausarg-pacbio-hifi-350822-da095606")
@@ -42,6 +55,7 @@ my_file = manifest.reads.get("bpa-ausarg-pacbio-hifi-350822-da095606")
 print(my_file.paths("raw"))
 print(my_file.paths("qc"))
 print(my_file.stats_path("qc"))
+print(my_file.log_path("qc"))
 
 # looking up files that don't exist raises a KeyError
 try:
