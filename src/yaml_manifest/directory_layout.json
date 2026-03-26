@@ -37,6 +37,7 @@
             },
             "ext": {
                 "Hi-C": "cram",
+                "OXFORD_NANOPORE": "fastq.gz",
                 "PACBIO_SMRT": "fastq.gz"
             },
             "stats": {
