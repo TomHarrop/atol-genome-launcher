@@ -51,6 +51,22 @@ def get_stage_logs(stage_name: str) -> Path:
     return Path(stage["logs"])
 
 
+def get_pipeline_input(stage_name: str, **kwargs) -> Path:
+    stage = get_stage(stage_name)
+    pipeline_input = stage.get("pipeline_input")
+    if pipeline_input is None:
+        raise ValueError(f"pipeline_input not defined for stage {stage_name}")
+    return Path(pipeline_input)
+
+
+def get_pipeline_runscript(stage_name: str, **kwargs) -> Path:
+    stage = get_stage(stage_name)
+    pipeline_runscript = stage.get("pipeline_runscript")
+    if pipeline_runscript is None:
+        raise ValueError(f"pipeline_runscript not defined for stage {stage_name}")
+    return Path(pipeline_runscript)
+
+
 def _is_excluded(file_path: Path, base_dir: Path, patterns: list[str]) -> bool:
     """Check if a file matches any exclusion pattern."""
     rel = str(file_path.relative_to(base_dir))

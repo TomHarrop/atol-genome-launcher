@@ -1,12 +1,15 @@
 {
+    "config": "config",
     "downloads": "resources/raw_reads/{data_type}",
     "logs": "logs/{stage}",
     "pipeline_output": "results/{pipeline}/{dataset_id}.{assembly_version}",
+    "profiles": "profiles",
     "qc_reads": "results/qc/reads/{data_type}",
     "qc_stats": "results/qc/stats/{data_type}",
     "qc": "results/qc",
     "resources": "resources",
     "results": "results",
+    "scripts": "scripts",
     "stages": {
         "raw": {
             "dir": "downloads",
@@ -44,6 +47,8 @@
         "genomeassembly": {
             "dir": "pipeline_output",
             "logs": "logs/genomeassembly",
+            "pipeline_input": "config/genomeassembly.yaml",
+            "pipeline_runscript": "scripts/genomeassembly.sh",
             "upload": {
                 "exclude_patterns": [
                     "*.bin",
@@ -58,6 +63,8 @@
         "ascc": {
             "dir": "pipeline_output",
             "logs": "logs/ascc",
+            "pipeline_input": "config/ascc.yaml",
+            "pipeline_runscript": "scripts/ascc.sh",
             "upload": {
                 "exclude_patterns": [],
                 "compress_extensions": [
@@ -67,7 +74,9 @@
         },
         "curationpretext": {
             "dir": "pipeline_output",
-            "logs": "logs/ascc",
+            "logs": "logs/curationpretext",
+            "pipeline_input": "config/curationpretext.yaml",
+            "pipeline_runscript": "scripts/curationpretext.sh",
             "upload": {
                 "exclude_patterns": [],
                 "compress_extensions": []
@@ -75,7 +84,9 @@
         },
         "treeval": {
             "dir": "pipeline_output",
-            "logs": "logs/ascc",
+            "logs": "logs/treeval",
+            "pipeline_input": "config/treeval.yaml",
+            "pipeline_runscript": "scripts/treeval.sh",
             "upload": {
                 "exclude_patterns": [
                     "*.ktab.*"
