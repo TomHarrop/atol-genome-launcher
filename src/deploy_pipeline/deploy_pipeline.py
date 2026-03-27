@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
+from assembly_config_generator import render_template, template_dir
 from common import generate_parser, log_version
 from pathlib import Path
 from snakedeploy.deploy import deploy
 from snakemake.logging import logger
 from urllib.parse import urlsplit
-import argparse
-from assembly_config_generator import render_template
 from yaml_manifest import Manifest
+import argparse
+import shutil
+
 
 def parse_arguments():
     parser, inputs_parser, outputs_parser, settings_parser = generate_parser(
@@ -40,7 +42,7 @@ def parse_arguments():
         "--workflow_tag",
         help="genome-launcher-workflow tag",
         type=str,
-        default="0.0.6",
+        default="0.1.0",
     )
 
     settings_parser.add_argument(
@@ -61,6 +63,9 @@ def main():
     log_version()
     args = parse_arguments()
 
+    # read in manifest file
+    manifest = Manifest.from_yaml(args.manifest_file)
+
     logger.warning(f"Deploying workflow to {args.run_dir}")
     deploy(
         args.workflow_url.geturl(),
@@ -71,28 +76,26 @@ def main():
         branch=None,
     )
 
-    # TODO: replace config with manifest file
+    # replace config with manifest file
+    shutil.copy(args.manifest_file, Path(args.run_dir, "config", "manifest.yaml"))
 
     # TODO: sbatch config for genome launcher workflow
 
-    # TODO: format the sanger-tol configs
-
-    # read in manifest file
-    manifest = Manifest.from_yaml(args.manifest_file)
-
-      # render genomeassembly template
+    # format the sanger-tol configs
+    path_to_templates = template_dir()
     render_template(
         manifest,
-        "src/assembly_config_generator/templates/sanger-tol_genomeassembly_0.50.0.yaml.j2",
-        Path(args.run_dir,manifest.pipeline_input("genomeassembly")),
+        Path(path_to_templates, "sanger-tol_genomeassembly_0.50.0.yaml.j2"),
+        Path(args.run_dir, manifest.pipeline_input("genomeassembly")),
     )
 
     # render ascc template
     render_template(
         manifest,
-        "src/assembly_config_generator/templates/sanger-tol_ascc_0.5.3.yaml.j2",
-        Path(args.run_dir,manifest.pipeline_input("ascc")),
+        Path(path_to_templates, "sanger-tol_ascc_0.5.3.yaml.j2"),
+        Path(args.run_dir, manifest.pipeline_input("ascc")),
     )
+
 
 if __name__ == "__main__":
     main()

@@ -22,12 +22,14 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def render_template(manifest, template_path, outfile):
+def template_dir():
+    return pkg_resources.files(__package__).joinpath("templates")
 
+
+def render_template(manifest, template_path, outfile):
+ 
     # add additional args
     context = {
-        "genomeassembly_long_read_platform": manifest.genomeassembly_long_read_platform,
-        "ascc_long_read_platform": manifest.ascc_long_read_platform,
         "long_reads": manifest.long_reads.flat_paths("qc"),
         "hic_reads": manifest.hic_reads.flat_paths("qc"),
     }
@@ -38,6 +40,7 @@ def render_template(manifest, template_path, outfile):
     # ---- write output ----
     with open(outfile, "wt") as f:
         f.write(rendered)
+
 
 def main():
 
