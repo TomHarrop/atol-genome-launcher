@@ -26,7 +26,8 @@ def render_template(manifest, template_path, outfile):
 
     # add additional args
     context = {
-        "platform": manifest.sangertol_genomeassembly_long_read_platform,
+        "genomeassembly_long_read_platform": manifest.genomeassembly_long_read_platform,
+        "ascc_long_read_platform": manifest.ascc_long_read_platform,
         "long_reads": manifest.long_reads.flat_paths("qc"),
         "hic_reads": manifest.hic_reads.flat_paths("qc"),
     }

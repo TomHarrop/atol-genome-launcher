@@ -6,7 +6,8 @@ from snakedeploy.deploy import deploy
 from snakemake.logging import logger
 from urllib.parse import urlsplit
 import argparse
-
+from assembly_config_generator import render_template
+from yaml_manifest import Manifest
 
 def parse_arguments():
     parser, inputs_parser, outputs_parser, settings_parser = generate_parser(
@@ -76,6 +77,22 @@ def main():
 
     # TODO: format the sanger-tol configs
 
+    # read in manifest file
+    manifest = Manifest.from_yaml(args.manifest_file)
+
+      # render genomeassembly template
+    render_template(
+        manifest,
+        "src/assembly_config_generator/templates/sanger-tol_genomeassembly_0.50.0.yaml.j2",
+        Path(args.run_dir,manifest.pipeline_input("genomeassembly")),
+    )
+
+    # render ascc template
+    render_template(
+        manifest,
+        "src/assembly_config_generator/templates/sanger-tol_ascc_0.5.3.yaml.j2",
+        Path(args.run_dir,manifest.pipeline_input("ascc")),
+    )
 
 if __name__ == "__main__":
     main()
