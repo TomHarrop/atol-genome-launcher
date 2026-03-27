@@ -1,0 +1,10 @@
+reads_path:
+{%- for reads in long_reads %}
+  - {{ reads }}
+{%- endfor %}
+reads_type: "{{ ascc_long_read_platform }}"
+reads_layout: "SINGLE"
+sample_id: "{{ dataset_id }}"
+scientific_name: "{{ scientific_name }}"
+busco_lineages: "{{ busco_lineage }}"
+taxid: {{ taxon_id }}
