@@ -1,6 +1,31 @@
 Changelog
 =========
 
+0.8.0 (2026-03-27)
+------------------
+
+New
+
+~~~
+- Deploy-pipeline command. [Tom Harrop]
+
+Other
+~~~~~
+
+- Merge pull request #12 from TomHarrop/configs. [Tom Harrop]
+
+  adding genomeassembly config generation
+- Merge branch 'deploy-pipeline' into configs. [Amy Tims]
+- Merge branch 'main' into deploy-pipeline. [Tom Harrop]
+- Merge branch 'main' into deploy-pipeline. [Tom Harrop]
+- Starting to add config files. [Amy Tims]
+- Starting to add config files. [Amy Tims]
+- Merge branch 'deploy-pipeline' into configs. [Amy Tims]
+- Merge branch 'main' into deploy-pipeline. [Tom Harrop]
+- Merge branch 'configs_rebase' into configs. [Amy Tims]
+- Adding manifest info. [Amy Tims]
+- Adding manifest info. [Amy Tims]
+
 0.7.3 (2026-03-26)
 ------------------
 
