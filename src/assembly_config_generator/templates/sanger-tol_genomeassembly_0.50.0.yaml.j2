@@ -7,13 +7,13 @@ sequencing_data:
     platform: "{{ genomeassembly_long_read_platform }}"
     reads:
 {%- for reads in long_reads %}
-      - {{ reads }}
+      - ${PWD}/{{ reads }}
 {%- endfor %}
 {%- if hic_reads %}
   hic:
     reads:
 {%- for reads in hic_reads %}
-      - {{ reads }}
+      - ${PWD}/{{ reads }}
 {%- endfor %}
     hic_motif:
 {%- for motif in hic_motif.split(",") %}

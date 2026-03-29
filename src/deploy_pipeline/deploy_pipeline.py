@@ -86,14 +86,14 @@ def main():
     render_template(
         manifest,
         Path(path_to_templates, "sanger-tol_genomeassembly_0.50.0.yaml.j2"),
-        Path(args.run_dir, manifest.pipeline_input("genomeassembly")),
+        Path(args.run_dir, f"{manifest.pipeline_input("genomeassembly")}.sample"),
     )
 
     # render ascc template
     render_template(
         manifest,
         Path(path_to_templates, "sanger-tol_ascc_0.5.3.yaml.j2"),
-        Path(args.run_dir, manifest.pipeline_input("ascc")),
+        Path(args.run_dir, f"{manifest.pipeline_input("ascc")}.sample"),
     )
 
 
