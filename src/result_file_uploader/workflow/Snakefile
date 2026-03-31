@@ -85,4 +85,4 @@ rule target:
 onsuccess:
     with open(checksum_file, "rt") as f:
         sha256sum = f.read().strip().split()[0]
-    print(f'{{"{remote_path}", "{sha256sum}"}}', file=sys.stdout)
+    print(f'{{"remote_path": "{remote_path}", "sha256sum": "{sha256sum}"}}', file=sys.stdout)
