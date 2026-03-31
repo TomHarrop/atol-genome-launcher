@@ -1,26 +1,41 @@
 Changelog
 =========
 
-0.8.1 (2026-03-29)
+0.8.4 (2026-03-31)
 ------------------
 
 Changes
 
 ~~~~~~~
-- Leave PWD variable in formatted templates (addresses
-  https://github.com/AToL-Bioinformatics/genome-launcher-
-  workflow/issues/1) [Tom Harrop]
+- Result_file_uploader outputs proper jsonl (fixes #13) [Tom Harrop]
 
+
+0.8.3 (2026-03-31)
+------------------
+- Busco dataset name. [Tom Harrop]
+
+
+0.8.1 (2026-03-29)
+------------------
+
+Changes
+~~~~~~~
+
+- Leave PWD variable in formatted templates (addresses
+  <https://github.com/AToL-Bioinformatics/genome-launcher->
+  workflow/issues/1) [Tom Harrop]
 
 0.8.0 (2026-03-27)
 ------------------
 
 New
+
 ~~~
 - Deploy-pipeline command. [Tom Harrop]
 
 Other
 ~~~~~
+
 - Merge pull request #12 from TomHarrop/configs. [Tom Harrop]
 
   adding genomeassembly config generation
@@ -35,35 +50,34 @@ Other
 - Adding manifest info. [Amy Tims]
 - Adding manifest info. [Amy Tims]
 
-
 0.7.3 (2026-03-26)
 ------------------
 
 Changes
-~~~~~~~
 
+~~~~~~~
 - Add template keys, directories and file paths to manifest. [Tom
   Harrop]
+
 
 0.7.1 (2026-03-19)
 ------------------
 
 New
-
 ~~~
 - Treeval output. [Tom Harrop]
 
 Other
 ~~~~~
-
 - Find pipeline output. [Tom Harrop]
+
 
 0.7.0 (2026-03-17)
 ------------------
 
 Changes
-
 ~~~~~~~
+
 - Move pipeline-result-uploader to shared setup. [Tom Harrop]
 - Move result-file-uploader to shared setup. [Tom Harrop]
 - Move assembly-config-generator to shared setup. [Tom Harrop]
@@ -71,6 +85,7 @@ Changes
 - Move assembly-data-downloader to shared setup. [Tom Harrop]
 
 Other
+
 ~~~~~
 - Merge pull request #10 from TomHarrop/shared_setup. [Tom Harrop]
 
