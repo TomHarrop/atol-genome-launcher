@@ -1,0 +1,24 @@
+{%- if pacbio_reads %}
+- id: {{ dataset_id }}
+  platform: pacbio_hifi
+    reads:
+{%- for reads in pacbio_reads %}
+      - ${PWD}/{{ reads }}
+{%- endfor %}
+{%- endif %}
+{%- if ont_reads %}
+- id: {{ dataset_id }}
+  platform: illumina_hic
+    reads:
+{%- for reads in ont_reads %}
+      - ${PWD}/{{ reads }}
+{%- endfor %}
+{%- endif %}
+{%- if hic_reads %}
+- id: {{ dataset_id }}
+  platform: illumina_hic
+    reads:
+{%- for reads in hic_reads %}
+      - ${PWD}/{{ reads }}
+{%- endfor %}
+{%- endif %}

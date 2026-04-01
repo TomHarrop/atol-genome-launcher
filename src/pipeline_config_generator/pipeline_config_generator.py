@@ -27,10 +27,11 @@ def template_dir():
 
 
 def render_template(manifest, template_path, outfile):
- 
+
     # add additional args
     context = {
-        "long_reads": manifest.long_reads.flat_paths("qc"),
+        "pacbio_reads": manifest.pacbio_reads.flat_paths("qc"),
+        "ont_reads": manifest.ont_reads.flat_paths("qc"),
         "hic_reads": manifest.hic_reads.flat_paths("qc"),
     }
 

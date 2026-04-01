@@ -48,7 +48,10 @@
         "genomeassembly": {
             "dir": "pipeline_output",
             "logs": "logs/genomeassembly",
-            "pipeline_input": "config/genomeassembly.yaml",
+            "pipeline_input": {
+                "genomic_data": "config/genomeassembly.data.yaml",
+                "assembly_specs": "config/genomeassembly.spec.yaml"
+            },
             "pipeline_runscript": "scripts/genomeassembly.sh",
             "upload": {
                 "exclude_patterns": [

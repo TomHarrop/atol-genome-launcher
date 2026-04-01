@@ -1,4 +1,4 @@
-from assembly_config_generator.assembly_config_generator import (
+from pipeline_config_generator.pipeline_config_generator import (
     render_template,
     template_dir,
 )

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from assembly_config_generator import render_template, template_dir
+from pipeline_config_generator import render_template, template_dir
 from common import generate_parser, log_version
 from pathlib import Path
 from snakedeploy.deploy import deploy
@@ -85,8 +85,20 @@ def main():
     path_to_templates = template_dir()
     render_template(
         manifest,
-        Path(path_to_templates, "sanger-tol_genomeassembly_0.50.0.yaml.j2"),
-        Path(args.run_dir, f"{manifest.pipeline_input("genomeassembly")}.sample"),
+        Path(path_to_templates, "sanger-tol_genomeassembly_e651801.data.yaml.j2"),
+        Path(
+            args.run_dir,
+            f"{manifest.pipeline_input("genomeassembly")["genomic_data"]}.sample",
+        ),
+    )
+
+    render_template(
+        manifest,
+        Path(path_to_templates, "sanger-tol_genomeassembly_e651801.spec.yaml.j2"),
+        Path(
+            args.run_dir,
+            f"{manifest.pipeline_input("genomeassembly")["assembly_specs"]}",
+        ),
     )
 
     # render ascc template
