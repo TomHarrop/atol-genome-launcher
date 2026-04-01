@@ -22,10 +22,10 @@
   long_read_dataset: {{ dataset_id }}
   long_read_platform: pacbio_hifi
 {%- if mito_hmm_name %}
-    oatk_mito_hmm: https://github.com/c-zhou/OatkDB/raw/main/v20230921/{{mito_hmm_name}}.fam
+  oatk_mito_hmm: https://github.com/c-zhou/OatkDB/raw/main/v20230921/{{mito_hmm_name}}.fam
 {%- endif %}
 {%- if plastid_hmm_name %}
-    oatk_plastid_hmm: https://github.com/c-zhou/OatkDB/raw/main/v20230921/{{plastid_hmm_name}}.fam
+  oatk_plastid_hmm: https://github.com/c-zhou/OatkDB/raw/main/v20230921/{{plastid_hmm_name}}.fam
 {%- endif %}
 {%- endif %}
 - id: {{ dataset_id }}.mitohifi

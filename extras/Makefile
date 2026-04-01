@@ -45,8 +45,9 @@ clean_all:
 
 CHANGELOG.md: .git/index
 	gitchangelog > $(tmpdir)/CHANGELOG.md
-	apptainer exec docker://davidanson/markdownlint-cli2:v0.13.0 \
+	apptainer exec docker://davidanson/markdownlint-cli2:v0.22.0 \
 	markdownlint-cli2 \
+	--config .markdownlint.json \
 	--fix \
 	:$(tmpdir)/CHANGELOG.md || true
 	mv $(tmpdir)/CHANGELOG.md ./CHANGELOG.md
