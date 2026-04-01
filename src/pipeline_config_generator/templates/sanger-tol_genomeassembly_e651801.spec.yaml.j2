@@ -1,10 +1,18 @@
+{%- set platforms = [] %}
+{%- if pacbio_reads %}
+  {%- set _ = platforms.append({"reads": pacbio_reads, "platform": "pacbio_hifi"}) %}
+{%- endif %}
+{%- if ont_reads %}
+  {%- set _ = platforms.append({"reads": ont_reads, "platform": "oxford_nanopore"}) %}
+{%- endif %}
+{%- for p in platforms %}
 {%- if hic_reads %}
-- id: {{ dataset_id }}.phased
+- id: {{ dataset_id }}.{{ p.platform }}.phased
   hic_dataset: {{ dataset_id }}
   phased_assembly: true
   purge: false
 {%- else %}
-- id: {{ dataset_id }}.purged
+- id: {{ dataset_id }}.{{ p.platform }}.purged
   purge: true
 {%- endif %}
   assembler: "hifiasm"
@@ -12,9 +20,10 @@
   find_mito: true
   find_plastid: true
   long_read_dataset: {{ dataset_id }}
-  long_read_platform: {{ genomeassembly_long_read_platform }}
+  long_read_platform: {{ p.platform }}
   mitohifi_mito_genetic_code: {{ mito_code }}
   mitohifi_reference_species: "Rhynchosporium commune" # TODO
+{%- endfor %}
 {%- if pacbio_reads %}
 {%- if mito_hmm_name or plastid_hmm_name %}
 - id: {{ dataset_id }}.oatk
