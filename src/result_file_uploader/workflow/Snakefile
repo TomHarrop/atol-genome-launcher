@@ -13,6 +13,7 @@ checksum_verified = Path(tempdir, f"{local_path.name}.verified")
 remote_dest = f"{RCLONE_REMOTE}:{bucket}/{remote_path}"
 remote_parent = f"{RCLONE_REMOTE}:{bucket}/{str(Path(remote_path).parent)}"
 remote_filename = Path(remote_path).name
+remote_include = f"/{remote_filename}"
 
 # FIXME debugging SSL certificate path
 openssl_capath_env = get_default_verify_paths().openssl_capath_env
@@ -65,13 +66,15 @@ rule verify_checksum:
         verified=touch(checksum_verified),
     params:
         remote_parent=remote_parent,
-        remote_filename=remote_filename,
+        remote_include=remote_include,
     shell:
         "rclone checksum sha256 "
         "{input.checksum} "
         "{params.remote_parent} "
         "--download "
-        "--include '{params.remote_filename}' "
+        "--max-depth 1 "
+        "--one-way "
+        "--include '{params.remote_include}' "
         "--verbose "
 
 
