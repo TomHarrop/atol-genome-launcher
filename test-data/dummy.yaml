@@ -3,6 +3,7 @@ dataset_id: "aBcDe1"
 assembly_version: 6
 hic_motif: "GATC,GANTC,CTNAG,TTAA"
 mito_code: 2
+mitohifi_reference_species: "Cymbopogon citratus"
 mito_hmm_name: "lepidosauria_mito"
 scientific_name: "Saiphos equalis"
 taxon_id: 172942
@@ -14,6 +15,13 @@ reads:
     bpa-ausarg-pacbio-hifi-350822-da080843:
       - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-pacbio-hifi-350822-da080843/resource/4a409be4cc1e33713fd3d5f9e573cff5/download/350822_AusARG_AGRF_DA080843.ccs.bam"
         md5sum: "4a409be4cc1e33713fd3d5f9e573cff5"
+  OXFORD_NANOPORE:
+    bpa-fish-ont-promethion-617217-pbi90024-1:
+      - url: "https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi90024-1/resource/11ae622b57d6429f623fdbf430844f35/download/617217_FISH_BRF_PBI90024_ONTPromethION_fastq_pass.tar"
+        md5sum: "11ae622b57d6429f623fdbf430844f35"
+    bpa-fish-ont-promethion-617217-pbi88904-1:
+      - url: "https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi88904-1/resource/b5e37dfd5b94e6dc363c154b99e495cf/download/617217_FISH_BRF_PBI88904_ONTPromethION_fastq_pass.tar"
+        md5sum: "b5e37dfd5b94e6dc363c154b99e495cf"
   Hi-C:
     bpa-ausarg-hi-c-353997-hmgmjdrxy:
       r1:

@@ -1,46 +1,33 @@
-{%- set platforms = [] %}
-{%- if pacbio_reads %}
-  {%- set _ = platforms.append({"reads": pacbio_reads, "platform": "pacbio_hifi"}) %}
-{%- endif %}
-{%- if ont_reads %}
-  {%- set _ = platforms.append({"reads": ont_reads, "platform": "oxford_nanopore"}) %}
-{%- endif %}
-{%- for p in platforms %}
-{%- if hic_reads %}
-- id: {{ dataset_id }}.{{ p.platform }}.phased
+{%- for at in assembly_types %}
+- id: {{ dataset_id }}.{{ at.name }}
+  assembler: "{{ at.assembler }}"
+  long_read_dataset: {{ dataset_id }}
+  long_read_platform: {{ at.long_read_platform }}
+{%- if at.is_phased %}
   hic_dataset: {{ dataset_id }}
   phased_assembly: true
   purge: false
-{%- else %}
-- id: {{ dataset_id }}.{{ p.platform }}.purged
+{%- endif %}
+{%- if at.is_purged %}
   purge: true
 {%- endif %}
-  assembler: "hifiasm"
-  busco_lineage: {{ busco_lineage }}_odb12
-  find_mito: true
-  find_plastid: true
-  long_read_dataset: {{ dataset_id }}
-  long_read_platform: {{ p.platform }}
-  mitohifi_mito_genetic_code: {{ mito_code }}
-  mitohifi_reference_species: "Rhynchosporium commune" # TODO
+{%- if at.busco_lineage %}
+  busco_lineage: {{ at.busco_lineage }}
+{%- endif %}
+{%- if at.assembler == "hifiasm" %}
+  find_mito: {{ at.find_mito | lower }}
+  find_plastid: {{ at.find_plastid | lower }}
+{%- endif %}
+{%- if at.mitohifi_mito_genetic_code %}
+  mitohifi_mito_genetic_code: {{ at.mitohifi_mito_genetic_code }}
+{%- endif %}
+{%- if at.mitohifi_reference_species %}
+  mitohifi_reference_species: "{{ at.mitohifi_reference_species }}"
+{%- endif %}
+{%- if at.oatk_mito_hmm %}
+  oatk_mito_hmm: {{ at.oatk_mito_hmm }}
+{%- endif %}
+{%- if at.oatk_plastid_hmm %}
+  oatk_plastid_hmm: {{ at.oatk_plastid_hmm }}
+{%- endif %}
 {%- endfor %}
-{%- if pacbio_reads %}
-{%- if mito_hmm_name or plastid_hmm_name %}
-- id: {{ dataset_id }}.oatk
-  assembler: "oatk"
-  long_read_dataset: {{ dataset_id }}
-  long_read_platform: pacbio_hifi
-{%- if mito_hmm_name %}
-  oatk_mito_hmm: https://github.com/c-zhou/OatkDB/raw/main/v20230921/{{mito_hmm_name}}.fam
-{%- endif %}
-{%- if plastid_hmm_name %}
-  oatk_plastid_hmm: https://github.com/c-zhou/OatkDB/raw/main/v20230921/{{plastid_hmm_name}}.fam
-{%- endif %}
-{%- endif %}
-- id: {{ dataset_id }}.mitohifi
-  assembler: "mitohifi"
-  long_read_dataset: {{ dataset_id }}
-  long_read_platform: pacbio_hifi
-  mitohifi_mito_genetic_code: {{ mito_code }}
-  mitohifi_reference_species: "Rhynchosporium commune" # TODO
-{%- endif %}

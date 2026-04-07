@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import json
 import re
+from importlib import resources as importlib_resources
 from pathlib import Path
 from typing import Any, Optional
 
@@ -15,6 +17,193 @@ from yaml_manifest.layout import (
     get_pipeline_runscript,
     _collect_upload_files,
 )
+
+_ASSEMBLY_TYPES_FILE = "assembly_types.json"
+
+_OATK_HMM_BASE_URL = (
+    "https://github.com/c-zhou/OatkDB/raw/main/v20230921/{hmm_name}.fam"
+)
+
+
+def _load_assembly_types() -> dict[str, dict]:
+    ref = importlib_resources.files("yaml_manifest").joinpath(_ASSEMBLY_TYPES_FILE)
+    with importlib_resources.as_file(ref) as path:
+        with open(path) as fh:
+            return json.load(fh)
+
+
+_ASSEMBLY_TYPES = _load_assembly_types()
+
+
+class AssemblyType(BaseModel):
+    """A resolved assembly type with concrete output paths."""
+
+    name: str
+    long_read_platform: str
+    requires_hic: bool
+    assembler: str
+    outputs: dict[str, Path]
+
+    # Optional assembler-specific configuration
+    oatk_mito_hmm: Optional[str] = None
+    oatk_plastid_hmm: Optional[str] = None
+    mitohifi_mito_genetic_code: Optional[int] = None
+    mitohifi_reference_species: Optional[str] = None
+    busco_lineage: Optional[str] = None
+    find_mito: bool = False
+    find_plastid: bool = False
+
+    @computed_field
+    @property
+    def is_genomic(self) -> bool:
+        """True if this assembly type produces primary/haplotigs."""
+        return "primary" in self.outputs
+
+    @computed_field
+    @property
+    def is_organelle(self) -> bool:
+        """True if this assembly type produces mito/plastid."""
+        return "mito" in self.outputs or "plastid" in self.outputs
+
+    @computed_field
+    @property
+    def is_phased(self) -> bool:
+        return self.assembler == "hifiasm" and self.requires_hic
+
+    @computed_field
+    @property
+    def is_purged(self) -> bool:
+        return self.assembler == "hifiasm" and not self.requires_hic
+
+    @property
+    def primary(self) -> Optional[Path]:
+        return self.outputs.get("primary")
+
+    @property
+    def haplotigs(self) -> Optional[Path]:
+        return self.outputs.get("haplotigs")
+
+    @property
+    def mito(self) -> Optional[Path]:
+        return self.outputs.get("mito")
+
+    @property
+    def plastid(self) -> Optional[Path]:
+        return self.outputs.get("plastid")
+
+
+def _resolve_assembly_types(
+    dataset_id: str,
+    assembly_version: int,
+    has_pacbio: bool,
+    has_ont: bool,
+    has_hic: bool,
+    mito_code: Optional[int],
+    mito_hmm_name: Optional[str],
+    plastid_hmm_name: Optional[str],
+    busco_lineage: Optional[str],
+    mitohifi_reference_species: Optional[str] = None,
+) -> list[AssemblyType]:
+    """Determine which assembly types apply based on available data."""
+    results = []
+    fmt = {"dataset_id": dataset_id, "assembly_version": assembly_version}
+
+    for type_name, config in _ASSEMBLY_TYPES.items():
+        platform = config["long_read_platform"]
+        requires_hic = config["requires_hic"]
+        requires_hmm = config.get("requires_hmm", False)
+        requires_mitohifi_ref = config.get("requires_mitohifi_reference_species", False)
+        assembler = config["assembler"]
+
+        # Check platform availability — map spec platform names to manifest
+        # data type keys
+        _PLATFORM_TO_DATA_TYPE = {
+            "pacbio_hifi": "PACBIO_SMRT",
+            "oxford_nanopore": "OXFORD_NANOPORE",
+        }
+        data_type = _PLATFORM_TO_DATA_TYPE.get(platform)
+        if data_type == "PACBIO_SMRT" and not has_pacbio:
+            continue
+        if data_type == "OXFORD_NANOPORE" and not has_ont:
+            continue
+
+        # Check Hi-C requirement for hifiasm assemblies:
+        # - phased requires Hi-C
+        # - purged is skipped when Hi-C is available (phased takes priority)
+        if requires_hic and not has_hic:
+            continue
+        if not requires_hic and has_hic and assembler == "hifiasm":
+            continue
+
+        # oatk requires at least one HMM model
+        if requires_hmm:
+            if not mito_hmm_name and not plastid_hmm_name:
+                continue
+
+        # mitohifi requires mitohifi_reference_species
+        if requires_mitohifi_ref:
+            if not mitohifi_reference_species:
+                continue
+
+        # Resolve output paths
+        outputs = {
+            key: Path(template.format(**fmt))
+            for key, template in config["outputs"].items()
+        }
+
+        # Build assembler-specific fields
+        oatk_mito_hmm = None
+        oatk_plastid_hmm = None
+        mitohifi_mito_genetic_code = None
+        mitohifi_ref_species = None
+        resolved_busco = None
+        find_mito = False
+        find_plastid = False
+
+        if assembler == "hifiasm":
+            if busco_lineage:
+                # Strip any existing _odbNN suffix before appending _odb12
+                import re as _re
+                base = _re.sub(r"_odb\d+$", "", busco_lineage)
+                resolved_busco = f"{base}_odb12"
+            # hifiasm gets find_mito/find_plastid when
+            # mitohifi_reference_species is available
+            if mitohifi_reference_species:
+                find_mito = True
+                find_plastid = True
+                mitohifi_ref_species = mitohifi_reference_species
+                mitohifi_mito_genetic_code = mito_code
+
+        elif assembler == "oatk":
+            if mito_hmm_name:
+                oatk_mito_hmm = _OATK_HMM_BASE_URL.format(hmm_name=mito_hmm_name)
+            if plastid_hmm_name:
+                oatk_plastid_hmm = _OATK_HMM_BASE_URL.format(
+                    hmm_name=plastid_hmm_name
+                )
+
+        elif assembler == "mitohifi":
+            mitohifi_ref_species = mitohifi_reference_species
+            mitohifi_mito_genetic_code = mito_code
+
+        results.append(
+            AssemblyType(
+                name=type_name,
+                long_read_platform=platform,
+                requires_hic=requires_hic,
+                assembler=assembler,
+                outputs=outputs,
+                oatk_mito_hmm=oatk_mito_hmm,
+                oatk_plastid_hmm=oatk_plastid_hmm,
+                mitohifi_mito_genetic_code=mitohifi_mito_genetic_code,
+                mitohifi_reference_species=mitohifi_ref_species,
+                busco_lineage=resolved_busco,
+                find_mito=find_mito,
+                find_plastid=find_plastid,
+            )
+        )
+
+    return results
 
 
 class BpaFile(BaseModel):
@@ -231,6 +420,8 @@ class Manifest(BaseModel):
     hic_motif: Optional[str] = None
     mito_code: Optional[int] = None
     mito_hmm_name: Optional[str] = None
+    plastid_hmm_name: Optional[str] = None
+    mitohifi_reference_species: Optional[str] = None
 
     # Read data
     read_files: list[ReadFile]
@@ -251,6 +442,52 @@ class Manifest(BaseModel):
         from yaml_manifest.parser import parse_config
 
         return parse_config(raw)
+
+    # Assembly types
+
+    @computed_field
+    @property
+    def assembly_types(self) -> list[AssemblyType]:
+        """Determine which assembly types are applicable for this manifest."""
+        has_pacbio = bool(self.pacbio_reads)
+        has_ont = bool(self.ont_reads)
+        has_hic = bool(self.hic_reads)
+        return _resolve_assembly_types(
+            dataset_id=self.dataset_id,
+            assembly_version=self.assembly_version,
+            has_pacbio=has_pacbio,
+            has_ont=has_ont,
+            has_hic=has_hic,
+            mito_code=self.mito_code,
+            mito_hmm_name=self.mito_hmm_name,
+            plastid_hmm_name=self.plastid_hmm_name,
+            busco_lineage=self.busco_lineage,
+            mitohifi_reference_species=self.mitohifi_reference_species,
+        )
+
+    @property
+    def genomic_assembly_types(self) -> list[AssemblyType]:
+        """Assembly types that produce primary/haplotigs assemblies."""
+        return [at for at in self.assembly_types if at.is_genomic]
+
+    @property
+    def organelle_assembly_types(self) -> list[AssemblyType]:
+        """Assembly types that produce mito/plastid assemblies."""
+        return [at for at in self.assembly_types if at.is_organelle]
+
+    def get_assembly_type(self, name: str) -> AssemblyType:
+        """Look up an assembly type by name."""
+        for at in self.assembly_types:
+            if at.name == name:
+                return at
+        raise KeyError(
+            f"Assembly type '{name}' not found. "
+            f"Available: {[at.name for at in self.assembly_types]}"
+        )
+
+    def assembly_output_paths(self) -> dict[str, dict[str, Path]]:
+        """All assembly output paths keyed by assembly type name."""
+        return {at.name: at.outputs for at in self.assembly_types}
 
     # ReadFileCollection accessors
 
@@ -379,7 +616,30 @@ class Manifest(BaseModel):
         """
         return self.render_template(Path(template_path).read_text(), **kwargs)
 
+    @computed_field
+    @property
+    def read_data_groups(self) -> list[dict[str, Any]]:
+        """Read groups formatted for the genomeassembly data template.
 
-def natural_sort_key(s: str) -> list:
-    """Convert string to list for natural sorting (handles embedded numbers)."""
-    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
+        Returns a list of dicts with 'id', 'platform', and 'reads' keys,
+        suitable for direct iteration in the data.yaml.j2 template.
+        """
+        _PLATFORM_MAP = {
+            "PACBIO_SMRT": "pacbio_hifi",
+            "OXFORD_NANOPORE": "oxford_nanopore",
+            "Hi-C": "illumina_hic",
+        }
+        groups = []
+        for data_type in self.all_data_types:
+            rfc = self.by_data_type(data_type)
+            if not rfc:
+                continue
+            platform = _PLATFORM_MAP.get(data_type, data_type)
+            groups.append(
+                {
+                    "id": self.dataset_id,
+                    "platform": platform,
+                    "reads": rfc.flat_paths("qc"),
+                }
+            )
+        return groups

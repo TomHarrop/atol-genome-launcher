@@ -1,0 +1,58 @@
+{
+    "pacbio_hifi.purged": {
+        "long_read_platform": "pacbio_hifi",
+        "requires_hic": false,
+        "assembler": "hifiasm",
+        "outputs": {
+            "primary": "{dataset_id}.{assembly_version}/{dataset_id}.pacbio_hifi.purged.primary.fa.gz",
+            "haplotigs": "{dataset_id}.{assembly_version}/{dataset_id}.pacbio_hifi.purged.haplotigs.fa.gz"
+        }
+    },
+    "oxford_nanopore.purged": {
+        "long_read_platform": "oxford_nanopore",
+        "requires_hic": false,
+        "assembler": "hifiasm",
+        "outputs": {
+            "primary": "{dataset_id}.{assembly_version}/{dataset_id}.oxford_nanopore.purged.primary.fa.gz",
+            "haplotigs": "{dataset_id}.{assembly_version}/{dataset_id}.oxford_nanopore.purged.haplotigs.fa.gz"
+        }
+    },
+    "pacbio_hifi.phased": {
+        "long_read_platform": "pacbio_hifi",
+        "requires_hic": true,
+        "assembler": "hifiasm",
+        "outputs": {
+            "primary": "{dataset_id}.{assembly_version}/{dataset_id}.pacbio_hifi.phased.primary.fa.gz",
+            "haplotigs": "{dataset_id}.{assembly_version}/{dataset_id}.pacbio_hifi.phased.haplotigs.fa.gz"
+        }
+    },
+    "oxford_nanopore.phased": {
+        "long_read_platform": "oxford_nanopore",
+        "requires_hic": true,
+        "assembler": "hifiasm",
+        "outputs": {
+            "primary": "{dataset_id}.{assembly_version}/{dataset_id}.oxford_nanopore.phased.primary.fa.gz",
+            "haplotigs": "{dataset_id}.{assembly_version}/{dataset_id}.oxford_nanopore.phased.haplotigs.fa.gz"
+        }
+    },
+    "oatk": {
+        "long_read_platform": "pacbio_hifi",
+        "requires_hic": false,
+        "requires_hmm": true,
+        "assembler": "oatk",
+        "outputs": {
+            "mito": "{dataset_id}.{assembly_version}/{dataset_id}.oatk.mito.fa.gz",
+            "plastid": "{dataset_id}.{assembly_version}/{dataset_id}.oatk.plastid.fa.gz"
+        }
+    },
+    "mitohifi": {
+        "long_read_platform": "pacbio_hifi",
+        "requires_hic": false,
+        "requires_mitohifi_reference_species": true,
+        "assembler": "mitohifi",
+        "outputs": {
+            "mito": "{dataset_id}.{assembly_version}/{dataset_id}.mitohifi.mito.fa.gz",
+            "plastid": "{dataset_id}.{assembly_version}/{dataset_id}.mitohifi.plastid.fa.gz"
+        }
+    }
+}

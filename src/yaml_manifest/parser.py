@@ -15,6 +15,8 @@ _KNOWN_KEYS = {
     "hic_motif",
     "mito_code",
     "mito_hmm_name",
+    "mitohifi_reference_species",
+    "plastid_hmm_name",
     "reads",
 }
 
@@ -47,6 +49,8 @@ def parse_config(raw: dict) -> Manifest:
         hic_motif=raw.get("hic_motif"),
         mito_code=raw.get("mito_code"),
         mito_hmm_name=raw.get("mito_hmm_name"),
+        mitohifi_reference_species=raw.get("mitohifi_reference_species"),
+        plastid_hmm_name=raw.get("plastid_hmm_name"),
         read_files=read_files,
         extra=extra,
     )
