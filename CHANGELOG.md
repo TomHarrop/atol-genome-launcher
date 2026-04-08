@@ -1,6 +1,19 @@
 Changelog
 =========
 
+0.10.0 (2026-04-08)
+-------------------
+
+New
+
+~~~
+- Draft logic for generating genomeassembly v1+ templates. [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Don't upload BAM files from genomeassembly. [Tom Harrop]
+
 0.9.2 (2026-04-02)
 ------------------
 
