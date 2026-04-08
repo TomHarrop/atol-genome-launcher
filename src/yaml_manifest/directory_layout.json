@@ -55,6 +55,7 @@
             "pipeline_runscript": "scripts/genomeassembly.sh",
             "upload": {
                 "exclude_patterns": [
+                    "*.bam",
                     "*.bin",
                     "*.ktab.*"
                 ],
