@@ -1,4 +1,4 @@
-busco_lineage: "sauropsida_odb10"
+busco_lineage: "sauropsida"
 dataset_id: "aBcDe1"
 assembly_version: 6
 hic_motif: "GATC,GANTC,CTNAG,TTAA"

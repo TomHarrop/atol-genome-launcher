@@ -1,5 +1,5 @@
 {%- for at in assembly_types %}
-- id: {{ dataset_id }}.{{ at.name }}
+- id: {{ dataset_id }}.{{ assembly_version }}.{{ at.name }}
   assembler: "{{ at.assembler }}"
   long_read_dataset: {{ dataset_id }}
   long_read_platform: {{ at.long_read_platform }}
@@ -12,7 +12,7 @@
   purge: true
 {%- endif %}
 {%- if at.busco_lineage %}
-  busco_lineage: {{ at.busco_lineage }}
+  busco_lineage: {{ at.busco_lineage }}_odb12
 {%- endif %}
 {%- if at.assembler == "hifiasm" %}
   find_mito: {{ at.find_mito | lower }}

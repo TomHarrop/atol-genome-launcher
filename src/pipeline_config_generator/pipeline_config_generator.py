@@ -38,6 +38,8 @@ def render_template(manifest, template_path, outfile):
     # render template
     rendered = manifest.render_template_file(template_path, **context)
 
+    raise ValueError(manifest.assembly_types)
+
     raise ValueError(rendered)
 
     # ---- write output ----

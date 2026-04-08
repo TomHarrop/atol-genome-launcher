@@ -55,18 +55,6 @@ class AssemblyType(BaseModel):
 
     @computed_field
     @property
-    def is_genomic(self) -> bool:
-        """True if this assembly type produces primary/haplotigs."""
-        return "primary" in self.outputs
-
-    @computed_field
-    @property
-    def is_organelle(self) -> bool:
-        """True if this assembly type produces mito/plastid."""
-        return "mito" in self.outputs or "plastid" in self.outputs
-
-    @computed_field
-    @property
     def is_phased(self) -> bool:
         return self.assembler == "hifiasm" and self.requires_hic
 
@@ -75,26 +63,11 @@ class AssemblyType(BaseModel):
     def is_purged(self) -> bool:
         return self.assembler == "hifiasm" and not self.requires_hic
 
-    @property
-    def primary(self) -> Optional[Path]:
-        return self.outputs.get("primary")
-
-    @property
-    def haplotigs(self) -> Optional[Path]:
-        return self.outputs.get("haplotigs")
-
-    @property
-    def mito(self) -> Optional[Path]:
-        return self.outputs.get("mito")
-
-    @property
-    def plastid(self) -> Optional[Path]:
-        return self.outputs.get("plastid")
-
 
 def _resolve_assembly_types(
     dataset_id: str,
     assembly_version: int,
+    results_base_dir: Path,
     has_pacbio: bool,
     has_ont: bool,
     has_hic: bool,
@@ -106,7 +79,10 @@ def _resolve_assembly_types(
 ) -> list[AssemblyType]:
     """Determine which assembly types apply based on available data."""
     results = []
-    fmt = {"dataset_id": dataset_id, "assembly_version": assembly_version}
+    fmt = {
+        "dataset_id": dataset_id,
+        "assembly_version": assembly_version,
+    }
 
     for type_name, config in _ASSEMBLY_TYPES.items():
         platform = config["long_read_platform"]
@@ -121,6 +97,10 @@ def _resolve_assembly_types(
             "pacbio_hifi": "PACBIO_SMRT",
             "oxford_nanopore": "OXFORD_NANOPORE",
         }
+
+        # Check if we have the required data for this assembly type. The
+        # strategy is to `continue` (exit the loop) if any of the required data
+        # for this assembly type is not found.
         data_type = _PLATFORM_TO_DATA_TYPE.get(platform)
         if data_type == "PACBIO_SMRT" and not has_pacbio:
             continue
@@ -128,8 +108,6 @@ def _resolve_assembly_types(
             continue
 
         # Check Hi-C requirement for hifiasm assemblies:
-        # - phased requires Hi-C
-        # - purged is skipped when Hi-C is available (phased takes priority)
         if requires_hic and not has_hic:
             continue
         if not requires_hic and has_hic and assembler == "hifiasm":
@@ -146,41 +124,52 @@ def _resolve_assembly_types(
                 continue
 
         # Resolve output paths
-        outputs = {
-            key: Path(template.format(**fmt))
-            for key, template in config["outputs"].items()
-        }
+        outputs = {}
+        for key, template in config["outputs"].items():
+            if template is None:
+                raise NotImplementedError(
+                    f"Add the output config for {type_name} to assembly_types.json"
+                )
+            outputs[key] = Path(results_base_dir, template.format(**fmt))
 
         # Build assembler-specific fields
         oatk_mito_hmm = None
         oatk_plastid_hmm = None
         mitohifi_mito_genetic_code = None
         mitohifi_ref_species = None
-        resolved_busco = None
         find_mito = False
         find_plastid = False
 
         if assembler == "hifiasm":
-            if busco_lineage:
-                # Strip any existing _odbNN suffix before appending _odb12
-                import re as _re
-                base = _re.sub(r"_odb\d+$", "", busco_lineage)
-                resolved_busco = f"{base}_odb12"
             # hifiasm gets find_mito/find_plastid when
             # mitohifi_reference_species is available
             if mitohifi_reference_species:
                 find_mito = True
-                find_plastid = True
+                find_plastid = True  # FIXME - should only be for plants
                 mitohifi_ref_species = mitohifi_reference_species
                 mitohifi_mito_genetic_code = mito_code
+
+            if find_mito is True:
+                outputs["MITO"] = Path(
+                    results_base_dir,
+                    f"{dataset_id}.{assembly_version}.{type_name}",
+                    "mito",
+                    "final_mitogenome.fasta",
+                )
+
+            if find_plastid is True:
+                outputs["MITO"] = Path(
+                    results_base_dir,
+                    f"{dataset_id}.{assembly_version}.{type_name}",
+                    "plastid",
+                    "final_mitogenome.fasta",
+                )
 
         elif assembler == "oatk":
             if mito_hmm_name:
                 oatk_mito_hmm = _OATK_HMM_BASE_URL.format(hmm_name=mito_hmm_name)
             if plastid_hmm_name:
-                oatk_plastid_hmm = _OATK_HMM_BASE_URL.format(
-                    hmm_name=plastid_hmm_name
-                )
+                oatk_plastid_hmm = _OATK_HMM_BASE_URL.format(hmm_name=plastid_hmm_name)
 
         elif assembler == "mitohifi":
             mitohifi_ref_species = mitohifi_reference_species
@@ -197,7 +186,7 @@ def _resolve_assembly_types(
                 oatk_plastid_hmm=oatk_plastid_hmm,
                 mitohifi_mito_genetic_code=mitohifi_mito_genetic_code,
                 mitohifi_reference_species=mitohifi_ref_species,
-                busco_lineage=resolved_busco,
+                busco_lineage=busco_lineage,
                 find_mito=find_mito,
                 find_plastid=find_plastid,
             )
@@ -452,9 +441,11 @@ class Manifest(BaseModel):
         has_pacbio = bool(self.pacbio_reads)
         has_ont = bool(self.ont_reads)
         has_hic = bool(self.hic_reads)
+        results_base_dir = self.get_dir("pipeline_output", pipeline="genomeassembly")
         return _resolve_assembly_types(
             dataset_id=self.dataset_id,
             assembly_version=self.assembly_version,
+            results_base_dir=results_base_dir,
             has_pacbio=has_pacbio,
             has_ont=has_ont,
             has_hic=has_hic,
@@ -464,16 +455,6 @@ class Manifest(BaseModel):
             busco_lineage=self.busco_lineage,
             mitohifi_reference_species=self.mitohifi_reference_species,
         )
-
-    @property
-    def genomic_assembly_types(self) -> list[AssemblyType]:
-        """Assembly types that produce primary/haplotigs assemblies."""
-        return [at for at in self.assembly_types if at.is_genomic]
-
-    @property
-    def organelle_assembly_types(self) -> list[AssemblyType]:
-        """Assembly types that produce mito/plastid assemblies."""
-        return [at for at in self.assembly_types if at.is_organelle]
 
     def get_assembly_type(self, name: str) -> AssemblyType:
         """Look up an assembly type by name."""
