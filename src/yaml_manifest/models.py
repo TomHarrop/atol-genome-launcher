@@ -5,6 +5,7 @@ import re
 from importlib import resources as importlib_resources
 from pathlib import Path
 from typing import Any, Optional
+from typing_extensions import deprecated
 
 from pydantic import BaseModel, field_validator, computed_field
 
@@ -526,6 +527,12 @@ class Manifest(BaseModel):
     # Pipeline-specific derived values
     @computed_field
     @property
+    @deprecated(
+        (
+            "The genomeassembly spec file now allows multiple platforms. "
+            "Choosing a long read platform for genomeassembly is deprecated."
+        )
+    )
     def genomeassembly_long_read_platform(self) -> str:
         # TODO: this needs to be adapted to the new sangertol config
         data_types = self.all_data_types
@@ -539,11 +546,22 @@ class Manifest(BaseModel):
     @computed_field
     @property
     def ascc_long_read_platform(self) -> str:
-        return (
-            "hifi"
-            if self.genomeassembly_long_read_platform == "pacbio"
-            else self.genomeassembly_long_read_platform
-        )
+        if self.pacbio_reads:
+            return "hifi"
+        elif self.ont_reads:
+            return "ont"
+        else:
+            raise ValueError("No long reads available for ASCC")
+
+    @computed_field
+    @property
+    def ascc_long_reads(self) -> list[Path]:
+        if self.pacbio_reads:
+            return self.pacbio_reads.flat_paths("qc")
+        elif self.ont_reads:
+            return self.ont_reads.flat_paths("qc")
+        else:
+            raise ValueError("No long reads available for ASCC")
 
     # Standardised directory structure
 

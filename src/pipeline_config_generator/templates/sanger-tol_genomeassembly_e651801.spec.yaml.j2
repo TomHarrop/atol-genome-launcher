@@ -16,13 +16,13 @@
 {%- endif %}
 {%- if at.assembler == "hifiasm" %}
   find_mito: {{ at.find_mito | lower }}
-  find_plastid: {{ at.find_plastid | lower }}
+  find_plastid: {{ at.find_plastid | lower }} # FIXME: remove if this isn't a plant
 {%- endif %}
 {%- if at.mitohifi_mito_genetic_code %}
   mitohifi_mito_genetic_code: {{ at.mitohifi_mito_genetic_code }}
 {%- endif %}
 {%- if at.mitohifi_reference_species %}
-  mitohifi_reference_species: "{{ at.mitohifi_reference_species }}"
+  mitohifi_reference_species: "{{ at.mitohifi_reference_species }}" # FIXME: look this up manually for now
 {%- endif %}
 {%- if at.oatk_mito_hmm %}
   oatk_mito_hmm: {{ at.oatk_mito_hmm }}

@@ -41,8 +41,8 @@
         "requires_hmm": true,
         "assembler": "oatk",
         "outputs": {
-            "MITO": "{dataset_id}.{assembly_version}/{dataset_id}.oatk.mito.fa.gz",
-            "PLASTID": "{dataset_id}.{assembly_version}/{dataset_id}.oatk.plastid.fa.gz"
+            "MITO": "{dataset_id}.{assembly_version}/{dataset_id}.oatk/FIXME.fa",
+            "PLASTID": "{dataset_id}.{assembly_version}/{dataset_id}.oatk/FIXME.fa"
         }
     },
     "mitohifi": {
@@ -51,8 +51,8 @@
         "requires_mitohifi_reference_species": true,
         "assembler": "mitohifi",
         "outputs": {
-            "MITO": "{dataset_id}.{assembly_version}/{dataset_id}.mitohifi.mito.fa.gz",
-            "PLASTID": "{dataset_id}.{assembly_version}/{dataset_id}.mitohifi.plastid.fa.gz"
+            "MITO": "{dataset_id}.{assembly_version}/{dataset_id}.mitohifi/FIXME.fa",
+            "PLASTID": "{dataset_id}.{assembly_version}/{dataset_id}.mitohifi/FIXME.fa"
         }
     }
 }

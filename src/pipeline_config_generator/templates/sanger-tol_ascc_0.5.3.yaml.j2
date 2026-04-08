@@ -1,5 +1,5 @@
 reads_path:
-{%- for reads in long_reads %}
+{%- for reads in ascc_long_reads %}
   - ${PWD}/{{ reads }}
 {%- endfor %}
 reads_type: "{{ ascc_long_read_platform }}"
