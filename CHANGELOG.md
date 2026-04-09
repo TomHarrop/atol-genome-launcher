@@ -1,11 +1,19 @@
 Changelog
 =========
 
+0.10.1 (2026-04-09)
+-------------------
+
+Changes
+
+~~~~~~~
+- Handle new manifest keys. [Tom Harrop]
+
+
 0.10.0 (2026-04-08)
 -------------------
 
 New
-
 ~~~
 - Draft logic for generating genomeassembly v1+ templates. [Tom Harrop]
 
