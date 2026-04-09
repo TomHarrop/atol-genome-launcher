@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Optional
 from typing_extensions import deprecated
 
-from pydantic import BaseModel, field_validator, computed_field
+from pydantic import BaseModel, field_validator, computed_field, model_validator
 
 from yaml_manifest.layout import (
     get_dir,
@@ -46,13 +46,14 @@ class AssemblyType(BaseModel):
     outputs: dict[str, Path]
 
     # Optional assembler-specific configuration
-    oatk_mito_hmm: Optional[str] = None
-    oatk_plastid_hmm: Optional[str] = None
-    mitohifi_mito_genetic_code: Optional[int] = None
-    mitohifi_reference_species: Optional[str] = None
-    busco_lineage: Optional[str] = None
+    busco_odb10_dataset_name: Optional[str] = None
+    busco_odb12_dataset_name: Optional[str] = None
     find_mito: bool = False
     find_plastid: bool = False
+    mitohifi_mito_genetic_code: Optional[int] = None
+    mitohifi_reference_species: Optional[str] = None
+    oatk_mito_hmm: Optional[str] = None
+    oatk_plastid_hmm: Optional[str] = None
 
     @computed_field
     @property
@@ -66,16 +67,17 @@ class AssemblyType(BaseModel):
 
 
 def _resolve_assembly_types(
-    dataset_id: str,
     assembly_version: int,
-    results_base_dir: Path,
-    has_pacbio: bool,
-    has_ont: bool,
+    dataset_id: str,
     has_hic: bool,
+    has_ont: bool,
+    has_pacbio: bool,
+    results_base_dir: Path,
+    busco_odb10_dataset_name: Optional[str],
+    busco_odb12_dataset_name: Optional[str],
     mito_code: Optional[int],
-    mito_hmm_name: Optional[str],
-    plastid_hmm_name: Optional[str],
-    busco_lineage: Optional[str],
+    oatk_hmm_name: Optional[str],
+    find_plastid: Optional[bool] = False,
     mitohifi_reference_species: Optional[str] = None,
 ) -> list[AssemblyType]:
     """Determine which assembly types apply based on available data."""
@@ -116,7 +118,7 @@ def _resolve_assembly_types(
 
         # oatk requires at least one HMM model
         if requires_hmm:
-            if not mito_hmm_name and not plastid_hmm_name:
+            if not oatk_hmm_name:
                 continue
 
         # mitohifi requires mitohifi_reference_species
@@ -139,15 +141,19 @@ def _resolve_assembly_types(
         mitohifi_mito_genetic_code = None
         mitohifi_ref_species = None
         find_mito = False
-        find_plastid = False
 
         if assembler == "hifiasm":
             # hifiasm gets find_mito/find_plastid when
             # mitohifi_reference_species is available
             if mitohifi_reference_species:
                 find_mito = True
-                find_plastid = True  # FIXME - should only be for plants
                 mitohifi_ref_species = mitohifi_reference_species
+                mitohifi_mito_genetic_code = mito_code
+            # FIXME. remove this else block after we have automatic
+            # mitohifi_reference_species lookup
+            else:
+                find_mito = True
+                mitohifi_ref_species = " # FIXME. Look up manually for now."
                 mitohifi_mito_genetic_code = mito_code
 
             if find_mito is True:
@@ -167,10 +173,11 @@ def _resolve_assembly_types(
                 )
 
         elif assembler == "oatk":
-            if mito_hmm_name:
-                oatk_mito_hmm = _OATK_HMM_BASE_URL.format(hmm_name=mito_hmm_name)
-            if plastid_hmm_name:
-                oatk_plastid_hmm = _OATK_HMM_BASE_URL.format(hmm_name=plastid_hmm_name)
+            if oatk_hmm_name:
+                oatk_mito_hmm = _OATK_HMM_BASE_URL.format(hmm_name=oatk_hmm_name)
+            if find_plastid and oatk_hmm_name:
+                hmm_name = "_".join([oatk_hmm_name.split("_")[0], "pltd"])
+                oatk_plastid_hmm = _OATK_HMM_BASE_URL.format(hmm_name=hmm_name)
 
         elif assembler == "mitohifi":
             mitohifi_ref_species = mitohifi_reference_species
@@ -187,9 +194,10 @@ def _resolve_assembly_types(
                 oatk_plastid_hmm=oatk_plastid_hmm,
                 mitohifi_mito_genetic_code=mitohifi_mito_genetic_code,
                 mitohifi_reference_species=mitohifi_ref_species,
-                busco_lineage=busco_lineage,
                 find_mito=find_mito,
                 find_plastid=find_plastid,
+                busco_odb10_dataset_name=busco_odb10_dataset_name,
+                busco_odb12_dataset_name=busco_odb12_dataset_name,
             )
         )
 
@@ -402,22 +410,35 @@ class Manifest(BaseModel):
     """
 
     # Specimen metadata
-    dataset_id: str
     assembly_version: int = 0
+    dataset_id: str
     scientific_name: str
     taxon_id: int
-    busco_lineage: Optional[str] = None
+
+    busco_odb10_dataset_name: Optional[str] = None
+    busco_odb12_dataset_name: Optional[str] = None
+    find_plastid: Optional[bool] = False
     hic_motif: Optional[str] = None
     mito_code: Optional[int] = None
-    mito_hmm_name: Optional[str] = None
-    plastid_hmm_name: Optional[str] = None
     mitohifi_reference_species: Optional[str] = None
+    oatk_hmm_name: Optional[str] = None
 
     # Read data
     read_files: list[ReadFile]
 
     # Catch-all for unknown metadata fields
     extra: dict[str, Any] = {}
+
+    @model_validator(mode="after")
+    def _check_long_reads(self) -> "Manifest":
+        has_pacbio = any(rf.data_type == "PACBIO_SMRT" for rf in self.read_files)
+        has_ont = any(rf.data_type == "OXFORD_NANOPORE" for rf in self.read_files)
+        if not has_pacbio and not has_ont:
+            raise ValueError(
+                "Manifest must contain at least one long read dataset "
+                "(PACBIO_SMRT or OXFORD_NANOPORE)"
+            )
+        return self
 
     @classmethod
     def from_yaml(cls, path: Path) -> "Manifest":
@@ -444,17 +465,18 @@ class Manifest(BaseModel):
         has_hic = bool(self.hic_reads)
         results_base_dir = self.get_dir("pipeline_output", pipeline="genomeassembly")
         return _resolve_assembly_types(
-            dataset_id=self.dataset_id,
             assembly_version=self.assembly_version,
-            results_base_dir=results_base_dir,
-            has_pacbio=has_pacbio,
-            has_ont=has_ont,
+            busco_odb10_dataset_name=self.busco_odb10_dataset_name,
+            busco_odb12_dataset_name=self.busco_odb12_dataset_name,
+            dataset_id=self.dataset_id,
+            find_plastid=self.find_plastid,
             has_hic=has_hic,
+            has_ont=has_ont,
+            has_pacbio=has_pacbio,
             mito_code=self.mito_code,
-            mito_hmm_name=self.mito_hmm_name,
-            plastid_hmm_name=self.plastid_hmm_name,
-            busco_lineage=self.busco_lineage,
             mitohifi_reference_species=self.mitohifi_reference_species,
+            oatk_hmm_name=self.oatk_hmm_name,
+            results_base_dir=results_base_dir,
         )
 
     def get_assembly_type(self, name: str) -> AssemblyType:
@@ -548,20 +570,14 @@ class Manifest(BaseModel):
     def ascc_long_read_platform(self) -> str:
         if self.pacbio_reads:
             return "hifi"
-        elif self.ont_reads:
-            return "ont"
-        else:
-            raise ValueError("No long reads available for ASCC")
+        return "ont"
 
     @computed_field
     @property
     def ascc_long_reads(self) -> list[Path]:
         if self.pacbio_reads:
             return self.pacbio_reads.flat_paths("qc")
-        elif self.ont_reads:
-            return self.ont_reads.flat_paths("qc")
-        else:
-            raise ValueError("No long reads available for ASCC")
+        return self.ont_reads.flat_paths("qc")
 
     # Standardised directory structure
 

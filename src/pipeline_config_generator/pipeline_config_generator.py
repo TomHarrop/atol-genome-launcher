@@ -28,7 +28,8 @@ def template_dir():
 
 def render_template(manifest, template_path, outfile):
 
-    # add additional args
+    # ReadFileCollection properties aren't included in model_dump(),
+    # so pass them explicitly for templates that need resolved read paths.
     context = {
         "pacbio_reads": manifest.pacbio_reads.flat_paths("qc"),
         "ont_reads": manifest.ont_reads.flat_paths("qc"),

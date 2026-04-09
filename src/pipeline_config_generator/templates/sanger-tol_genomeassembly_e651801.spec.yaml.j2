@@ -11,18 +11,18 @@
 {%- if at.is_purged %}
   purge: true
 {%- endif %}
-{%- if at.busco_lineage %}
-  busco_lineage: {{ at.busco_lineage }}_odb12
+{%- if at.busco_odb12_dataset_name %}
+  busco_lineage: {{ at.busco_odb12_dataset_name }}_odb12
 {%- endif %}
 {%- if at.assembler == "hifiasm" %}
   find_mito: {{ at.find_mito | lower }}
-  find_plastid: {{ at.find_plastid | lower }} # FIXME: remove if this isn't a plant
+  find_plastid: {{ at.find_plastid | lower }}
 {%- endif %}
 {%- if at.mitohifi_mito_genetic_code %}
   mitohifi_mito_genetic_code: {{ at.mitohifi_mito_genetic_code }}
 {%- endif %}
 {%- if at.mitohifi_reference_species %}
-  mitohifi_reference_species: "{{ at.mitohifi_reference_species }}" # FIXME: look this up manually for now
+  mitohifi_reference_species: "{{ at.mitohifi_reference_species }}"
 {%- endif %}
 {%- if at.oatk_mito_hmm %}
   oatk_mito_hmm: {{ at.oatk_mito_hmm }}

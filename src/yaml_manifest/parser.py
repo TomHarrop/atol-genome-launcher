@@ -8,16 +8,17 @@ from yaml_manifest.models import BpaFile, Manifest, ReadFile
 # Keys that map to explicit Manifest fields
 _KNOWN_KEYS = {
     "assembly_version",
+    "busco_odb10_dataset_name",
+    "busco_odb12_dataset_name",
     "dataset_id",
-    "scientific_name",
-    "taxon_id",
-    "busco_lineage",
+    "find_plastid",
     "hic_motif",
     "mito_code",
-    "mito_hmm_name",
     "mitohifi_reference_species",
-    "plastid_hmm_name",
+    "oatk_hmm_name",
     "reads",
+    "scientific_name",
+    "taxon_id",
 }
 
 
@@ -45,12 +46,13 @@ def parse_config(raw: dict) -> Manifest:
         assembly_version=raw.get("assembly_version", ""),
         scientific_name=raw.get("scientific_name", ""),
         taxon_id=raw.get("taxon_id", 0),
-        busco_lineage=raw.get("busco_lineage"),
+        busco_odb10_dataset_name=raw.get("busco_odb10_dataset_name"),
+        busco_odb12_dataset_name=raw.get("busco_odb12_dataset_name"),
         hic_motif=raw.get("hic_motif"),
         mito_code=raw.get("mito_code"),
-        mito_hmm_name=raw.get("mito_hmm_name"),
+        oatk_hmm_name=raw.get("oatk_hmm_name"),
         mitohifi_reference_species=raw.get("mitohifi_reference_species"),
-        plastid_hmm_name=raw.get("plastid_hmm_name"),
+        find_plastid=raw.get("find_plastid", False),
         read_files=read_files,
         extra=extra,
     )

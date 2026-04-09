@@ -42,7 +42,7 @@ def parse_arguments():
         "--workflow_tag",
         help="genome-launcher-workflow tag",
         type=str,
-        default="0.1.0",
+        default="0.6.1",
     )
 
     settings_parser.add_argument(
