@@ -19,6 +19,8 @@ from yaml_manifest.layout import (
     _collect_upload_files,
 )
 
+from yaml_manifest.parser import natural_sort_key
+
 _ASSEMBLY_TYPES_FILE = "assembly_types.json"
 
 _OATK_HMM_BASE_URL = (

@@ -66,3 +66,8 @@ def _parse_read_file(data_type: str, filename: str, file_data) -> ReadFile:
     else:
         single_end = [BpaFile(**f) for f in file_data]
         return ReadFile(name=filename, data_type=data_type, single_end=single_end)
+
+
+def natural_sort_key(s: str) -> list:
+    """Convert string to list for natural sorting (handles embedded numbers)."""
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]

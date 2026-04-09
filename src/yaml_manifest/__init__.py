@@ -2,7 +2,7 @@
 
 from yaml_manifest.layout import get_dir
 from yaml_manifest.models import AssemblyType, BpaFile, Manifest, ReadFile, ReadFileCollection
-from yaml_manifest.parser import load_manifest, parse_config
+from yaml_manifest.parser import load_manifest, parse_config, natural_sort_key
 
 __all__ = [
     "AssemblyType",
@@ -13,4 +13,5 @@ __all__ = [
     "get_dir",
     "load_manifest",
     "parse_config",
+    "natural_sort_key",
 ]
