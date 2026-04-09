@@ -19,13 +19,17 @@ from yaml_manifest.layout import (
     _collect_upload_files,
 )
 
-from yaml_manifest.parser import natural_sort_key
 
 _ASSEMBLY_TYPES_FILE = "assembly_types.json"
 
 _OATK_HMM_BASE_URL = (
     "https://github.com/c-zhou/OatkDB/raw/main/v20230921/{hmm_name}.fam"
 )
+
+
+def natural_sort_key(s: str) -> list:
+    """Convert string to list for natural sorting (handles embedded numbers)."""
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
 
 
 def _load_assembly_types() -> dict[str, dict]:

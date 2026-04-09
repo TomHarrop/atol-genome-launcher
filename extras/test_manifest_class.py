@@ -6,7 +6,7 @@ from yaml_manifest import Manifest
 # testing
 manifest_file = Path("test-data", "dummy.yaml")
 template_path = Path(
-    "src/assembly_config_generator/templates/sanger-tol_genomeassembly_0.50.0.yaml.j2"
+    "src/pipeline_config_generator/templates/sanger-tol_genomeassembly_0.50.0.yaml.j2"
 )
 
 manifest = Manifest.from_yaml(manifest_file)
