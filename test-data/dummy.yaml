@@ -1,10 +1,12 @@
-busco_lineage: "sauropsida"
-dataset_id: "aBcDe1"
 assembly_version: 6
+busco_odb10_dataset_name: "sauropsida"
+busco_odb12_dataset_name: "squamata"
+dataset_id: "aBcDe1"
+find_plastid: false
 hic_motif: "GATC,GANTC,CTNAG,TTAA"
 mito_code: 2
 mitohifi_reference_species: "Cymbopogon citratus"
-mito_hmm_name: "lepidosauria_mito"
+oatk_hmm_name: "lepidosauria_mito"
 scientific_name: "Saiphos equalis"
 taxon_id: 172942
 reads:
