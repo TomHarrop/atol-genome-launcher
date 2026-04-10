@@ -34,6 +34,13 @@ ascc_dir = manifest.get_dir("pipeline_output", pipeline="ascc")
 pacbio_read_paths = [x.paths("qc") for x in manifest.pacbio_reads]
 hic_reads = [x.paths("qc") for x in manifest.hic_reads]
 
+# TODO. The manifest knows where *some* output should be, but it's not complete
+# yet.
+pacbio_hifi_phased = manifest.assembly_types[0]
+print(
+    f"{pacbio_hifi_phased.name} primary output file: {pacbio_hifi_phased.outputs["PRIMARY"]}"
+)
+
 # render any template based on keys in the template that exactly match keys in
 # the config. Pass additional values that don't come directly from the Manifest
 # as kwargs
