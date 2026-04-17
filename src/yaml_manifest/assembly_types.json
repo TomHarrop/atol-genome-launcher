@@ -4,8 +4,14 @@
         "requires_hic": false,
         "assembler": "hifiasm",
         "outputs": {
-            "PRIMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/asm.purged.fa.gz",
-            "HAPLO": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/asm.htigs.all.fa.gz"
+            "genomeassembly": {
+                "PRIMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/asm.purged.fa.gz",
+                "HAPLO": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/asm.htigs.all.fa.gz"
+            },
+            "ascc": {
+                "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
+                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
+            }
         }
     },
     "oxford_nanopore.purged": {
@@ -13,8 +19,14 @@
         "requires_hic": false,
         "assembler": "hifiasm",
         "outputs": {
-            "PRIMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/asm.purged.fa.gz",
-            "HAPLO": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/asm.htigs.all.fa.gz"
+            "genomeassembly": {
+                "PRIMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/asm.purged.fa.gz",
+                "HAPLO": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/asm.htigs.all.fa.gz"
+            },
+            "ascc": {
+                "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
+                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
+            }
         }
     },
     "pacbio_hifi.phased": {
@@ -22,8 +34,14 @@
         "requires_hic": true,
         "assembler": "hifiasm",
         "outputs": {
-            "PRIMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/asm_hap1_scaffolds_final.fa.gz",
-            "HAPLO": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/asm_hap2_scaffolds_final.fa.gz"
+            "genomeassembly": {
+                "PRIMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/asm_hap1_scaffolds_final.fa.gz",
+                "HAPLO": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/asm_hap2_scaffolds_final.fa.gz"
+            },
+            "ascc": {
+                "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
+                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
+            }
         }
     },
     "oxford_nanopore.phased": {
@@ -31,8 +49,14 @@
         "requires_hic": true,
         "assembler": "hifiasm",
         "outputs": {
-            "PRIMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/asm_hap1_scaffolds_final.fa.gz",
-            "HAPLO": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/asm_hap2_scaffolds_final.fa.gz"
+            "genomeassembly": {
+                "PRIMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/asm_hap1_scaffolds_final.fa.gz",
+                "HAPLO": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/asm_hap2_scaffolds_final.fa.gz"
+            },
+            "ascc": {
+                "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
+                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
+            }
         }
     },
     "oatk": {
@@ -41,8 +65,10 @@
         "requires_hmm": true,
         "assembler": "oatk",
         "outputs": {
-            "MITO": "{dataset_id}.{assembly_version}.oatk/FIXME.fa",
-            "PLASTID": "{dataset_id}.{assembly_version}.oatk/FIXME.fa"
+            "genomeassembly": {
+                "MITO": "{dataset_id}.{assembly_version}.oatk/asm.k1000_c320.mito.ctg.fasta",
+                "PLASTID": "{dataset_id}.{assembly_version}.oatk/asm.k1000_c320.pltd.ctg.fasta"
+            }
         }
     },
     "mitohifi": {
@@ -51,8 +77,10 @@
         "requires_mitohifi_reference_species": true,
         "assembler": "mitohifi",
         "outputs": {
-            "MITO": "{dataset_id}.{assembly_version}.mitohifi/FIXME.fa",
-            "PLASTID": "{dataset_id}.{assembly_version}.mitohifi/FIXME.fa"
+            "genomeassembly": {
+                "MITO": "{dataset_id}.{assembly_version}.mitohifi/FIXME.fa",
+                "PLASTID": "{dataset_id}.{assembly_version}.mitohifi/FIXME.fa"
+            }
         }
     }
 }

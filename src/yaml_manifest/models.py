@@ -49,7 +49,7 @@ class AssemblyType(BaseModel):
     long_read_platform: str
     requires_hic: bool
     assembler: str
-    outputs: dict[str, Path]
+    outputs: dict[str, dict[str, Path]]
 
     # Optional assembler-specific configuration
     busco_odb10_dataset_name: Optional[str] = None
@@ -57,7 +57,7 @@ class AssemblyType(BaseModel):
     find_mito: bool = False
     find_plastid: bool = False
     mitohifi_mito_genetic_code: Optional[int] = None
-    mitohifi_reference_species: Optional[str] = None
+    mitohifi_references_pecies: Optional[str] = None
     oatk_mito_hmm: Optional[str] = None
     oatk_plastid_hmm: Optional[str] = None
 
@@ -71,6 +71,9 @@ class AssemblyType(BaseModel):
     def is_purged(self) -> bool:
         return self.assembler == "hifiasm" and not self.requires_hic
 
+    def outputs_for(self, pipeline: str) -> dict[str, Path]:
+        return self.outputs.get(pipeline, {})
+
 
 def _resolve_assembly_types(
     assembly_version: int,
@@ -78,7 +81,7 @@ def _resolve_assembly_types(
     has_hic: bool,
     has_ont: bool,
     has_pacbio: bool,
-    results_base_dir: Path,
+    pipeline_base_dirs: dict[str, Path],
     busco_odb10_dataset_name: Optional[str],
     busco_odb12_dataset_name: Optional[str],
     mito_code: Optional[int],
@@ -134,12 +137,11 @@ def _resolve_assembly_types(
 
         # Resolve output paths
         outputs = {}
-        for key, template in config["outputs"].items():
-            if template is None:
-                raise NotImplementedError(
-                    f"Add the output config for {type_name} to assembly_types.json"
-                )
-            outputs[key] = Path(results_base_dir, template.format(**fmt))
+        for pipeline, pipeline_outputs in config["outputs"].items():
+            outputs[pipeline] = {
+                key: Path(pipeline_base_dirs.get(pipeline, ""), template.format(**fmt))
+                for key, template in pipeline_outputs.items()
+            }
 
         # Build assembler-specific fields
         oatk_mito_hmm = None
@@ -149,6 +151,14 @@ def _resolve_assembly_types(
         find_mito = False
 
         if assembler == "hifiasm":
+            # All hifiasm modes output PRIMARY/HAPLO assemblies. Provide the
+            # combined fasta file.
+            outputs.setdefault("ascc", {})["COMBINED"] = Path(
+                pipeline_base_dirs.get("ascc", ""),
+                type_name,
+                "PRIMARY_HAPLO_combined.fasta.gz",
+            )
+
             # hifiasm gets find_mito/find_plastid when
             # mitohifi_reference_species is available
             if mitohifi_reference_species:
@@ -163,16 +173,16 @@ def _resolve_assembly_types(
                 mitohifi_mito_genetic_code = mito_code
 
             if find_mito is True:
-                outputs["MITO"] = Path(
-                    results_base_dir,
+                outputs["genomeassembly"]["MITO"] = Path(
+                    pipeline_base_dirs.get("genomeassembly", ""),
                     f"{dataset_id}.{assembly_version}.{type_name}",
                     "mito",
                     "final_mitogenome.fasta",
                 )
 
             if find_plastid is True:
-                outputs["MITO"] = Path(
-                    results_base_dir,
+                outputs["genomeassembly"]["PLASTID"] = Path(
+                    pipeline_base_dirs.get("genomeassembly", ""),
                     f"{dataset_id}.{assembly_version}.{type_name}",
                     "plastid",
                     "final_mitogenome.fasta",
@@ -469,7 +479,11 @@ class Manifest(BaseModel):
         has_pacbio = bool(self.pacbio_reads)
         has_ont = bool(self.ont_reads)
         has_hic = bool(self.hic_reads)
-        results_base_dir = self.get_dir("pipeline_output", pipeline="genomeassembly")
+        # FIXME. Why is this hard coded?
+        pipeline_base_dirs = {
+            x: self.get_dir("pipeline_output", pipeline=x)
+            for x in ["genomeassembly", "ascc"]
+        }
         return _resolve_assembly_types(
             assembly_version=self.assembly_version,
             busco_odb10_dataset_name=self.busco_odb10_dataset_name,
@@ -482,7 +496,7 @@ class Manifest(BaseModel):
             mito_code=self.mito_code,
             mitohifi_reference_species=self.mitohifi_reference_species,
             oatk_hmm_name=self.oatk_hmm_name,
-            results_base_dir=results_base_dir,
+            pipeline_base_dirs=pipeline_base_dirs,
         )
 
     def get_assembly_type(self, name: str) -> AssemblyType:
@@ -495,9 +509,9 @@ class Manifest(BaseModel):
             f"Available: {[at.name for at in self.assembly_types]}"
         )
 
-    def assembly_output_paths(self) -> dict[str, dict[str, Path]]:
-        """All assembly output paths keyed by assembly type name."""
-        return {at.name: at.outputs for at in self.assembly_types}
+    def pipeline_output_paths(self, pipeline) -> dict[str, dict[str, Path]]:
+        """All pipeline output paths keyed by output type name."""
+        return {at.name: at.outputs.get(pipeline, {}) for at in self.assembly_types}
 
     # ReadFileCollection accessors
 

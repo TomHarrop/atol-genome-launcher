@@ -5,11 +5,22 @@ from yaml_manifest import Manifest
 
 # testing
 manifest_file = Path("test-data", "dummy.yaml")
-template_path = Path(
-    "src/pipeline_config_generator/templates/sanger-tol_genomeassembly_0.50.0.yaml.j2"
+genomeassembly_template_path = Path(
+    "src/pipeline_config_generator/templates/sanger-tol_genomeassembly_e651801.spec.yaml.j2"
+)
+
+ascc_template_path = Path(
+    "src/pipeline_config_generator/templates/sanger-tol_ascc_0.5.3.yaml.j2"
+)
+
+treeval_template_path = Path(
+    "src/pipeline_config_generator/templates/sanger-tol_treeval_1.4.5.yaml.j2"
 )
 
 manifest = Manifest.from_yaml(manifest_file)
+
+# General info
+manifest.dataset_id
 
 # we can add convenience methods to the Manifest class for anything we need to
 # generate, e.g.
@@ -37,8 +48,13 @@ hic_reads = [x.paths("qc") for x in manifest.hic_reads]
 # TODO. The manifest knows where *some* output should be, but it's not complete
 # yet.
 pacbio_hifi_phased = manifest.assembly_types[0]
+
 print(
-    f"{pacbio_hifi_phased.name} primary output file: {pacbio_hifi_phased.outputs["PRIMARY"]}"
+    f"{pacbio_hifi_phased.name} primary output file: {pacbio_hifi_phased.outputs_for("genomeassembly")["PRIMARY"]}"
+)
+
+print(
+    f"{pacbio_hifi_phased.name} combined ASCC output: {pacbio_hifi_phased.outputs_for("ascc")["COMBINED"]}"
 )
 
 # render any template based on keys in the template that exactly match keys in
@@ -46,11 +62,30 @@ print(
 # as kwargs
 print(
     manifest.render_template_file(
-        template_path,
+        genomeassembly_template_path,
         long_reads=manifest.long_reads.flat_paths("qc"),
         hic_reads=manifest.hic_reads.flat_paths("qc"),
     )
 )
+
+
+print(
+    manifest.render_template_file(
+        ascc_template_path,
+        long_reads=manifest.long_reads.flat_paths("qc"),
+        hic_reads=manifest.hic_reads.flat_paths("qc"),
+    )
+)
+
+
+raise ValueError(
+    manifest.render_template_file(
+        treeval_template_path,
+        long_reads=manifest.long_reads.flat_paths("qc"),
+        hic_reads=manifest.hic_reads.flat_paths("qc"),
+    )
+)
+
 
 # the config and runscript paths are configured in directory_layout.json, e.g.
 print(f"genomeassembly pipeline_input: {manifest.pipeline_input("genomeassembly")}")
