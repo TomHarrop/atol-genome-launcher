@@ -32,6 +32,16 @@ def natural_sort_key(s: str) -> list:
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
 
 
+def replace_ext(path: Path, new_ext: str = "") -> Path:
+    suffixes = Path(path).suffixes
+    if len(suffixes) > 2:
+        raise ValueError(
+            f"Got more than 2 suffixes when trying to replace_ext in {path}. This is not safe."
+        )
+    extensions = "".join(suffixes)
+    return Path(str(path).replace(extensions, new_ext))
+
+
 def _load_assembly_types() -> dict[str, dict]:
     ref = importlib_resources.files("yaml_manifest").joinpath(_ASSEMBLY_TYPES_FILE)
     with importlib_resources.as_file(ref) as path:
@@ -430,6 +440,7 @@ class Manifest(BaseModel):
     dataset_id: str
     scientific_name: str
     taxon_id: int
+    defined_class: str
 
     busco_odb10_dataset_name: Optional[str] = None
     busco_odb12_dataset_name: Optional[str] = None
@@ -453,6 +464,17 @@ class Manifest(BaseModel):
             raise ValueError(
                 "Manifest must contain at least one long read dataset "
                 "(PACBIO_SMRT or OXFORD_NANOPORE)"
+            )
+        if has_pacbio and has_ont:
+            raise NotImplementedError(
+                "\n\n"
+                "Only one long read platform per manifest is implemented right now.\n"
+                "Put the assemblies in separate manifests.\n\n"
+                "If they are from the same specimen (i.e. they have the same ToLID),\n"
+                "they should have different assembly_versions.\n\n"
+                f"pacbio_reads:\n  {"\n  ".join(self.pacbio_reads.all_urls)}"
+                "\n"
+                f"ont_reads:\n  {"\n  ".join(self.ont_reads.all_urls)}"
             )
         return self
 
@@ -598,6 +620,54 @@ class Manifest(BaseModel):
         if self.pacbio_reads:
             return self.pacbio_reads.flat_paths("qc")
         return self.ont_reads.flat_paths("qc")
+
+    @computed_field
+    @property
+    def hifiasm_assemblies(self) -> list[AssemblyType]:
+        return [x for x in self.assembly_types if x.assembler == "hifiasm"]
+
+    @computed_field
+    @property
+    def treeval_assembly(self) -> AssemblyType:
+        phased_assemblies = [x for x in self.hifiasm_assemblies if "phased" in x.name]
+        if len(phased_assemblies) == 1:
+            return phased_assemblies[0]
+        if len(phased_assemblies) > 1:
+            raise ValueError(
+                "Multiple phased assemblies found when trying to set treeval_assembly"
+            )
+
+        purged_assemblies = [x for x in self.hifiasm_assemblies if "purged" in x.name]
+        if len(purged_assemblies) == 1:
+            return purged_assemblies[0]
+        if len(purged_assemblies) > 1:
+            raise ValueError(
+                "Multiple purged assemblies found when trying to set treeval_assembly"
+            )
+
+        raise ValueError("Failed to set treeval_assembly")
+
+    @computed_field
+    @property
+    def treeval_reference_file(self) -> Path:
+        return Path(
+            self.treeval_assembly.outputs.get("ascc", {}).get("COMBINED", Path())
+        )
+
+    @computed_field
+    @property
+    def treeval_long_reads(self) -> list[Path]:
+        return [replace_ext(x, ".fasta.gz") for x in self.ascc_long_reads]
+
+    @computed_field
+    @property
+    def treeval_kmer_profile(self) -> Path:
+        # TODO: what is this?
+        return (
+            self.treeval_assembly.outputs_for("genomeassembly")
+            .get("PRIMARY", Path())
+            .parent.parent
+        )
 
     # Standardised directory structure
 

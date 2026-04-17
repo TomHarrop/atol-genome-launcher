@@ -42,7 +42,7 @@ def parse_arguments():
         "--workflow_tag",
         help="genome-launcher-workflow tag",
         type=str,
-        default="0.6.1",
+        default="0.7.1",
     )
 
     settings_parser.add_argument(
@@ -107,6 +107,17 @@ def main():
         Path(path_to_templates, "sanger-tol_ascc_0.5.3.yaml.j2"),
         Path(args.run_dir, f"{manifest.pipeline_input("ascc")}.sample"),
     )
+
+    # if there is Hi-C, render the treeval template
+    if bool(manifest.hic_reads):
+        render_template(
+            manifest,
+            Path(path_to_templates, "sanger-tol_treeval_1.4.5.yaml.j2"),
+            Path(
+                args.run_dir,
+                f"{manifest.pipeline_input("treeval")}.sample",
+            ),
+        )
 
 
 if __name__ == "__main__":

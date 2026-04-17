@@ -46,6 +46,7 @@ def parse_config(raw: dict) -> Manifest:
         assembly_version=raw.get("assembly_version", ""),
         scientific_name=raw.get("scientific_name", ""),
         taxon_id=raw.get("taxon_id", 0),
+        defined_class=raw.get("defined_class", ""),
         busco_odb10_dataset_name=raw.get("busco_odb10_dataset_name"),
         busco_odb12_dataset_name=raw.get("busco_odb12_dataset_name"),
         hic_motif=raw.get("hic_motif"),
