@@ -105,7 +105,14 @@ def main():
     render_template(
         manifest,
         Path(path_to_templates, "sanger-tol_ascc_0.5.3.yaml.j2"),
-        Path(args.run_dir, f"{manifest.pipeline_input("ascc")}.sample"),
+        Path(args.run_dir, f"{manifest.pipeline_input("ascc")["input"]}.sample"),
+    )
+
+    # render the ascc samplesheet
+    render_template(
+        manifest,
+        Path(path_to_templates, "sanger-tol_ascc_0.5.3.samplesheet.csv.j2"),
+        Path(args.run_dir, f"{manifest.pipeline_input("ascc")["samplesheet"]}.sample"),
     )
 
     # if there is Hi-C, render the treeval template

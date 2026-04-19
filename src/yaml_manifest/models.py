@@ -692,7 +692,7 @@ class Manifest(BaseModel):
         output_dir = self.get_dir("pipeline_output", pipeline=stage)
         return _collect_upload_files(stage, output_dir)
 
-    def pipeline_input(self, stage: str) -> Path:
+    def pipeline_input(self, stage: str) -> Path | dict[str, Path]:
         return get_pipeline_input(stage)
 
     def pipeline_runscript(self, stage: str) -> Path:

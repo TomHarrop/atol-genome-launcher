@@ -1,0 +1,4 @@
+sample,assembly_type,assembly_file
+{%- for label, path in ascc_inputs.items() %}
+{{ dataset_id }}.{{ assembly_version }},{{ label }},${PWD}/{{ path }}
+{%- endfor %}
