@@ -473,15 +473,14 @@ class Manifest(BaseModel):
             )
         if has_pacbio and has_ont:
             raise NotImplementedError(
-                "\n\n"
-                "Only one long read platform per manifest is implemented right now.\n"
-                "Put the assemblies in separate manifests.\n\n"
-                "If they are from the same specimen (i.e. they have the same ToLID),\n"
-                "they should have different assembly_versions.\n\n"
-                f"pacbio_reads:\n  {"\n  ".join(self.pacbio_reads.all_urls)}"
-                "\n"
-                f"ont_reads:\n  {"\n  ".join(self.ont_reads.all_urls)}"
+                """
+
+Only one long read platform per manifest is implemented right now. Put the
+assemblies in separate manifests. If they are from the same specimen (i.e. they
+have the same ToLID), they should have different assembly_versions.
+"""
             )
+
         return self
 
     @classmethod
