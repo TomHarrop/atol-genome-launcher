@@ -26,14 +26,20 @@ _OATK_HMM_BASE_URL = (
     "https://github.com/c-zhou/OatkDB/raw/main/v20230921/{hmm_name}.fam"
 )
 
+_ALLOWED_SUFFIXES = [".fa", ".fasta", ".fastq", ".fq", ".gz"]
+
 
 def natural_sort_key(s: str) -> list:
     """Convert string to list for natural sorting (handles embedded numbers)."""
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
 
 
-def replace_ext(path: Path, new_ext: str = "") -> Path:
-    suffixes = Path(path).suffixes
+def replace_ext(
+    path: Path, new_ext: str = "", allowed_suffixes: list = _ALLOWED_SUFFIXES
+) -> Path:
+
+    suffixes = [s for s in Path(path).suffixes if s in allowed_suffixes]
+
     if len(suffixes) > 2:
         raise ValueError(
             f"Got more than 2 suffixes when trying to replace_ext in {path}. This is not safe."
@@ -629,6 +635,8 @@ class Manifest(BaseModel):
     @computed_field
     @property
     def treeval_assembly(self) -> AssemblyType:
+        # TODO. This might actually be the "main" assembly output. Review after
+        # benchmarking.
         phased_assemblies = [x for x in self.hifiasm_assemblies if "phased" in x.name]
         if len(phased_assemblies) == 1:
             return phased_assemblies[0]

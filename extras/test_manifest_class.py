@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-from yaml_manifest import Manifest
+from yaml_manifest import Manifest, replace_ext
 
 # testing
-manifest_file = Path("test-data", "dummy.yaml")
+manifest_file = Path("test-data", "dummy_pb.yaml")
 genomeassembly_template_path = Path(
     "src/pipeline_config_generator/templates/sanger-tol_genomeassembly_e651801.spec.yaml.j2"
 )
@@ -53,9 +53,19 @@ print(
     f"{pacbio_hifi_phased.name} primary output file: {pacbio_hifi_phased.outputs_for("genomeassembly")["PRIMARY"]}"
 )
 
+pacbio_hifi_phased_primary = pacbio_hifi_phased.outputs_for("ascc").get("PRIMARY")
+
+print(
+    f"ascc PRIMARY output {pacbio_hifi_phased_primary} would be compressed to {replace_ext(pacbio_hifi_phased_primary, ".fasta.gz")}"
+)
+
 print(
     f"{pacbio_hifi_phased.name} combined ASCC output: {pacbio_hifi_phased.outputs_for("ascc")["COMBINED"]}"
 )
+
+# The main assembly is currently called "treeval_assembly", but this needs to
+# be reviewed.
+print(f"treeval_assembly: {manifest.treeval_assembly.outputs_for("ascc")}")
 
 # render any template based on keys in the template that exactly match keys in
 # the config. Pass additional values that don't come directly from the Manifest
@@ -78,7 +88,7 @@ print(
 )
 
 
-raise ValueError(
+print(
     manifest.render_template_file(
         treeval_template_path,
         long_reads=manifest.long_reads.flat_paths("qc"),
