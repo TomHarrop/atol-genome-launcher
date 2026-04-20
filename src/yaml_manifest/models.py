@@ -26,10 +26,26 @@ _OATK_HMM_BASE_URL = (
     "https://github.com/c-zhou/OatkDB/raw/main/v20230921/{hmm_name}.fam"
 )
 
+_ALLOWED_SUFFIXES = [".fa", ".fasta", ".fastq", ".fq", ".gz"]
+
 
 def natural_sort_key(s: str) -> list:
     """Convert string to list for natural sorting (handles embedded numbers)."""
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
+
+
+def replace_ext(
+    path: Path, new_ext: str = "", allowed_suffixes: list = _ALLOWED_SUFFIXES
+) -> Path:
+
+    suffixes = [s for s in Path(path).suffixes if s in allowed_suffixes]
+
+    if len(suffixes) > 2:
+        raise ValueError(
+            f"Got more than 2 suffixes when trying to replace_ext in {path}. This is not safe."
+        )
+    extensions = "".join(suffixes)
+    return Path(str(path).replace(extensions, new_ext))
 
 
 def _load_assembly_types() -> dict[str, dict]:
@@ -49,7 +65,7 @@ class AssemblyType(BaseModel):
     long_read_platform: str
     requires_hic: bool
     assembler: str
-    outputs: dict[str, Path]
+    outputs: dict[str, dict[str, Path]]
 
     # Optional assembler-specific configuration
     busco_odb10_dataset_name: Optional[str] = None
@@ -57,7 +73,7 @@ class AssemblyType(BaseModel):
     find_mito: bool = False
     find_plastid: bool = False
     mitohifi_mito_genetic_code: Optional[int] = None
-    mitohifi_reference_species: Optional[str] = None
+    mitohifi_references_pecies: Optional[str] = None
     oatk_mito_hmm: Optional[str] = None
     oatk_plastid_hmm: Optional[str] = None
 
@@ -71,6 +87,9 @@ class AssemblyType(BaseModel):
     def is_purged(self) -> bool:
         return self.assembler == "hifiasm" and not self.requires_hic
 
+    def outputs_for(self, pipeline: str) -> dict[str, Path]:
+        return self.outputs.get(pipeline, {})
+
 
 def _resolve_assembly_types(
     assembly_version: int,
@@ -78,7 +97,7 @@ def _resolve_assembly_types(
     has_hic: bool,
     has_ont: bool,
     has_pacbio: bool,
-    results_base_dir: Path,
+    pipeline_base_dirs: dict[str, Path],
     busco_odb10_dataset_name: Optional[str],
     busco_odb12_dataset_name: Optional[str],
     mito_code: Optional[int],
@@ -134,12 +153,11 @@ def _resolve_assembly_types(
 
         # Resolve output paths
         outputs = {}
-        for key, template in config["outputs"].items():
-            if template is None:
-                raise NotImplementedError(
-                    f"Add the output config for {type_name} to assembly_types.json"
-                )
-            outputs[key] = Path(results_base_dir, template.format(**fmt))
+        for pipeline, pipeline_outputs in config["outputs"].items():
+            outputs[pipeline] = {
+                key: Path(pipeline_base_dirs.get(pipeline, ""), template.format(**fmt))
+                for key, template in pipeline_outputs.items()
+            }
 
         # Build assembler-specific fields
         oatk_mito_hmm = None
@@ -149,6 +167,14 @@ def _resolve_assembly_types(
         find_mito = False
 
         if assembler == "hifiasm":
+            # All hifiasm modes output PRIMARY/HAPLO assemblies. Provide the
+            # combined fasta file.
+            outputs.setdefault("ascc", {})["COMBINED"] = Path(
+                pipeline_base_dirs.get("ascc", ""),
+                type_name,
+                "PRIMARY_HAPLO_combined.fasta.gz",
+            )
+
             # hifiasm gets find_mito/find_plastid when
             # mitohifi_reference_species is available
             if mitohifi_reference_species:
@@ -163,16 +189,16 @@ def _resolve_assembly_types(
                 mitohifi_mito_genetic_code = mito_code
 
             if find_mito is True:
-                outputs["MITO"] = Path(
-                    results_base_dir,
+                outputs["genomeassembly"]["MITO"] = Path(
+                    pipeline_base_dirs.get("genomeassembly", ""),
                     f"{dataset_id}.{assembly_version}.{type_name}",
                     "mito",
                     "final_mitogenome.fasta",
                 )
 
             if find_plastid is True:
-                outputs["MITO"] = Path(
-                    results_base_dir,
+                outputs["genomeassembly"]["PLASTID"] = Path(
+                    pipeline_base_dirs.get("genomeassembly", ""),
                     f"{dataset_id}.{assembly_version}.{type_name}",
                     "plastid",
                     "final_mitogenome.fasta",
@@ -420,6 +446,7 @@ class Manifest(BaseModel):
     dataset_id: str
     scientific_name: str
     taxon_id: int
+    defined_class: str
 
     busco_odb10_dataset_name: Optional[str] = None
     busco_odb12_dataset_name: Optional[str] = None
@@ -443,6 +470,17 @@ class Manifest(BaseModel):
             raise ValueError(
                 "Manifest must contain at least one long read dataset "
                 "(PACBIO_SMRT or OXFORD_NANOPORE)"
+            )
+        if has_pacbio and has_ont:
+            raise NotImplementedError(
+                "\n\n"
+                "Only one long read platform per manifest is implemented right now.\n"
+                "Put the assemblies in separate manifests.\n\n"
+                "If they are from the same specimen (i.e. they have the same ToLID),\n"
+                "they should have different assembly_versions.\n\n"
+                f"pacbio_reads:\n  {"\n  ".join(self.pacbio_reads.all_urls)}"
+                "\n"
+                f"ont_reads:\n  {"\n  ".join(self.ont_reads.all_urls)}"
             )
         return self
 
@@ -469,7 +507,11 @@ class Manifest(BaseModel):
         has_pacbio = bool(self.pacbio_reads)
         has_ont = bool(self.ont_reads)
         has_hic = bool(self.hic_reads)
-        results_base_dir = self.get_dir("pipeline_output", pipeline="genomeassembly")
+        # FIXME. Why is this hard coded?
+        pipeline_base_dirs = {
+            x: self.get_dir("pipeline_output", pipeline=x)
+            for x in ["genomeassembly", "ascc"]
+        }
         return _resolve_assembly_types(
             assembly_version=self.assembly_version,
             busco_odb10_dataset_name=self.busco_odb10_dataset_name,
@@ -482,7 +524,7 @@ class Manifest(BaseModel):
             mito_code=self.mito_code,
             mitohifi_reference_species=self.mitohifi_reference_species,
             oatk_hmm_name=self.oatk_hmm_name,
-            results_base_dir=results_base_dir,
+            pipeline_base_dirs=pipeline_base_dirs,
         )
 
     def get_assembly_type(self, name: str) -> AssemblyType:
@@ -495,9 +537,9 @@ class Manifest(BaseModel):
             f"Available: {[at.name for at in self.assembly_types]}"
         )
 
-    def assembly_output_paths(self) -> dict[str, dict[str, Path]]:
-        """All assembly output paths keyed by assembly type name."""
-        return {at.name: at.outputs for at in self.assembly_types}
+    def pipeline_output_paths(self, pipeline) -> dict[str, dict[str, Path]]:
+        """All pipeline output paths keyed by output type name."""
+        return {at.name: at.outputs.get(pipeline, {}) for at in self.assembly_types}
 
     # ReadFileCollection accessors
 
@@ -585,6 +627,56 @@ class Manifest(BaseModel):
             return self.pacbio_reads.flat_paths("qc")
         return self.ont_reads.flat_paths("qc")
 
+    @computed_field
+    @property
+    def hifiasm_assemblies(self) -> list[AssemblyType]:
+        return [x for x in self.assembly_types if x.assembler == "hifiasm"]
+
+    @computed_field
+    @property
+    def treeval_assembly(self) -> AssemblyType:
+        # TODO. This might actually be the "main" assembly output. Review after
+        # benchmarking.
+        phased_assemblies = [x for x in self.hifiasm_assemblies if "phased" in x.name]
+        if len(phased_assemblies) == 1:
+            return phased_assemblies[0]
+        if len(phased_assemblies) > 1:
+            raise ValueError(
+                "Multiple phased assemblies found when trying to set treeval_assembly"
+            )
+
+        purged_assemblies = [x for x in self.hifiasm_assemblies if "purged" in x.name]
+        if len(purged_assemblies) == 1:
+            return purged_assemblies[0]
+        if len(purged_assemblies) > 1:
+            raise ValueError(
+                "Multiple purged assemblies found when trying to set treeval_assembly"
+            )
+
+        raise ValueError("Failed to set treeval_assembly")
+
+    @computed_field
+    @property
+    def treeval_reference_file(self) -> Path:
+        return Path(
+            self.treeval_assembly.outputs.get("ascc", {}).get("COMBINED", Path())
+        )
+
+    @computed_field
+    @property
+    def treeval_long_reads(self) -> list[Path]:
+        return [replace_ext(x, ".fasta.gz") for x in self.ascc_long_reads]
+
+    @computed_field
+    @property
+    def treeval_kmer_profile(self) -> Path:
+        # TODO: what is this?
+        return (
+            self.treeval_assembly.outputs_for("genomeassembly")
+            .get("PRIMARY", Path())
+            .parent.parent
+        )
+
     # Standardised directory structure
 
     def get_dir(self, name: str, **kwargs) -> Path:
@@ -608,7 +700,7 @@ class Manifest(BaseModel):
         output_dir = self.get_dir("pipeline_output", pipeline=stage)
         return _collect_upload_files(stage, output_dir)
 
-    def pipeline_input(self, stage: str) -> Path:
+    def pipeline_input(self, stage: str) -> Path | dict[str, Path]:
         return get_pipeline_input(stage)
 
     def pipeline_runscript(self, stage: str) -> Path:

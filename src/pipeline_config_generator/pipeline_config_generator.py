@@ -34,6 +34,7 @@ def render_template(manifest, template_path, outfile):
         "pacbio_reads": manifest.pacbio_reads.flat_paths("qc"),
         "ont_reads": manifest.ont_reads.flat_paths("qc"),
         "hic_reads": manifest.hic_reads.flat_paths("qc"),
+        "ascc_inputs": manifest.treeval_assembly.outputs.get("genomeassembly", {}),
     }
 
     # render template

@@ -68,7 +68,10 @@
         "ascc": {
             "dir": "pipeline_output",
             "logs": "logs/ascc",
-            "pipeline_input": "config/ascc.yaml",
+            "pipeline_input": {
+                "input": "config/ascc.yaml",
+                "samplesheet": "config/ascc_samplesheet.csv"
+            },
             "pipeline_runscript": "scripts/ascc.sh",
             "upload": {
                 "exclude_patterns": [],

@@ -1,0 +1,48 @@
+assembly_version: 6
+busco_odb10_dataset_name: "sauropsida"
+busco_odb12_dataset_name: "squamata"
+dataset_id: "aBcDe1"
+find_plastid: false
+hic_motif: "GATC,GANTC,CTNAG,TTAA"
+mito_code: 2
+mitohifi_reference_species: "Cymbopogon citratus"
+oatk_hmm_name: "lepidosauria_mito"
+scientific_name: "Saiphos equalis"
+taxon_id: 172942
+defined_class: Lepidosaura
+reads:
+  PACBIO_SMRT:
+    bpa-ausarg-pacbio-hifi-350822-da095606:
+      - md5sum: "1c0830aed2482df5fe0c166630db9bb9"
+        url: "https://data.bioplatforms.com/dataset/bpa-ausarg-pacbio-hifi-350822-da095\
+          606/resource/1c0830aed2482df5fe0c166630db9bb9/download/350822_AusARG_\
+          AGRF_DA095606.ccs.bam"
+    bpa-ausarg-pacbio-hifi-350822-da080843:
+      - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-pacbio-hifi-350822-da080\
+          843/resource/4a409be4cc1e33713fd3d5f9e573cff5/download/350822_AusARG_\
+          AGRF_DA080843.ccs.bam"
+        md5sum: "4a409be4cc1e33713fd3d5f9e573cff5"
+  Hi-C:
+    bpa-ausarg-hi-c-353997-hmgmjdrxy:
+      r1:
+        - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/re\
+            source/f3efb2a937921622b232115fd091f777/download/353997_AusARG_BRF_\
+            HMGMJDRXY_S4_L001_R1_001.fastq.gz"
+          md5sum: "f3efb2a937921622b232115fd091f777"
+          lane_number: "L0001"
+        - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/re\
+            source/05f8d596dc3a8539d0aa4ed5223ec458/download/353997_AusARG_BRF_\
+            HMGMJDRXY_S4_L002_R1_001.fastq.gz"
+          md5sum: "05f8d596dc3a8539d0aa4ed5223ec458"
+          lane_number: "L0002"
+      r2:
+        - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/re\
+            source/f11bb9b8a179fc1e5a0dce60c01b98fa/download/353997_AusARG_BRF_\
+            HMGMJDRXY_S4_L001_R2_001.fastq.gz"
+          md5sum: "f11bb9b8a179fc1e5a0dce60c01b98fa"
+          lane_number: "L0001"
+        - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/re\
+            source/110f148a260ea7c7c57514fa59b3b15e/download/353997_AusARG_BRF_\
+            HMGMJDRXY_S4_L002_R2_001.fastq.gz"
+          md5sum: "110f148a260ea7c7c57514fa59b3b15e"
+          lane_number: "L0002"

@@ -3,24 +3,27 @@ assembly:
   assem_version: {{ assembly_version }}
   sample_id: {{ dataset_id }}
   latin_name: {{ scientific_name }}
-  defined_class: Lepidosauria
+  defined_class: {{ defined_class }}
   project_id: AToL
-reference_file: rSaiEqu1/rSaiEqu1_both_haps.fa.gz
+reference_file: ${PWD}/{{ treeval_reference_file }}
 map_order: length
 assem_reads:
-  read_type: hifi
+  read_type: {{ ascc_long_read_platform }}
   read_data:
-    - results/qc/reads/PACBIO_SMRT/350822_AusARG_AGRF_DA080843.fasta.gz
-    - results/qc/reads/PACBIO_SMRT/350822_AusARG_AGRF_DA095606.fasta.gz
+{%- for reads in treeval_long_reads %}
+    - ${PWD}/{{ reads }}
+{%- endfor %}
   supplementary_data: path
 hic_data:
   hic_cram:
-    - results/qc/reads/Hi-C/353997_AusARG_BRF_HMGMJDRXY.cram
+{%- for path in hic_reads %}
+    - ${PWD}/{{ path }}
+{%- endfor %}
   hic_aligner: bwamem2
 kmer_profile:
   # kmer_length will act as input for kmer_read_cov fastk and as the name of folder in profile_dir
   kmer_length: 31
-  profile: results/genomeassembly/rSaiEqu1v1/rSaiEqu1.v1
+  profile: ${PWD}/{{ treeval_kmer_profile }}
 self_comp:
   motif_len: 0
 intron:
@@ -30,8 +33,12 @@ telomere:
 synteny:
   - /path/to/synteny.fasta
 busco:
-  lineages_path: /scratch/pawsey1132/atims/busco/
-  lineage: sauropsida_odb10
+  lineages_path: ${PWD}/resources/staging/busco
+{%- if busco_odb12_dataset_name %}
+  lineage: {{ busco_odb12_dataset_name }}_odb12
+{%- elif busco_odb10_dataset_name %}
+  lineage: {{ busco_odb10_dataset_name }}_odb10
+{%- endif %}
 alignment:
   genesets:
     - /path/to/genesets.csv

@@ -7,6 +7,7 @@ from yaml_manifest.models import (
     Manifest,
     ReadFile,
     ReadFileCollection,
+    replace_ext,
 )
 from yaml_manifest.parser import load_manifest, parse_config
 
@@ -19,4 +20,5 @@ __all__ = [
     "get_dir",
     "load_manifest",
     "parse_config",
+    "replace_ext",
 ]
