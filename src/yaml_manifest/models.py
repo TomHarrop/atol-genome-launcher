@@ -73,7 +73,7 @@ class AssemblyType(BaseModel):
     find_mito: bool = False
     find_plastid: bool = False
     mitohifi_mito_genetic_code: Optional[int] = None
-    mitohifi_references_pecies: Optional[str] = None
+    mitohifi_reference_species: Optional[str] = None
     oatk_mito_hmm: Optional[str] = None
     oatk_plastid_hmm: Optional[str] = None
 
