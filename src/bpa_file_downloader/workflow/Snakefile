@@ -2,7 +2,6 @@
 
 import os
 
-
 globals().update(config)
 
 target_files = [Path(file_name)]
@@ -16,12 +15,21 @@ rule download_file:
     output:
         file=Path(file_name),
     params:
-        url=bioplatforms_url,
         bpi_apikey=os.environ.get("BPA_APIKEY"),
+        filename=subpath(output.file, basename=True),
+        lowest_speed_limit="1M",
+        max_connection_per_server=8,
+        outdir=subpath(output.file, parent=True),
+        split=8,
+        url=bioplatforms_url,
     shell:
-        "wget "
+        "aria2c "
         '--header="X-CKAN-API-Key:{params.bpi_apikey}" '
-        "-O {output.file} "
+        "--dir={params.outdir} "
+        "--lowest-speed-limit={params.lowest_speed_limit} "
+        "--max-connection-per-server={params.max_connection_per_server} "
+        "--out={params.filename} "
+        "--split={params.split} "
         "{params.url}"
 
 
