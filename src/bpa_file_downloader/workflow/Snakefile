@@ -16,18 +16,22 @@ rule download_file:
         file=Path(file_name),
     params:
         bpi_apikey=os.environ.get("BPA_APIKEY"),
+        connect_timeout=10,
+        continue_true_false="true",
         filename=subpath(output.file, basename=True),
-        lowest_speed_limit="1M",
         max_connection_per_server=8,
+        max_tries=5,
         outdir=subpath(output.file, parent=True),
         split=8,
         url=bioplatforms_url,
     shell:
         "aria2c "
         '--header="X-CKAN-API-Key:{params.bpi_apikey}" '
+        "--connect-timeout={params.connect_timeout} "
+        "--continue={params.continue_true_false} "
         "--dir={params.outdir} "
-        "--lowest-speed-limit={params.lowest_speed_limit} "
         "--max-connection-per-server={params.max_connection_per_server} "
+        "--max-tries={params.max_tries} "
         "--out={params.filename} "
         "--split={params.split} "
         "{params.url}"
