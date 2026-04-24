@@ -263,6 +263,7 @@ class ReadFile(BaseModel):
 
     name: str
     data_type: str
+    base_url: Optional[str] = None
     r1: Optional[list[BpaFile]] = None
     r2: Optional[list[BpaFile]] = None
     single_end: Optional[list[BpaFile]] = None
@@ -346,6 +347,62 @@ class ReadFile(BaseModel):
             if lane_files:
                 return lane_files[0].file_ext
         raise ValueError(f"No files found for ReadFile '{self.name}'")
+
+    def lane_path(self, bpa_file: "BpaFile", read_number: str) -> Path:
+        """Return the expected temp download path for a single BpaFile resource."""
+        return Path(
+            get_dir("downloads"),
+            self.data_type,
+            self.name,
+            read_number,
+            bpa_file.lane_number,
+            f"reads.{bpa_file.file_ext}",
+        )
+
+    def collected_path(self, read_number: Optional[str] = None) -> Path:
+        """Return the final collected path for this ReadFile.
+
+        For paired-end, read_number ('r1' or 'r2') must be provided.
+        For single-end, read_number is not required.
+        """
+        stage = get_stage("raw")
+        ext = self._raw_ext()
+        base = Path(get_dir("downloads"), self.data_type)
+        if self.is_paired_end:
+            if read_number is None:
+                raise ValueError("read_number required for paired-end ReadFile")
+            return base / f"{self.name}.{read_number}.{ext}"
+        return base / f"{self.name}.{ext}"
+
+    def download_requests(self) -> list[dict]:
+        """Return download request dicts for all resources in this package.
+
+        Each dict contains:
+          - url: the canonical BPA portal URL
+          - base_url: alternative base URL to try first (may be None)
+          - md5sum: expected checksum
+          - lane_number: lane identifier
+          - read_number: 'r1', 'r2', or 'single_end'
+          - lane_path: expected temp download path (Path)
+          - collected_path: final combined output path (Path)
+        """
+        requests = []
+        read_numbers = ["r1", "r2"] if self.is_paired_end else ["single_end"]
+        for read_number in read_numbers:
+            collected = self.collected_path(read_number if self.is_paired_end else None)
+            for bpa_file in self.lanes_for_read(read_number):
+                requests.append(
+                    {
+                        "url": bpa_file.url,
+                        "base_url": self.base_url,
+                        "md5sum": bpa_file.md5sum,
+                        "lane_number": bpa_file.lane_number,
+                        "read_number": read_number,
+                        "lane_path": self.lane_path(bpa_file, read_number),
+                        "collected_path": collected,
+                    }
+                )
+        return requests
 
 
 class ReadFileCollection:

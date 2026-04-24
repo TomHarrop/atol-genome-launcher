@@ -102,7 +102,9 @@ print(f"genomeassembly pipeline_input: {manifest.pipeline_input("genomeassembly"
 print(f"ascc pipeline_runscript: {manifest.pipeline_runscript("ascc")}")
 
 # We can get input/output paths for any ReadFile in the Manifest, e.g.
-my_file = manifest.reads.get("bpa-ausarg-pacbio-hifi-350822-da095606")
+my_file = manifest.reads.get("bpa-ausarg-hi-c-353997-hmgmjdrxy")
+
+raise ValueError(my_file.download_requests())
 
 print(my_file.paths("raw"))
 print(my_file.paths("qc"))

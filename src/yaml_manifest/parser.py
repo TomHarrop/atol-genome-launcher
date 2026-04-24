@@ -60,13 +60,22 @@ def parse_config(raw: dict) -> Manifest:
 
 
 def _parse_read_file(data_type: str, filename: str, file_data) -> ReadFile:
+    # Paired-end: detect by presence of r1/r2 keys
     if isinstance(file_data, dict) and ("r1" in file_data or "r2" in file_data):
-        r1 = [BpaFile(**f) for f in file_data.get("r1", [])] or None
-        r2 = [BpaFile(**f) for f in file_data.get("r2", [])] or None
-        return ReadFile(name=filename, data_type=data_type, r1=r1, r2=r2)
+        base_url = file_data.get("base_url")
+        r1 = [BpaFile(**f) for f in file_data.get("r1", {}).get("resources", [])] or None
+        r2 = [BpaFile(**f) for f in file_data.get("r2", {}).get("resources", [])] or None
+        return ReadFile(name=filename, data_type=data_type, base_url=base_url, r1=r1, r2=r2)
     else:
-        single_end = [BpaFile(**f) for f in file_data]
-        return ReadFile(name=filename, data_type=data_type, single_end=single_end)
+        # Single-end: may be bare list (legacy) or dict with resources key
+        if isinstance(file_data, dict):
+            base_url = file_data.get("base_url")
+            resources = file_data.get("resources", [])
+        else:
+            base_url = None
+            resources = file_data
+        single_end = [BpaFile(**f) for f in resources]
+        return ReadFile(name=filename, data_type=data_type, base_url=base_url, single_end=single_end)
 
 
 def natural_sort_key(s: str) -> list:
