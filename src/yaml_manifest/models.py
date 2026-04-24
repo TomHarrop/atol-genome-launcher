@@ -348,7 +348,7 @@ class ReadFile(BaseModel):
                 return lane_files[0].file_ext
         raise ValueError(f"No files found for ReadFile '{self.name}'")
 
-    def lane_path(self, bpa_file: "BpaFile", read_number: str) -> Path:
+    def lane_path(self, bpa_file: BpaFile, read_number: str) -> Path:
         """Return the expected temp download path for a single BpaFile resource."""
         return Path(
             get_dir("downloads"),
@@ -365,7 +365,6 @@ class ReadFile(BaseModel):
         For paired-end, read_number ('r1' or 'r2') must be provided.
         For single-end, read_number is not required.
         """
-        stage = get_stage("raw")
         ext = self._raw_ext()
         base = Path(get_dir("downloads"), self.data_type)
         if self.is_paired_end:
@@ -374,35 +373,21 @@ class ReadFile(BaseModel):
             return base / f"{self.name}.{read_number}.{ext}"
         return base / f"{self.name}.{ext}"
 
-    def download_requests(self) -> list[dict]:
-        """Return download request dicts for all resources in this package.
+    def lane_url(self, lane_path: Path) -> dict:
+        """Return url and base_url for a given lane_path.
 
-        Each dict contains:
-          - url: the canonical BPA portal URL
-          - base_url: alternative base URL to try first (may be None)
-          - md5sum: expected checksum
-          - lane_number: lane identifier
-          - read_number: 'r1', 'r2', or 'single_end'
-          - lane_path: expected temp download path (Path)
-          - collected_path: final combined output path (Path)
+        Returns a dict with 'url', 'base_url', and 'md5sum'.
         """
-        requests = []
         read_numbers = ["r1", "r2"] if self.is_paired_end else ["single_end"]
         for read_number in read_numbers:
-            collected = self.collected_path(read_number if self.is_paired_end else None)
             for bpa_file in self.lanes_for_read(read_number):
-                requests.append(
-                    {
+                if self.lane_path(bpa_file, read_number) == lane_path:
+                    return {
                         "url": bpa_file.url,
                         "base_url": self.base_url,
                         "md5sum": bpa_file.md5sum,
-                        "lane_number": bpa_file.lane_number,
-                        "read_number": read_number,
-                        "lane_path": self.lane_path(bpa_file, read_number),
-                        "collected_path": collected,
                     }
-                )
-        return requests
+        raise KeyError(f"Lane path {lane_path} not found in {self.name}")
 
 
 class ReadFileCollection:
@@ -489,6 +474,31 @@ class ReadFileCollection:
 
     def stats_paths(self, stage: str) -> list[Path]:
         return [rf.stats_path(stage) for rf in self._read_files]
+
+    def collected_to_lane_paths(self, raw_path: Path) -> list[Path]:
+        """Return the constituent lane paths for a given collected output path.
+
+        The raw_path should be one of the paths returned by flat_paths('raw').
+        """
+        for rf in self._read_files:
+            read_numbers = ["r1", "r2"] if rf.is_paired_end else ["single_end"]
+            for read_number in read_numbers:
+                collected = rf.collected_path(read_number if rf.is_paired_end else None)
+                if collected == raw_path:
+                    return [
+                        rf.lane_path(bpa_file, read_number)
+                        for bpa_file in rf.lanes_for_read(read_number)
+                    ]
+        raise KeyError(f"Raw path {raw_path} not found in any ReadFile")
+
+    def lane_url(self, lane_path: Path) -> dict:
+        """Return url, base_url, and md5sum for a given lane path."""
+        for rf in self._read_files:
+            try:
+                return rf.lane_url(lane_path)
+            except KeyError:
+                continue
+        raise KeyError(f"Lane path {lane_path} not found in any ReadFile")
 
 
 class Manifest(BaseModel):
