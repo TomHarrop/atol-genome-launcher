@@ -7,7 +7,7 @@ def get_download_params(wildcards):
     my_file = manifest.reads.get(wildcards.filename)
     lanes = my_file.lanes_for_read(wildcards.read_number)
     lane = next(lf for lf in lanes if lf.lane_number == wildcards.lane_number)
-    return {"url": lane.url, "md5sum": lane.md5sum, "base_url": my_file.base_url}
+    return {"url": lane.url, "md5sum": lane.md5sum}
 
 
 def get_paired_end_lanes(wildcards):
@@ -120,11 +120,6 @@ rule download_file:
     shell:
         "bpa-file-downloader "
         "--file_checksum {params.params[md5sum]} "
-        + (
-            "--base_url {params.params[base_url]} "
-            if "{params.params[base_url]}" != "None"
-            else ""
-        )
-        + "{params.params[url]} "
+        "{params.params[url]} "
         "{output.read_file} "
         "&> {log}"
