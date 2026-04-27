@@ -227,7 +227,7 @@ def _resolve_assembly_types(
                 mitohifi_mito_genetic_code=mitohifi_mito_genetic_code,
                 mitohifi_reference_species=mitohifi_ref_species,
                 find_mito=find_mito,
-                find_plastid=find_plastid,
+                find_plastid=find_plastid or False,
                 busco_odb10_dataset_name=busco_odb10_dataset_name,
                 busco_odb12_dataset_name=busco_odb12_dataset_name,
             )
@@ -365,7 +365,11 @@ class ReadFile(BaseModel):
         """Return the constituent lane paths for a collected output."""
         for read_number in self.read_numbers:
             if self.paths("raw").get(read_number) == collected_path:
-                return [bf.raw_path for bf in self.lanes_for_read(read_number)]
+                return [
+                    bf.raw_path
+                    for bf in self.lanes_for_read(read_number)
+                    if bf.raw_path is not None
+                ]
         raise KeyError(f"Collected path {collected_path} not found in {self.name}")
 
     def _iter_lane_file_lists(self):
