@@ -104,17 +104,14 @@ print(f"ascc pipeline_runscript: {manifest.pipeline_runscript("ascc")}")
 # We can get input/output paths for any ReadFile in the Manifest, e.g.
 my_file = manifest.reads.get("bpa-ausarg-hi-c-353997-hmgmjdrxy")
 
-raw_paths = manifest.reads.flat_paths("raw")
+collected_paths = manifest.reads.flat_paths("raw")
 
-a_read_file = manifest.reads[2]
-
-raise ValueError(a_read_file.all_raw_paths)
-
-collected_paths = a_read_file.paths("raw")
-constituent_paths = a_read_file.lane_paths
+for collected_path in collected_paths:
+    print(collected_path)
+    print(f"    {manifest.reads.collected_path_to_raw_paths(collected_path)}")
 
 
-raise ValueError(a_read_file.lane_url(constituent_paths.get("r1")[0]))
+raise ValueError(manifest.reads.collected_path_to_raw_paths())
 
 # raise ValueError(constituent_paths)
 

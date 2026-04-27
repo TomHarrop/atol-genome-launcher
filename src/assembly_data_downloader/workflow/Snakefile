@@ -3,45 +3,12 @@
 from yaml_manifest import Manifest
 
 
-def get_download_params(wildcards):
-    my_file = manifest.reads.get(wildcards.filename)
-    lanes = my_file.lanes_for_read(wildcards.read_number)
-    lane = next(lf for lf in lanes if lf.lane_number == wildcards.lane_number)
-    return {"url": lane.url, "md5sum": lane.md5sum}
+def format_download_params(wildcards):
+    download_params = manifest.reads.lane_url(Path(wildcards.raw_file))
+    base_url = download_params.get("base_url")
+    download_params["base_url_param"] = f"--base_url {base_url}" if base_url else ""
 
-
-def get_paired_end_lanes(wildcards):
-    my_file = manifest.reads.get(wildcards.filename)
-    lanes = my_file.lanes_for_read(wildcards.read_number)
-
-    return [
-        Path(
-            download_dir,
-            wildcards.data_type,
-            wildcards.filename,
-            wildcards.read_number,
-            lf.lane_number,
-            f"reads.{lf.file_ext}",
-        )
-        for lf in lanes
-    ]
-
-
-def get_single_end_lanes(wildcards):
-    my_file = manifest.reads.get(wildcards.filename)
-    lanes = my_file.lanes_for_read("single_end")
-
-    return [
-        Path(
-            download_dir,
-            wildcards.data_type,
-            wildcards.filename,
-            "single_end",
-            lf.lane_number,
-            f"reads.{lf.file_ext}",
-        )
-        for lf in lanes
-    ]
+    return download_params
 
 
 # Configuration
@@ -49,16 +16,14 @@ manifest = Manifest.from_yaml(config.get("manifest_file"))
 logs_dir = manifest.get_stage_logs("raw")
 download_dir = manifest.get_dir("downloads")
 
+
 # Wildcard constraints
 all_read_numbers = ["r1", "r2", "single_end"]
 
 
 wildcard_constraints:
-    data_type="|".join(re.escape(x) for x in manifest.all_data_types),
-    filename="|".join(re.escape(x) for x in manifest.reads.names),
-    read_number="|".join(all_read_numbers),
-    lane_number="|".join(re.escape(x) for x in manifest.all_lane_numbers),
-    extension="|".join(re.escape(x) for x in manifest.all_extensions),
+    collected_file="|".join([str(x) for x in manifest.reads.flat_paths("raw")]),
+    raw_file="|".join([str(x) for x in manifest.reads.all_raw_paths]),
 
 
 # Workflow
@@ -67,59 +32,30 @@ rule target:
         manifest.reads.flat_paths("raw"),
 
 
-rule collect_single_end_files:
+rule collect_lane_files:
     input:
-        get_single_end_lanes,
+        lambda wildcards: manifest.reads.collected_path_to_raw_paths(
+            Path(wildcards.collected_file)
+        ),
     output:
-        Path(download_dir, "{data_type}", "{filename}.{extension}"),
-    shell:
-        "cat {input} > {output}"
-
-
-rule collect_paired_end_files:
-    input:
-        get_paired_end_lanes,
-    output:
-        Path(download_dir, "{data_type}", "{filename}.{read_number}.{extension}"),
+        Path("{collected_file}"),
     shell:
         "cat {input} > {output}"
 
 
 rule download_file:
     output:
-        read_file=temp(
-            Path(
-                download_dir,
-                "{data_type}",
-                "{filename}",
-                "{read_number}",
-                "{lane_number}",
-                "reads.{extension}",
-            )
-        ),
-        check_file=temp(
-            Path(
-                download_dir,
-                "{data_type}",
-                "{filename}",
-                "{read_number}",
-                "{lane_number}",
-                "reads.{extension}.check.txt",
-            )
-        ),
+        read_file=Path("{raw_file}"),
+        check_file=Path("{raw_file}.check.txt"),
     log:
-        Path(
-            logs_dir,
-            "download_file",
-            "{data_type}",
-            "{filename}.{read_number}.{lane_number}.{extension}.log",
-        ),
-    params:
-        params=get_download_params,
+        Path(logs_dir, "download_file", "{raw_file}.log"),
     retries: 3
+    params:
+        params=format_download_params,
     shell:
         "bpa-file-downloader "
         "--file_checksum {params.params[md5sum]} "
+        "{params.params[base_url_param]} "
         "{params.params[url]} "
         "{output.read_file} "
         "&> {log}"

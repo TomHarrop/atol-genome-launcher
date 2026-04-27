@@ -278,13 +278,16 @@ class ReadFile(BaseModel):
 
     @model_validator(mode="after")
     def _set_raw_paths(self) -> "ReadFile":
-        read_numbers = ["r1", "r2"] if self.is_paired_end else ["single_end"]
-        for read_number in read_numbers:
+        for read_number in self.read_numbers:
             for bpa_file in self.lanes_for_read(read_number):
                 bpa_file.raw_path = Path(
                     self._lane_base(read_number), bpa_file.raw_path_suffix
                 )
         return self
+
+    @property
+    def read_numbers(self) -> list[str]:
+        return ["r1", "r2"] if self.is_paired_end else ["single_end"]
 
     @property
     def is_paired_end(self) -> bool:
@@ -357,6 +360,13 @@ class ReadFile(BaseModel):
             raise ValueError(f"No logs_dir for '{stage}'")
 
         return Path(logs_dir, self.data_type, f"{self.name}.log")
+
+    def collected_path_to_raw_paths(self, collected_path: Path) -> list[Path]:
+        """Return the constituent lane paths for a collected output."""
+        for read_number in self.read_numbers:
+            if self.paths("raw").get(read_number) == collected_path:
+                return [bf.raw_path for bf in self.lanes_for_read(read_number)]
+        raise KeyError(f"Collected path {collected_path} not found in {self.name}")
 
     def _iter_lane_file_lists(self):
         if self.is_paired_end:
@@ -437,6 +447,14 @@ class ReadFileCollection:
             )
         )
 
+    @property
+    def all_raw_paths(self) -> list[Path]:
+        """All lane-level download paths across all read files."""
+        raw_paths = []
+        for rf in self._read_files:
+            raw_paths.extend(rf.all_raw_paths)
+        return raw_paths
+
     def by_data_type(self, data_type: str) -> "ReadFileCollection":
         """Filter to a specific data type."""
         return ReadFileCollection(
@@ -461,6 +479,26 @@ class ReadFileCollection:
 
     def stats_paths(self, stage: str) -> list[Path]:
         return [rf.stats_path(stage) for rf in self._read_files]
+
+    def collected_path_to_raw_paths(self, collected_path: Path) -> list[Path]:
+        for rf in self._read_files:
+            try:
+                return rf.collected_path_to_raw_paths(collected_path)
+            except KeyError:
+                continue
+        raise KeyError(f"Collected path {collected_path} not found in any ReadFile")
+
+    def lane_url(self, raw_path: Path) -> dict:
+        for rf in self._read_files:
+            for lane_files in rf._iter_lane_file_lists():
+                for bpa_file in lane_files:
+                    if bpa_file.raw_path == raw_path:
+                        return {
+                            "url": bpa_file.url,
+                            "base_url": rf.base_url,
+                            "md5sum": bpa_file.md5sum,
+                        }
+        raise KeyError(f"Raw path {raw_path} not found in any ReadFile")
 
 
 class Manifest(BaseModel):
