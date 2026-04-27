@@ -107,29 +107,15 @@ my_file = manifest.reads.get("bpa-ausarg-hi-c-353997-hmgmjdrxy")
 collected_paths = manifest.reads.flat_paths("raw")
 
 for collected_path in collected_paths:
-    print(collected_path)
-    print(f"    {manifest.reads.collected_path_to_raw_paths(collected_path)}")
+    raw_paths = manifest.reads.collected_path_to_raw_paths(collected_path)
 
-
-raise ValueError(manifest.reads.collected_path_to_raw_paths())
-
-# raise ValueError(constituent_paths)
-
-a_read_file.lane_path(a_collected_path)
-
-raise ValueError(manifest.reads.collected_to_lane_paths(raw_paths[2]))
-
-for raw_path in raw_paths:
-    source_paths = manifest.reads.collected_to_lane_paths(raw_path)
     print(
-        f"\nSource files for {raw_path}:\n  {"\n  ".join(str(x) for x in source_paths)}"
+        f"\nSource files for {collected_path}:\n  {"\n  ".join(str(x) for x in raw_paths)}"
     )
-    for source_path in source_paths:
-        url_info = manifest.reads.lane_url(source_path)
-        print(f"    {source_path} is downloaded from\n      {url_info}")
+    for raw_paths in raw_paths:
+        url_info = manifest.reads.lane_url(raw_paths)
+        print(f"    {raw_paths} is downloaded from\n      {url_info}")
 
-
-raise ValueError(manifest.reads)
 
 print(my_file.paths("raw"))
 print(my_file.paths("qc"))
