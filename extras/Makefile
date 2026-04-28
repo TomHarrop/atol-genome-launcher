@@ -18,6 +18,7 @@ changelog: CHANGELOG.md
 	python3 -m cProfile -o $*/cProfile.stats \
 	-m bpa_file_downloader.bpa_file_downloader \
 	--file_checksum "d0ac97437b4540d9c761d80218690af9" \
+	--base_url "https://downloads-qcif.bioplatforms.com/bpa/grasslands/illumina-shortread/BPAOPS-1555/20240129_AG_UNSW_22HYWKLT3/" \
 	https://data.bioplatforms.com/dataset/bpa-grasslands-illumina-shortread-371572-373569/resource/d0ac97437b4540d9c761d80218690af9/download/369570_LibID371572_AG_22HYWKLT3_AAGTCCAA-TACTCATA_S4_L001_R1_001.fastq.gz \
 	$*/testout.fq.gz
 

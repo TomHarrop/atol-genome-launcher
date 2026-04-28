@@ -20,7 +20,7 @@
                     "r2": "{name}.r2.{ext}"
                 },
                 "single_end": {
-                    "reads": "{name}.{ext}"
+                    "single_end": "{name}.{ext}"
                 }
             }
         },

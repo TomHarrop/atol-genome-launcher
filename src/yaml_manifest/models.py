@@ -227,7 +227,7 @@ def _resolve_assembly_types(
                 mitohifi_mito_genetic_code=mitohifi_mito_genetic_code,
                 mitohifi_reference_species=mitohifi_ref_species,
                 find_mito=find_mito,
-                find_plastid=find_plastid,
+                find_plastid=find_plastid or False,
                 busco_odb10_dataset_name=busco_odb10_dataset_name,
                 busco_odb12_dataset_name=busco_odb12_dataset_name,
             )
@@ -241,7 +241,8 @@ class BpaFile(BaseModel):
 
     url: str
     md5sum: str
-    lane_number: Optional[str] = "single_lane"
+    lane_number: str = "single_lane"
+    raw_path: Optional[Path] = None
 
     @field_validator("lane_number")
     @classmethod
@@ -257,15 +258,36 @@ class BpaFile(BaseModel):
         """Extract compound file extension from URL (e.g., 'fastq.gz')."""
         return "".join(Path(self.url).suffixes).lstrip(".")
 
+    @property
+    def raw_path_suffix(self) -> Path:
+        """
+        The last elements of the Path() where this BpaFile will be downloaded
+        """
+        return Path(self.lane_number, f"reads.{self.file_ext}")
+
 
 class ReadFile(BaseModel):
     """A read file entry, either paired-end (r1/r2) or single-end."""
 
     name: str
     data_type: str
+    base_url: Optional[str] = None
     r1: Optional[list[BpaFile]] = None
     r2: Optional[list[BpaFile]] = None
     single_end: Optional[list[BpaFile]] = None
+
+    @model_validator(mode="after")
+    def _set_raw_paths(self) -> "ReadFile":
+        for read_number in self.read_numbers:
+            for bpa_file in self.lanes_for_read(read_number):
+                bpa_file.raw_path = Path(
+                    self._lane_base(read_number), bpa_file.raw_path_suffix
+                )
+        return self
+
+    @property
+    def read_numbers(self) -> list[str]:
+        return ["r1", "r2"] if self.is_paired_end else ["single_end"]
 
     @property
     def is_paired_end(self) -> bool:
@@ -277,6 +299,13 @@ class ReadFile(BaseModel):
         for lane_files in self._iter_lane_file_lists():
             urls.extend(lf.url for lf in lane_files)
         return urls
+
+    @property
+    def all_raw_paths(self) -> list[Path]:
+        raw_paths = []
+        for lane_files in self._iter_lane_file_lists():
+            raw_paths.extend(lf.raw_path for lf in lane_files)
+        return raw_paths
 
     @property
     def all_lane_numbers(self) -> list[str]:
@@ -332,6 +361,17 @@ class ReadFile(BaseModel):
 
         return Path(logs_dir, self.data_type, f"{self.name}.log")
 
+    def collected_path_to_raw_paths(self, collected_path: Path) -> list[Path]:
+        """Return the constituent lane paths for a collected output."""
+        for read_number in self.read_numbers:
+            if self.paths("raw").get(read_number) == collected_path:
+                return [
+                    bf.raw_path
+                    for bf in self.lanes_for_read(read_number)
+                    if bf.raw_path is not None
+                ]
+        raise KeyError(f"Collected path {collected_path} not found in {self.name}")
+
     def _iter_lane_file_lists(self):
         if self.is_paired_end:
             if self.r1:
@@ -346,6 +386,9 @@ class ReadFile(BaseModel):
             if lane_files:
                 return lane_files[0].file_ext
         raise ValueError(f"No files found for ReadFile '{self.name}'")
+
+    def _lane_base(self, read_number: str) -> Path:
+        return Path(get_dir("downloads"), self.data_type, self.name, read_number)
 
 
 class ReadFileCollection:
@@ -408,6 +451,14 @@ class ReadFileCollection:
             )
         )
 
+    @property
+    def all_raw_paths(self) -> list[Path]:
+        """All lane-level download paths across all read files."""
+        raw_paths = []
+        for rf in self._read_files:
+            raw_paths.extend(rf.all_raw_paths)
+        return raw_paths
+
     def by_data_type(self, data_type: str) -> "ReadFileCollection":
         """Filter to a specific data type."""
         return ReadFileCollection(
@@ -432,6 +483,26 @@ class ReadFileCollection:
 
     def stats_paths(self, stage: str) -> list[Path]:
         return [rf.stats_path(stage) for rf in self._read_files]
+
+    def collected_path_to_raw_paths(self, collected_path: Path) -> list[Path]:
+        for rf in self._read_files:
+            try:
+                return rf.collected_path_to_raw_paths(collected_path)
+            except KeyError:
+                continue
+        raise KeyError(f"Collected path {collected_path} not found in any ReadFile")
+
+    def lane_url(self, raw_path: Path) -> dict:
+        for rf in self._read_files:
+            for lane_files in rf._iter_lane_file_lists():
+                for bpa_file in lane_files:
+                    if bpa_file.raw_path == raw_path:
+                        return {
+                            "url": bpa_file.url,
+                            "base_url": rf.base_url,
+                            "md5sum": bpa_file.md5sum,
+                        }
+        raise KeyError(f"Raw path {raw_path} not found in any ReadFile")
 
 
 class Manifest(BaseModel):

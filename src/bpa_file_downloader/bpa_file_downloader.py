@@ -2,6 +2,7 @@
 
 from snakemake_setup import get_snakefile, run_workflow
 from common import generate_parser, log_version
+from pathlib import Path
 import os
 
 
@@ -22,6 +23,17 @@ def parse_arguments():
         type=str,
         dest="file_checksum",
         required=False,
+    )
+
+    settings_parser.add_argument(
+        "--base_url",
+        type=str,
+        help=(
+            """
+        The base_url to attempt downloading this file from the non-AWS Data
+        Portal mirror. If provided, this will be tried before the main URL.
+        """
+        ),
     )
 
     return parser.parse_args()

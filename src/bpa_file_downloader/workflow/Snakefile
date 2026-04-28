@@ -2,20 +2,57 @@
 
 import os
 
+def download_params(wildcards, attempt):
+    """
+    We set the download params via a function that checks for base_url. We are
+    using resources rather than params because SM sets the params on the first
+    attempt and doesn't update them. See
+    https://github.com/snakemake/snakemake/issues/2483
+
+    """
+    if not base_url or attempt > 1:
+        bpi_apikey = os.environ.get("BPA_APIKEY")
+        return f'--header="X-CKAN-API-Key:{bpi_apikey}" {bioplatforms_url}'
+    if base_url and attempt == 1:
+        bpa_mirror_user = os.environ.get("BPA_MIRROR_USER")
+        bpa_mirror_passwd = os.environ.get("BPA_MIRROR_PASSWD")
+        return (
+            f'--http-user="{bpa_mirror_user}" '
+            f'--http-passwd="{bpa_mirror_passwd}" '
+            f"{base_url+ Path(bioplatforms_url).name}"
+        )
+
+    raise RuntimeError("Failed to parse download parameters.")
+
+
 globals().update(config)
 
 target_files = [Path(file_name)]
 
+if base_url:
+    retries = 1
 
-envvars:
-    "BPA_APIKEY",
+    envvars:
+        "BPA_APIKEY",
+        "BPA_MIRROR_USER",
+        "BPA_MIRROR_PASSWD",
+
+else:
+    retries = 0
+
+    envvars:
+        "BPA_APIKEY",
+
+
 
 
 rule download_file:
     output:
         file=Path(file_name),
+    retries: retries
+    resources:
+        download_params=download_params,
     params:
-        bpi_apikey=os.environ.get("BPA_APIKEY"),
         connect_timeout=10,
         continue_true_false="true",
         filename=subpath(output.file, basename=True),
@@ -23,10 +60,8 @@ rule download_file:
         max_tries=5,
         outdir=subpath(output.file, parent=True),
         split=8,
-        url=bioplatforms_url,
     shell:
         "aria2c "
-        '--header="X-CKAN-API-Key:{params.bpi_apikey}" '
         "--connect-timeout={params.connect_timeout} "
         "--continue={params.continue_true_false} "
         "--dir={params.outdir} "
@@ -34,7 +69,7 @@ rule download_file:
         "--max-tries={params.max_tries} "
         "--out={params.filename} "
         "--split={params.split} "
-        "{params.url}"
+        "{resources.download_params}"
 
 
 if file_checksum:
