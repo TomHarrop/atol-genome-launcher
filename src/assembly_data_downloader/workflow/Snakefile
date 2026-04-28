@@ -11,14 +11,9 @@ def format_download_params(wildcards):
     return download_params
 
 
-# Configuration
 manifest = Manifest.from_yaml(config.get("manifest_file"))
 logs_dir = manifest.get_stage_logs("raw")
 download_dir = manifest.get_dir("downloads")
-
-
-# Wildcard constraints
-all_read_numbers = ["r1", "r2", "single_end"]
 
 
 wildcard_constraints:
@@ -26,7 +21,6 @@ wildcard_constraints:
     raw_file="|".join([str(x) for x in manifest.reads.all_raw_paths]),
 
 
-# Workflow
 rule target:
     input:
         manifest.reads.flat_paths("raw"),
