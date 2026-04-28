@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import os
+from urllib.parse import urljoin
+
 
 def download_params(wildcards, attempt):
     """
@@ -16,10 +18,17 @@ def download_params(wildcards, attempt):
     if base_url and attempt == 1:
         bpa_mirror_user = os.environ.get("BPA_MIRROR_USER")
         bpa_mirror_passwd = os.environ.get("BPA_MIRROR_PASSWD")
+
+        # handle base_dir URLs without a trailing slash
+        base_url_dir = base_url + ("" if base_url.endswith("/") else "/")
+        joined_url = urljoin(
+            base_url_dir,
+            Path(bioplatforms_url).name,
+        )
+
         return (
             f'--http-user="{bpa_mirror_user}" '
-            f'--http-passwd="{bpa_mirror_passwd}" '
-            f"{base_url+ Path(bioplatforms_url).name}"
+            f'--http-passwd="{bpa_mirror_passwd}" ' + joined_url
         )
 
     raise RuntimeError("Failed to parse download parameters.")
@@ -42,8 +51,6 @@ else:
 
     envvars:
         "BPA_APIKEY",
-
-
 
 
 rule download_file:
