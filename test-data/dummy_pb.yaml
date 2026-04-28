@@ -28,8 +28,8 @@ reads:
           md5sum: "4a409be4cc1e33713fd3d5f9e573cff5"
   Hi-C:
     bpa-ausarg-hi-c-353997-hmgmjdrxy:
-      r1:
-        resources:
+      resources:
+        r1:
           - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/re\
               source/f3efb2a937921622b232115fd091f777/download/353997_AusARG_BR\
               F_HMGMJDRXY_S4_L001_R1_001.fastq.gz"
@@ -40,8 +40,7 @@ reads:
               F_HMGMJDRXY_S4_L002_R1_001.fastq.gz"
             md5sum: "05f8d596dc3a8539d0aa4ed5223ec458"
             lane_number: "L0002"
-      r2:
-        resources:
+        r2:
           - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/re\
               source/f11bb9b8a179fc1e5a0dce60c01b98fa/download/353997_AusARG_BR\
               F_HMGMJDRXY_S4_L001_R2_001.fastq.gz"

@@ -13,12 +13,14 @@ defined_class: Lepidosaura
 reads:
   PACBIO_SMRT:
     bpa-ausarg-pacbio-hifi-350822-da095606:
-      - md5sum: "1c0830aed2482df5fe0c166630db9bb9"
-        url: "https://data.bioplatforms.com/dataset/bpa-ausarg-pacbio-hifi-350822-da095\
-          606/resource/1c0830aed2482df5fe0c166630db9bb9/download/350822_AusARG_\
-          AGRF_DA095606.ccs.bam"
+      resources:
+        - md5sum: "1c0830aed2482df5fe0c166630db9bb9"
+          url: "https://data.bioplatforms.com/dataset/bpa-ausarg-pacbio-hifi-350822-da095\
+            606/resource/1c0830aed2482df5fe0c166630db9bb9/download/350822_AusAR\
+            G_AGRF_DA095606.ccs.bam"
     bpa-ausarg-pacbio-hifi-350822-da080843:
-      - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-pacbio-hifi-350822-da080\
-          843/resource/4a409be4cc1e33713fd3d5f9e573cff5/download/350822_AusARG_\
-          AGRF_DA080843.ccs.bam"
-        md5sum: "4a409be4cc1e33713fd3d5f9e573cff5"
+      resources:
+        - url: "https://data.bioplatforms.com/dataset/bpa-ausarg-pacbio-hifi-350822-da080\
+            843/resource/4a409be4cc1e33713fd3d5f9e573cff5/download/350822_AusAR\
+            G_AGRF_DA080843.ccs.bam"
+          md5sum: "4a409be4cc1e33713fd3d5f9e573cff5"

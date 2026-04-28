@@ -3,6 +3,29 @@
 from pathlib import Path
 from yaml_manifest import Manifest, replace_ext
 
+# check dummy manifests
+dummy_manifest_files = [
+    Path("test-data", "dummy_pb.yaml"),
+    Path("test-data", "dummy_both.yaml"),
+    Path("test-data", "dummy_ont.yaml"),
+    Path("test-data", "dummy_no_lane.yaml"),
+    Path("test-data", "dummy_nohic.yaml"),
+]
+
+for dummy_manifest_file in dummy_manifest_files:
+
+    print(f"\n\nTest parsing {dummy_manifest_file}\n\n")
+
+    try:
+        print(Manifest.from_yaml(dummy_manifest_file))
+    except NotImplementedError as e:
+        print(f"Manifest {dummy_manifest_file} couldn't be parsed:")
+        print(e)
+
+
+manifest_file = Path("test-data", "dummy_pb.yaml")
+
+
 # testing
 manifest_file = Path("test-data", "dummy_pb.yaml")
 genomeassembly_template_path = Path(
