@@ -1,11 +1,93 @@
 Changelog
 =========
 
+0.12.2 (2026-05-01)
+-------------------
+
+New
+
+~~~
+- Output readme during deploy. [Tom Harrop]
+
+
+0.12.1 (2026-04-28)
+-------------------
+
+Fix
+~~~
+
+- Fixed nesting of r1/r2 and resources tags in YAML. [Tom Harrop]
+- Handle base_urls without trailing slash. [Tom Harrop]
+
+0.12.0 (2026-04-28)
+-------------------
+
+New
+
+~~~
+- Try downloading from mirror if base_url is given. Fall back to AWS.
+  [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Use manifest URLs in assembly-data-downloader. [Tom Harrop]
+- BpaFile stores the download path. [Tom Harrop]
+
+Other
+
+~~~~~
+- Merge pull request #18 from TomHarrop/mirror. [Tom Harrop]
+
+  Draft of base_url handling in Manifest
+- Refactor additions. [Tom Harrop]
+- Reset src/assembly_data_downloader/workflow/Snakefile. [Tom Harrop]
+- Draft of base_url handling in Manifest. [Tom Harrop]
+
+
+0.11.4 (2026-04-22)
+-------------------
+
+Changes
+~~~~~~~
+
+- Update aria2 params. [Tom Harrop]
+
+0.11.3 (2026-04-22)
+-------------------
+
+Changes
+
+~~~~~~~
+- Switch bpa-file-downloader to aria2c. [Tom Harrop]
+
+
+0.11.0 (2026-04-20)
+-------------------
+
+New
+~~~
+- Render ASCC templates. [Tom Harrop]
+- Produce a TreeVal config if there is Hi-C data. [Tom Harrop]
+- Add outputs for ascc to assembly_types (fixes #16) [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Only rename files with allowed extensions. [Tom Harrop]
+
+Other
+
+~~~~~
+- Merge pull request #17 from TomHarrop/more-templates. [Tom Harrop]
+
+  ASCC and TreeVal config formatting
+
+
 0.10.4 (2026-04-10)
 -------------------
 
 Fix
-
 ~~~
 - Removed duplicate directory in assembly paths. [Tom Harrop]
 
