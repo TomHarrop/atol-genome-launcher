@@ -13,12 +13,10 @@ import shutil
 
 def parse_arguments():
     parser, inputs_parser, outputs_parser, settings_parser = generate_parser(
-        description=(
-            """
+        description=("""
             Deploy the genome-launcher-pipeline and the sanger-tol pipeline run
             scripts to a local directory.
-            """
-        )
+            """)
     )
 
     parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
@@ -30,11 +28,9 @@ def parse_arguments():
         default=urlsplit(
             "https://github.com/AToL-Bioinformatics/genome-launcher-workflow"
         ),
-        help=(
-            """ 
+        help=(""" 
         genome-launcher-workflow URL
-        """
-        ),
+        """),
         type=urlsplit,
     )
 
@@ -42,7 +38,7 @@ def parse_arguments():
         "--workflow_tag",
         help="genome-launcher-workflow tag",
         type=str,
-        default="0.7.1",
+        default="0.9.1",
     )
 
     settings_parser.add_argument(
@@ -78,6 +74,10 @@ def main():
 
     # replace config with manifest file
     shutil.copy(args.manifest_file, Path(args.run_dir, "config", "manifest.yaml"))
+
+    # format the readme
+    readme_template = Path(args.run_dir, "config", "README.md")
+    render_template(manifest, readme_template, Path(args.run_dir, "README.md"))
 
     # TODO: sbatch config for genome launcher workflow
 
