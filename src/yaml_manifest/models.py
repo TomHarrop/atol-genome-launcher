@@ -10,6 +10,7 @@ from typing_extensions import deprecated
 from pydantic import (
     BaseModel,
     ConfigDict,
+    HttpUrl,
     field_validator,
     computed_field,
     model_validator,
@@ -242,12 +243,19 @@ def _resolve_assembly_types(
 
 
 class BpaFile(BaseModel):
-    """A single remote file on the Bioplatforms Australia data portal."""
+    """
+    A CKAN Resource on the Bioplatforms Australia data portal, equivalent to a
+    single remote file.
+    """
 
     url: str
     md5sum: str
     lane_number: str = "single_lane"
     raw_path: Optional[Path] = None
+
+    model_config = ConfigDict(
+        field_title_generator=lambda field_name, field_info: field_name
+    )
 
     @field_validator("lane_number")
     @classmethod
@@ -272,7 +280,13 @@ class BpaFile(BaseModel):
 
 
 class ReadFile(BaseModel):
-    """A read file entry, either paired-end (r1/r2) or single-end."""
+    """
+    A ReadFile containing a list of BpaFiles. Roughly equivalent to a CKAN
+    Package on the BPA Data Portal. For consumers, the ReadFile could represent
+    a single file for single-end reads (e.g. pacbio_reads.bam,
+    ont_reads.fastq.gz) or a pair of file for paired-end reads (e.g.
+    hic_reads.r1.fastq.gz, hic_reads.r2.fastq.gz).
+    """
 
     name: str
     data_type: str
@@ -280,6 +294,10 @@ class ReadFile(BaseModel):
     r1: Optional[list[BpaFile]] = None
     r2: Optional[list[BpaFile]] = None
     single_end: Optional[list[BpaFile]] = None
+
+    model_config = ConfigDict(
+        field_title_generator=lambda field_name, field_info: field_name
+    )
 
     @model_validator(mode="after")
     def _set_raw_paths(self) -> "ReadFile":
@@ -512,7 +530,7 @@ class ReadFileCollection:
 
 class Manifest(BaseModel):
     """
-    AToL manifest, defining metadata and read data for an assembly.
+    AToL manifest, defining the metadata and read data for an assembly.
     """
 
     # Specimen metadata
@@ -524,13 +542,13 @@ class Manifest(BaseModel):
     busco_odb10_dataset_name: str
     busco_odb12_dataset_name: str
 
-    defined_class: Optional[str]
+    ncbi_class: Optional[str] = None
 
     find_plastid: Optional[bool] = False
-    hic_motif: Optional[str]
-    mito_code: Optional[int]
-    mitohifi_reference_species: Optional[str]
-    oatk_hmm_name: Optional[str]
+    hic_motif: Optional[str] = None
+    mito_code: Optional[int] = None
+    mitohifi_reference_species: Optional[str] = None
+    oatk_hmm_name: Optional[str] = None
 
     # Read data
     read_files: list[ReadFile]

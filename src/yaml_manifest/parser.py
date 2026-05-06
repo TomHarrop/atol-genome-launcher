@@ -15,6 +15,7 @@ _KNOWN_KEYS = {
     "hic_motif",
     "mito_code",
     "mitohifi_reference_species",
+    "ncbi_class",
     "oatk_hmm_name",
     "reads",
     "scientific_name",
@@ -46,9 +47,9 @@ def parse_config(raw: dict) -> Manifest:
         assembly_version=raw.get("assembly_version", ""),
         scientific_name=raw.get("scientific_name", ""),
         taxon_id=raw.get("taxon_id", 0),
-        defined_class=raw.get("defined_class", ""),
-        busco_odb10_dataset_name=raw.get("busco_odb10_dataset_name"),
-        busco_odb12_dataset_name=raw.get("busco_odb12_dataset_name"),
+        ncbi_class=raw.get("ncbi_class", ""),
+        busco_odb10_dataset_name=raw.get("busco_odb10_dataset_name", ""),
+        busco_odb12_dataset_name=raw.get("busco_odb12_dataset_name", ""),
         hic_motif=raw.get("hic_motif"),
         mito_code=raw.get("mito_code"),
         oatk_hmm_name=raw.get("oatk_hmm_name"),
@@ -60,25 +61,18 @@ def parse_config(raw: dict) -> Manifest:
 
 
 def _parse_read_file(data_type: str, filename: str, file_data) -> ReadFile:
-    # Paired-end has r1/r2 keys below resources
     if isinstance(file_data, dict):
         resources = file_data.get("resources", {})
-        if isinstance(resources, dict) and ("r1" in resources or "r2" in resources):
-            base_url = file_data.get("base_url")
-            r1 = [BpaFile(**f) for f in resources.get("r1", [])] or None
-            r2 = [BpaFile(**f) for f in resources.get("r2", [])] or None
-            return ReadFile(name=filename, data_type=data_type, base_url=base_url, r1=r1, r2=r2)
-        else:
-            # Single-end dict with resources as a list
-            base_url = file_data.get("base_url")
-            single_end = [BpaFile(**f) for f in (resources if isinstance(resources, list) else [])]
-            return ReadFile(name=filename, data_type=data_type, base_url=base_url, single_end=single_end)
-    else:
-        # Legacy bare list
-        single_end = [BpaFile(**f) for f in file_data]
-        return ReadFile(name=filename, data_type=data_type, single_end=single_end)
-
-
-def natural_sort_key(s: str) -> list:
-    """Convert string to list for natural sorting (handles embedded numbers)."""
-    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
+        base_url = file_data.get("base_url")
+        single_end = [BpaFile(**f) for f in resources.get("single_end", [])] or None
+        r1 = [BpaFile(**f) for f in resources.get("r1", [])] or None
+        r2 = [BpaFile(**f) for f in resources.get("r2", [])] or None
+        return ReadFile(
+            name=filename,
+            data_type=data_type,
+            base_url=base_url,
+            r1=r1,
+            r2=r2,
+            single_end=single_end,
+        )
+    raise ValueError(f"Failed to parse {file_data}")

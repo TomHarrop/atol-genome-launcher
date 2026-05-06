@@ -14,16 +14,18 @@ reads:
   OXFORD_NANOPORE:
     bpa-fish-ont-promethion-617217-pbi90024-1:
       resources:
-        - url: "https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi9\
-            0024-1/resource/11ae622b57d6429f623fdbf430844f35/download/617217_FI\
-            SH_BRF_PBI90024_ONTPromethION_fastq_pass.tar"
-          md5sum: "11ae622b57d6429f623fdbf430844f35"
+        single_end:
+          - url: "https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi9\
+              0024-1/resource/11ae622b57d6429f623fdbf430844f35/download/617217_\
+              FISH_BRF_PBI90024_ONTPromethION_fastq_pass.tar"
+            md5sum: "11ae622b57d6429f623fdbf430844f35"
     bpa-fish-ont-promethion-617217-pbi88904-1:
       resources:
-        - url: "https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi8\
-            8904-1/resource/b5e37dfd5b94e6dc363c154b99e495cf/download/617217_FI\
-            SH_BRF_PBI88904_ONTPromethION_fastq_pass.tar"
-          md5sum: "b5e37dfd5b94e6dc363c154b99e495cf"
+        single_end:
+          - url: "https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi8\
+              8904-1/resource/b5e37dfd5b94e6dc363c154b99e495cf/download/617217_\
+              FISH_BRF_PBI88904_ONTPromethION_fastq_pass.tar"
+            md5sum: "b5e37dfd5b94e6dc363c154b99e495cf"
   Hi-C:
     bpa-ausarg-hi-c-353997-hmgmjdrxy:
       resources:

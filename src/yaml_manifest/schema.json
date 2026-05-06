@@ -1,19 +1,19 @@
 {
     "$defs": {
         "BpaFile": {
-            "description": "A single remote file on the Bioplatforms Australia data portal.",
+            "description": "A CKAN Resource on the Bioplatforms Australia data portal, equivalent to a\nsingle remote file.",
             "properties": {
                 "url": {
-                    "title": "Url",
+                    "title": "url",
                     "type": "string"
                 },
                 "md5sum": {
-                    "title": "Md5Sum",
+                    "title": "md5sum",
                     "type": "string"
                 },
                 "lane_number": {
                     "default": "single_lane",
-                    "title": "Lane Number",
+                    "title": "lane_number",
                     "type": "string"
                 },
                 "raw_path": {
@@ -27,7 +27,7 @@
                         }
                     ],
                     "default": null,
-                    "title": "Raw Path"
+                    "title": "raw_path"
                 }
             },
             "required": [
@@ -38,14 +38,14 @@
             "type": "object"
         },
         "ReadFile": {
-            "description": "A read file entry, either paired-end (r1/r2) or single-end.",
+            "description": "A ReadFile containing a list of BpaFiles. Roughly equivalent to a CKAN\nPackage on the BPA Data Portal. For consumers, the ReadFile could represent\na single file for single-end reads (e.g. pacbio_reads.bam,\nont_reads.fastq.gz) or a pair of file for paired-end reads (e.g.\nhic_reads.r1.fastq.gz, hic_reads.r2.fastq.gz).",
             "properties": {
                 "name": {
-                    "title": "Name",
+                    "title": "name",
                     "type": "string"
                 },
                 "data_type": {
-                    "title": "Data Type",
+                    "title": "data_type",
                     "type": "string"
                 },
                 "base_url": {
@@ -58,7 +58,7 @@
                         }
                     ],
                     "default": null,
-                    "title": "Base Url"
+                    "title": "base_url"
                 },
                 "r1": {
                     "anyOf": [
@@ -73,7 +73,7 @@
                         }
                     ],
                     "default": null,
-                    "title": "R1"
+                    "title": "r1"
                 },
                 "r2": {
                     "anyOf": [
@@ -88,7 +88,7 @@
                         }
                     ],
                     "default": null,
-                    "title": "R2"
+                    "title": "r2"
                 },
                 "single_end": {
                     "anyOf": [
@@ -103,7 +103,7 @@
                         }
                     ],
                     "default": null,
-                    "title": "Single End"
+                    "title": "single_end"
                 }
             },
             "required": [
@@ -114,7 +114,7 @@
             "type": "object"
         }
     },
-    "description": "AToL manifest, defining metadata and read data for an assembly.",
+    "description": "AToL manifest, defining the metadata and read data for an assembly.",
     "properties": {
         "assembly_version": {
             "title": "assembly_version",
@@ -140,7 +140,7 @@
             "title": "busco_odb12_dataset_name",
             "type": "string"
         },
-        "defined_class": {
+        "ncbi_class": {
             "anyOf": [
                 {
                     "type": "string"
@@ -149,7 +149,8 @@
                     "type": "null"
                 }
             ],
-            "title": "defined_class"
+            "default": null,
+            "title": "ncbi_class"
         },
         "find_plastid": {
             "anyOf": [
@@ -172,6 +173,7 @@
                     "type": "null"
                 }
             ],
+            "default": null,
             "title": "hic_motif"
         },
         "mito_code": {
@@ -183,6 +185,7 @@
                     "type": "null"
                 }
             ],
+            "default": null,
             "title": "mito_code"
         },
         "mitohifi_reference_species": {
@@ -194,6 +197,7 @@
                     "type": "null"
                 }
             ],
+            "default": null,
             "title": "mitohifi_reference_species"
         },
         "oatk_hmm_name": {
@@ -205,6 +209,7 @@
                     "type": "null"
                 }
             ],
+            "default": null,
             "title": "oatk_hmm_name"
         },
         "read_files": {
@@ -228,11 +233,6 @@
         "taxon_id",
         "busco_odb10_dataset_name",
         "busco_odb12_dataset_name",
-        "defined_class",
-        "hic_motif",
-        "mito_code",
-        "mitohifi_reference_species",
-        "oatk_hmm_name",
         "read_files"
     ],
     "title": "Manifest",
