@@ -25,9 +25,7 @@ for dummy_manifest_file in dummy_manifest_files:
 
 manifest_file = Path("test-data", "dummy_pb.yaml")
 
-
 # testing
-manifest_file = Path("test-data", "dummy_pb.yaml")
 genomeassembly_template_path = Path(
     "src/pipeline_config_generator/templates/sanger-tol_genomeassembly_e651801.spec.yaml.j2"
 )
@@ -41,6 +39,14 @@ treeval_template_path = Path(
 )
 
 manifest = Manifest.from_yaml(manifest_file)
+
+# WIP - convert to JSON
+import json
+
+manifest_dict = manifest.__dict__
+
+raise ValueError(manifest_dict)
+
 
 # General info
 manifest.dataset_id
