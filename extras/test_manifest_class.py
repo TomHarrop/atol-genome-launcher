@@ -45,7 +45,7 @@ import json
 
 manifest_dict = manifest.__dict__
 
-raise ValueError(manifest_dict)
+raise ValueError(json.dumps(Manifest.model_json_schema()))
 
 
 # General info

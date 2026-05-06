@@ -7,7 +7,13 @@ from pathlib import Path
 from typing import Any, Optional
 from typing_extensions import deprecated
 
-from pydantic import BaseModel, field_validator, computed_field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    field_validator,
+    computed_field,
+    model_validator,
+)
 
 from yaml_manifest.layout import (
     get_dir,
@@ -18,7 +24,6 @@ from yaml_manifest.layout import (
     get_pipeline_runscript,
     _collect_upload_files,
 )
-
 
 _ASSEMBLY_TYPES_FILE = "assembly_types.json"
 
@@ -507,31 +512,35 @@ class ReadFileCollection:
 
 class Manifest(BaseModel):
     """
-    Complete manifest parsed from YAML.
-
-    Contains both specimen metadata and read file definitions.
+    AToL manifest, defining metadata and read data for an assembly.
     """
 
     # Specimen metadata
-    assembly_version: int = 0
+    assembly_version: int
     dataset_id: str
     scientific_name: str
     taxon_id: int
-    defined_class: str
 
-    busco_odb10_dataset_name: Optional[str] = None
-    busco_odb12_dataset_name: Optional[str] = None
+    busco_odb10_dataset_name: str
+    busco_odb12_dataset_name: str
+
+    defined_class: Optional[str]
+
     find_plastid: Optional[bool] = False
-    hic_motif: Optional[str] = None
-    mito_code: Optional[int] = None
-    mitohifi_reference_species: Optional[str] = None
-    oatk_hmm_name: Optional[str] = None
+    hic_motif: Optional[str]
+    mito_code: Optional[int]
+    mitohifi_reference_species: Optional[str]
+    oatk_hmm_name: Optional[str]
 
     # Read data
     read_files: list[ReadFile]
 
     # Catch-all for unknown metadata fields
     extra: dict[str, Any] = {}
+
+    model_config = ConfigDict(
+        field_title_generator=lambda field_name, field_info: field_name
+    )
 
     @model_validator(mode="after")
     def _check_long_reads(self) -> "Manifest":
@@ -543,14 +552,12 @@ class Manifest(BaseModel):
                 "(PACBIO_SMRT or OXFORD_NANOPORE)"
             )
         if has_pacbio and has_ont:
-            raise NotImplementedError(
-                """
+            raise NotImplementedError("""
 
 Only one long read platform per manifest is implemented right now. Put the
 assemblies in separate manifests. If they are from the same specimen (i.e. they
 have the same ToLID), they should have different assembly_versions.
-"""
-            )
+""")
 
         return self
 
