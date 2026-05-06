@@ -1,0 +1,47 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "required": [
+        "assembly_version",
+        "busco_odb10_dataset_name",
+        "busco_odb12_dataset_name",
+        "dataset_id",
+        "scientific_name",
+        "taxon_id"
+    ],
+    "properties": {
+        "assembly_version": {
+            "type": "integer"
+        },
+        "busco_odb10_dataset_name": {
+            "type": "string"
+        },
+        "busco_odb12_dataset_name": {
+            "type": "string"
+        },
+        "dataset_id": {
+            "type": "string"
+        },
+        "find_plastid": {
+            "type": "boolean"
+        },
+        "hic_motif": {
+            "type": "string"
+        },
+        "mitochondrial_genetic_code_id": {
+            "type": "integer"
+        },
+        "mitohifi_reference_species": {
+            "type": "string"
+        },
+        "oatk_hmm_name": {
+            "type": "string"
+        },
+        "scientific_name": {
+            "type": "string"
+        },
+        "taxon_id": {
+            "type": "integer"
+        }
+    }
+}
