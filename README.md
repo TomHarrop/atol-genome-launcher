@@ -1,9 +1,5 @@
 ## atol-genome-launcher
 
-> [!IMPORTANT]
->
-> Currently in development.
-
 Utility code for AToL's Genome Engine. This package provides modules for
 launching assemblies and annotations based on metadata ingested by the
 [atol-bpa-datamapper](github.com/TomHarrop/atol-bpa-datamapper).
@@ -12,14 +8,23 @@ launching assemblies and annotations based on metadata ingested by the
 ### Standardised metadata parsing
 
 The `yaml_manifest` module provides standardised parsing of AToL's assembly
-YAML files.
+manifest. The schema for the manifest is at
+[src/yaml_manifest/schema.json](./src/yaml_manifest/schema.json)
+
+> [!IMPORTANT]
+>
+> Despite the name, the preferred input is JSON. See the [example JSON
+> file](./test-data/dummy_pb.json). A legacy parser for YAML is available as
+> `Manifest.from_yaml()`. 
+
 
 #### Load the manifest
 
 ```python3
 from yaml_manifest import Manifest
 
-manifest = Manifest.from_yaml("manifest.yaml")
+with open("manifest.json", "rb") as f:
+  manifest = Manifest.model_validate_json(f.read())
 ```
 
 If you have already processed the manifest in Python, you can load it straight
@@ -113,11 +118,6 @@ manifest, so you can run `deploy-pipeline manifest.yaml`. The deployed
 workflow, runscripts and manifest could then be committed to a private
 repository.
 
-> [!NOTE]
-> TODO:
->   - Format the runscripts and pipeline configs
->   - Generate a directory structure?
->   - git push?
 
 #### Usage
 
