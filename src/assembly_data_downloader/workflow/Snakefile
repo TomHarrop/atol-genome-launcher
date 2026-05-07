@@ -11,7 +11,9 @@ def format_download_params(wildcards):
     return download_params
 
 
-manifest = Manifest.from_yaml(config.get("manifest_file"))
+with open(config.get("manifest_file"), "rb") as f:
+    manifest = Manifest.model_validate_json(f.read())
+
 logs_dir = manifest.get_stage_logs("raw")
 download_dir = manifest.get_dir("downloads")
 

@@ -27,12 +27,9 @@ manifest_file = Path("test-data", "dummy_pb.yaml")
 
 
 # test json import
-import json
-
 json_manifest_file = Path("test-data", "dummy_pb.json")
-with open(json_manifest_file, "rt") as f:
-    raw_json = json.load(f)
-json_manifest = Manifest.model_validate(raw_json)
+with open(json_manifest_file, "rb") as f:
+    json_manifest = Manifest.model_validate_json(f.read())
 raise ValueError(json_manifest)
 
 # testing

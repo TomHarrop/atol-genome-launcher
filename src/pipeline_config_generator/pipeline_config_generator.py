@@ -51,7 +51,8 @@ def main():
     template_path = args.template
 
     # load manifest file
-    manifest = Manifest.from_yaml(args.manifest)
+    with open(args.manifest, "rb") as f:
+        manifest = Manifest.model_validate_json(f.read())
 
     render_template(manifest, template_path, args.pipeline_config)
 
