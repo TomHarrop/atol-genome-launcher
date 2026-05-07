@@ -60,7 +60,8 @@ def main():
     args = parse_arguments()
 
     # read in manifest file
-    manifest = Manifest.from_yaml(args.manifest_file)
+    with open(args.manifest_file, "rb") as f:
+        manifest = Manifest.model_validate_json(f.read())
 
     logger.warning(f"Deploying workflow to {args.run_dir}")
     deploy(
@@ -73,11 +74,12 @@ def main():
     )
 
     # replace config with manifest file
-    shutil.copy(args.manifest_file, Path(args.run_dir, "config", "manifest.yaml"))
+    shutil.copy(args.manifest_file, Path(args.run_dir, "config", "manifest.json"))
 
     # format the readme
     readme_template = Path(args.run_dir, "config", "README.md")
     render_template(manifest, readme_template, Path(args.run_dir, "README.md"))
+    readme_template.unlink()
 
     # TODO: sbatch config for genome launcher workflow
 

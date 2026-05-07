@@ -7,7 +7,14 @@ from pathlib import Path
 from typing import Any, Optional
 from typing_extensions import deprecated
 
-from pydantic import BaseModel, field_validator, computed_field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    HttpUrl,
+    field_validator,
+    computed_field,
+    model_validator,
+)
 
 from yaml_manifest.layout import (
     get_dir,
@@ -18,7 +25,6 @@ from yaml_manifest.layout import (
     get_pipeline_runscript,
     _collect_upload_files,
 )
-
 
 _ASSEMBLY_TYPES_FILE = "assembly_types.json"
 
@@ -237,12 +243,19 @@ def _resolve_assembly_types(
 
 
 class BpaFile(BaseModel):
-    """A single remote file on the Bioplatforms Australia data portal."""
+    """
+    A CKAN Resource on the Bioplatforms Australia data portal, equivalent to a
+    single remote file.
+    """
 
     url: str
     md5sum: str
     lane_number: str = "single_lane"
     raw_path: Optional[Path] = None
+
+    model_config = ConfigDict(
+        field_title_generator=lambda field_name, field_info: field_name
+    )
 
     @field_validator("lane_number")
     @classmethod
@@ -267,7 +280,13 @@ class BpaFile(BaseModel):
 
 
 class ReadFile(BaseModel):
-    """A read file entry, either paired-end (r1/r2) or single-end."""
+    """
+    A ReadFile containing a list of BpaFiles. Roughly equivalent to a CKAN
+    Package on the BPA Data Portal. For consumers, the ReadFile could represent
+    a single file for single-end reads (e.g. pacbio_reads.bam,
+    ont_reads.fastq.gz) or a pair of file for paired-end reads (e.g.
+    hic_reads.r1.fastq.gz, hic_reads.r2.fastq.gz).
+    """
 
     name: str
     data_type: str
@@ -275,6 +294,10 @@ class ReadFile(BaseModel):
     r1: Optional[list[BpaFile]] = None
     r2: Optional[list[BpaFile]] = None
     single_end: Optional[list[BpaFile]] = None
+
+    model_config = ConfigDict(
+        field_title_generator=lambda field_name, field_info: field_name
+    )
 
     @model_validator(mode="after")
     def _set_raw_paths(self) -> "ReadFile":
@@ -507,20 +530,20 @@ class ReadFileCollection:
 
 class Manifest(BaseModel):
     """
-    Complete manifest parsed from YAML.
-
-    Contains both specimen metadata and read file definitions.
+    AToL manifest, defining the metadata and read data for an assembly.
     """
 
     # Specimen metadata
-    assembly_version: int = 0
+    assembly_version: int
     dataset_id: str
     scientific_name: str
     taxon_id: int
-    defined_class: str
 
-    busco_odb10_dataset_name: Optional[str] = None
-    busco_odb12_dataset_name: Optional[str] = None
+    busco_odb10_dataset_name: str
+    busco_odb12_dataset_name: str
+
+    ncbi_class: Optional[str] = None
+
     find_plastid: Optional[bool] = False
     hic_motif: Optional[str] = None
     mito_code: Optional[int] = None
@@ -533,6 +556,10 @@ class Manifest(BaseModel):
     # Catch-all for unknown metadata fields
     extra: dict[str, Any] = {}
 
+    model_config = ConfigDict(
+        field_title_generator=lambda field_name, field_info: field_name
+    )
+
     @model_validator(mode="after")
     def _check_long_reads(self) -> "Manifest":
         has_pacbio = any(rf.data_type == "PACBIO_SMRT" for rf in self.read_files)
@@ -543,14 +570,12 @@ class Manifest(BaseModel):
                 "(PACBIO_SMRT or OXFORD_NANOPORE)"
             )
         if has_pacbio and has_ont:
-            raise NotImplementedError(
-                """
+            raise NotImplementedError("""
 
 Only one long read platform per manifest is implemented right now. Put the
 assemblies in separate manifests. If they are from the same specimen (i.e. they
 have the same ToLID), they should have different assembly_versions.
-"""
-            )
+""")
 
         return self
 

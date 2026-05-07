@@ -1,0 +1,240 @@
+{
+    "$defs": {
+        "BpaFile": {
+            "description": "A CKAN Resource on the Bioplatforms Australia data portal, equivalent to a\nsingle remote file.",
+            "properties": {
+                "url": {
+                    "title": "url",
+                    "type": "string"
+                },
+                "md5sum": {
+                    "title": "md5sum",
+                    "type": "string"
+                },
+                "lane_number": {
+                    "default": "single_lane",
+                    "title": "lane_number",
+                    "type": "string"
+                },
+                "raw_path": {
+                    "anyOf": [
+                        {
+                            "format": "path",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "raw_path"
+                }
+            },
+            "required": [
+                "url",
+                "md5sum"
+            ],
+            "title": "BpaFile",
+            "type": "object"
+        },
+        "ReadFile": {
+            "description": "A ReadFile containing a list of BpaFiles. Roughly equivalent to a CKAN\nPackage on the BPA Data Portal. For consumers, the ReadFile could represent\na single file for single-end reads (e.g. pacbio_reads.bam,\nont_reads.fastq.gz) or a pair of file for paired-end reads (e.g.\nhic_reads.r1.fastq.gz, hic_reads.r2.fastq.gz).",
+            "properties": {
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                },
+                "data_type": {
+                    "title": "data_type",
+                    "type": "string"
+                },
+                "base_url": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "base_url"
+                },
+                "r1": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/BpaFile"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "r1"
+                },
+                "r2": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/BpaFile"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "r2"
+                },
+                "single_end": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/BpaFile"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "single_end"
+                }
+            },
+            "required": [
+                "name",
+                "data_type"
+            ],
+            "title": "ReadFile",
+            "type": "object"
+        }
+    },
+    "description": "AToL manifest, defining the metadata and read data for an assembly.",
+    "properties": {
+        "assembly_version": {
+            "title": "assembly_version",
+            "type": "integer"
+        },
+        "dataset_id": {
+            "title": "dataset_id",
+            "type": "string"
+        },
+        "scientific_name": {
+            "title": "scientific_name",
+            "type": "string"
+        },
+        "taxon_id": {
+            "title": "taxon_id",
+            "type": "integer"
+        },
+        "busco_odb10_dataset_name": {
+            "title": "busco_odb10_dataset_name",
+            "type": "string"
+        },
+        "busco_odb12_dataset_name": {
+            "title": "busco_odb12_dataset_name",
+            "type": "string"
+        },
+        "ncbi_class": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "ncbi_class"
+        },
+        "find_plastid": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": false,
+            "title": "find_plastid"
+        },
+        "hic_motif": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "hic_motif"
+        },
+        "mito_code": {
+            "anyOf": [
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "mito_code"
+        },
+        "mitohifi_reference_species": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "mitohifi_reference_species"
+        },
+        "oatk_hmm_name": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "oatk_hmm_name"
+        },
+        "read_files": {
+            "items": {
+                "$ref": "#/$defs/ReadFile"
+            },
+            "title": "read_files",
+            "type": "array"
+        },
+        "extra": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "extra",
+            "type": "object"
+        }
+    },
+    "required": [
+        "assembly_version",
+        "dataset_id",
+        "scientific_name",
+        "taxon_id",
+        "busco_odb10_dataset_name",
+        "busco_odb12_dataset_name",
+        "read_files"
+    ],
+    "title": "Manifest",
+    "type": "object"
+}

@@ -23,11 +23,14 @@ for dummy_manifest_file in dummy_manifest_files:
         print(e)
 
 
-manifest_file = Path("test-data", "dummy_pb.yaml")
+# manifest_file = Path("test-data", "dummy_pb.yaml")
 
+
+json_manifest_file = Path("test-data", "dummy_pb.json")
+with open(json_manifest_file, "rb") as f:
+    manifest = Manifest.model_validate_json(f.read())
 
 # testing
-manifest_file = Path("test-data", "dummy_pb.yaml")
 genomeassembly_template_path = Path(
     "src/pipeline_config_generator/templates/sanger-tol_genomeassembly_e651801.spec.yaml.j2"
 )
@@ -40,7 +43,7 @@ treeval_template_path = Path(
     "src/pipeline_config_generator/templates/sanger-tol_treeval_1.4.5.yaml.j2"
 )
 
-manifest = Manifest.from_yaml(manifest_file)
+
 
 # General info
 manifest.dataset_id
