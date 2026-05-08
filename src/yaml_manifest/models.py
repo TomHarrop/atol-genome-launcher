@@ -2,6 +2,7 @@
 
 import json
 import re
+import yaml
 from importlib import resources as importlib_resources
 from pathlib import Path
 from typing import Any, Optional
@@ -839,6 +840,26 @@ have the same ToLID), they should have different assembly_versions.
         passed as kwargs, e.g. platform=long_read_platform
         """
         return self.render_template(Path(template_path).read_text(), **kwargs)
+
+    @computed_field
+    @property
+    def as_yaml(self) -> "str":
+        dumped_model = self.model_dump(
+            exclude={
+                "read_files": {
+                    "__all__": {
+                        "single_end": {"__all__": "raw_path"},
+                        "r1": {"__all__": "raw_path"},
+                        "r2": {"__all__": "raw_path"},
+                    }
+                }
+            },  # type: ignore
+            exclude_computed_fields=True,
+            exclude_defaults=True,
+            exclude_none=True,
+            exclude_unset=True,
+        )
+        return yaml.dump(dumped_model)
 
     @computed_field
     @property

@@ -43,11 +43,11 @@ def parse_config(raw: dict) -> Manifest:
     extra = {k: v for k, v in raw.items() if k not in _KNOWN_KEYS}
 
     return Manifest(
-        dataset_id=raw.get("dataset_id", ""),
-        assembly_version=raw.get("assembly_version", ""),
-        scientific_name=raw.get("scientific_name", ""),
-        taxon_id=raw.get("taxon_id", 0),
-        ncbi_class=raw.get("ncbi_class", ""),
+        dataset_id=raw["dataset_id"],
+        assembly_version=raw["assembly_version"],
+        scientific_name=raw["scientific_name"],
+        taxon_id=raw["taxon_id"],
+        ncbi_class=raw.get("ncbi_class", None),
         busco_odb10_dataset_name=raw.get("busco_odb10_dataset_name", ""),
         busco_odb12_dataset_name=raw.get("busco_odb12_dataset_name", ""),
         hic_motif=raw.get("hic_motif"),

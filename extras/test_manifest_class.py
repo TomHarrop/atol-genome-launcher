@@ -2,25 +2,26 @@
 
 from pathlib import Path
 from yaml_manifest import Manifest, replace_ext
+import yaml
 
-# check dummy manifests
-dummy_manifest_files = [
-    Path("test-data", "dummy_pb.yaml"),
-    Path("test-data", "dummy_both.yaml"),
-    Path("test-data", "dummy_ont.yaml"),
-    Path("test-data", "dummy_no_lane.yaml"),
-    Path("test-data", "dummy_nohic.yaml"),
-]
+# # check dummy manifests
+# dummy_manifest_files = [
+#     Path("test-data", "dummy_pb.yaml"),
+#     Path("test-data", "dummy_both.yaml"),
+#     Path("test-data", "dummy_ont.yaml"),
+#     Path("test-data", "dummy_no_lane.yaml"),
+#     Path("test-data", "dummy_nohic.yaml"),
+# ]
 
-for dummy_manifest_file in dummy_manifest_files:
+# for dummy_manifest_file in dummy_manifest_files:
 
-    print(f"\n\nTest parsing {dummy_manifest_file}\n\n")
+#     print(f"\n\nTest parsing {dummy_manifest_file}\n\n")
 
-    try:
-        print(Manifest.from_yaml(dummy_manifest_file))
-    except NotImplementedError as e:
-        print(f"Manifest {dummy_manifest_file} couldn't be parsed:")
-        print(e)
+#     try:
+#         print(Manifest.from_yaml(dummy_manifest_file))
+#     except NotImplementedError as e:
+#         print(f"Manifest {dummy_manifest_file} couldn't be parsed:")
+#         print(e)
 
 
 # manifest_file = Path("test-data", "dummy_pb.yaml")
@@ -29,6 +30,11 @@ for dummy_manifest_file in dummy_manifest_files:
 json_manifest_file = Path("test-data", "dummy_pb.json")
 with open(json_manifest_file, "rb") as f:
     manifest = Manifest.model_validate_json(f.read())
+
+
+# print the manifest as human-readable yaml
+print(manifest.as_yaml)
+
 
 # testing
 genomeassembly_template_path = Path(
@@ -42,7 +48,6 @@ ascc_template_path = Path(
 treeval_template_path = Path(
     "src/pipeline_config_generator/templates/sanger-tol_treeval_1.4.5.yaml.j2"
 )
-
 
 
 # General info
