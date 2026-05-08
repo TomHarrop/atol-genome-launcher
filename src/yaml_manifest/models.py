@@ -10,7 +10,7 @@ from typing_extensions import deprecated
 from pydantic import (
     BaseModel,
     ConfigDict,
-    HttpUrl,
+    Field,
     field_validator,
     computed_field,
     model_validator,
@@ -73,11 +73,12 @@ class AssemblyType(BaseModel):
     assembler: str
     outputs: dict[str, dict[str, Path]]
 
+    find_mito: bool = False
+    find_plastid: bool = False
+
     # Optional assembler-specific configuration
     busco_odb10_dataset_name: Optional[str] = None
     busco_odb12_dataset_name: Optional[str] = None
-    find_mito: bool = False
-    find_plastid: bool = False
     mitohifi_mito_genetic_code: Optional[int] = None
     mitohifi_reference_species: Optional[str] = None
     oatk_mito_hmm: Optional[str] = None
@@ -301,6 +302,8 @@ class ReadFile(BaseModel):
 
     @model_validator(mode="after")
     def _set_raw_paths(self) -> "ReadFile":
+        if not (self.r1 or self.r2 or self.single_end):
+            raise ValueError(f"ReadFile {self} has no reads.")
         for read_number in self.read_numbers:
             for bpa_file in self.lanes_for_read(read_number):
                 bpa_file.raw_path = Path(
@@ -539,8 +542,14 @@ class Manifest(BaseModel):
     scientific_name: str
     taxon_id: int
 
-    busco_odb10_dataset_name: str
-    busco_odb12_dataset_name: str
+    busco_odb10_dataset_name: str = Field(
+        min_length=1,
+        description="Just the name, excluding the _odb10 suffix.",
+    )
+    busco_odb12_dataset_name: str = Field(
+        min_length=1,
+        description="Just the name, excluding the _odb12 suffix.",
+    )
 
     ncbi_class: Optional[str] = None
 
@@ -578,6 +587,13 @@ have the same ToLID), they should have different assembly_versions.
 """)
 
         return self
+
+    @field_validator("busco_odb10_dataset_name", "busco_odb12_dataset_name")
+    @classmethod
+    def _check_busco_dataset_name(cls, value: str) -> str:
+        if "_odb" in value:
+            raise ValueError("Exclude the _odb suffix")
+        return value
 
     @classmethod
     def from_yaml(cls, path: Path) -> "Manifest":

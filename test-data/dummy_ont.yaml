@@ -9,7 +9,7 @@ mitohifi_reference_species: "Cymbopogon citratus"
 oatk_hmm_name: "lepidosauria_mito"
 scientific_name: "Saiphos equalis"
 taxon_id: 172942
-defined_class: Lepidosaura
+ncbi_class: Lepidosaura
 reads:
   OXFORD_NANOPORE:
     bpa-fish-ont-promethion-617217-pbi90024-1:

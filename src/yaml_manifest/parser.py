@@ -62,11 +62,11 @@ def parse_config(raw: dict) -> Manifest:
 
 def _parse_read_file(data_type: str, filename: str, file_data) -> ReadFile:
     if isinstance(file_data, dict):
-        resources = file_data.get("resources", {})
         base_url = file_data.get("base_url")
-        single_end = [BpaFile(**f) for f in resources.get("single_end", [])] or None
-        r1 = [BpaFile(**f) for f in resources.get("r1", [])] or None
-        r2 = [BpaFile(**f) for f in resources.get("r2", [])] or None
+        resources = file_data.get("resources", {})
+        single_end = [BpaFile(**f) for f in resources.get("single_end", {})] or None
+        r1 = [BpaFile(**f) for f in resources.get("r1", {})] or None
+        r2 = [BpaFile(**f) for f in resources.get("r2", {})] or None
         return ReadFile(
             name=filename,
             data_type=data_type,

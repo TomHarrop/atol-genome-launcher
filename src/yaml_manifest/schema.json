@@ -133,10 +133,14 @@
             "type": "integer"
         },
         "busco_odb10_dataset_name": {
+            "description": "Just the name, excluding the _odb10 suffix.",
+            "minLength": 1,
             "title": "busco_odb10_dataset_name",
             "type": "string"
         },
         "busco_odb12_dataset_name": {
+            "description": "Just the name, excluding the _odb12 suffix.",
+            "minLength": 1,
             "title": "busco_odb12_dataset_name",
             "type": "string"
         },
