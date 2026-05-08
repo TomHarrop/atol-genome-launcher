@@ -1,11 +1,43 @@
 Changelog
 =========
 
-0.12.2 (2026-05-01)
+0.13.1 (2026-05-08)
 -------------------
 
 New
 
+~~~
+- Print the config as YAML for the README. [Tom Harrop]
+- Demo manifest conversion. [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Update test YAMLs and add JSON equivalents. [Tom Harrop]
+
+0.13.0 (2026-05-07)
+-------------------
+
+New
+
+~~~
+- JSON manifest. [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Update consumers to use JSON manifest. [Tom Harrop]
+
+Other
+
+~~~~~
+- Test parsing from JSON. [Tom Harrop]
+
+
+0.12.2 (2026-05-01)
+-------------------
+
+New
 ~~~
 - Output readme during deploy. [Tom Harrop]
 
@@ -15,15 +47,14 @@ New
 
 Fix
 ~~~
-
 - Fixed nesting of r1/r2 and resources tags in YAML. [Tom Harrop]
 - Handle base_urls without trailing slash. [Tom Harrop]
+
 
 0.12.0 (2026-04-28)
 -------------------
 
 New
-
 ~~~
 - Try downloading from mirror if base_url is given. Fall back to AWS.
   [Tom Harrop]
