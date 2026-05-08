@@ -30,7 +30,7 @@ from yaml_manifest.layout import (
 _ASSEMBLY_TYPES_FILE = "assembly_types.json"
 
 _OATK_HMM_BASE_URL = (
-    "https://github.com/c-zhou/OatkDB/raw/main/v20230921/{hmm_name}.fam"
+    "https://github.com/c-zhou/OatkDB/raw/main/v20230921/{hmm_name}_{organelle}.fam"
 )
 
 _ALLOWED_SUFFIXES = [".fa", ".fasta", ".fastq", ".fq", ".gz"]
@@ -214,10 +214,11 @@ def _resolve_assembly_types(
 
         elif assembler == "oatk":
             if oatk_hmm_name:
-                oatk_mito_hmm = _OATK_HMM_BASE_URL.format(hmm_name=oatk_hmm_name)
+                oatk_mito_hmm = _OATK_HMM_BASE_URL.format(hmm_name=oatk_hmm_name, organelle="mito")
             if find_plastid and oatk_hmm_name:
-                hmm_name = "_".join([oatk_hmm_name.split("_")[0], "pltd"])
-                oatk_plastid_hmm = _OATK_HMM_BASE_URL.format(hmm_name=hmm_name)
+                oatk_plastid_hmm = _OATK_HMM_BASE_URL.format(
+                    hmm_name=oatk_hmm_name, organelle="pltd"
+                )
 
         elif assembler == "mitohifi":
             mitohifi_ref_species = mitohifi_reference_species
