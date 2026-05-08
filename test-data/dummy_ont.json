@@ -1,1 +1,63 @@
-{"assembly_version":6,"dataset_id":"aBcDe1","scientific_name":"Saiphos equalis","taxon_id":172942,"busco_odb10_dataset_name":"sauropsida","busco_odb12_dataset_name":"squamata","ncbi_class":"Lepidosaura","hic_motif":"GATC,GANTC,CTNAG,TTAA","mito_code":2,"mitohifi_reference_species":"Cymbopogon citratus","oatk_hmm_name":"lepidosauria_mito","read_files":[{"name":"bpa-fish-ont-promethion-617217-pbi90024-1","data_type":"OXFORD_NANOPORE","single_end":[{"url":"https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi90024-1/resource/11ae622b57d6429f623fdbf430844f35/download/617217_FISH_BRF_PBI90024_ONTPromethION_fastq_pass.tar","md5sum":"11ae622b57d6429f623fdbf430844f35"}]},{"name":"bpa-fish-ont-promethion-617217-pbi88904-1","data_type":"OXFORD_NANOPORE","single_end":[{"url":"https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi88904-1/resource/b5e37dfd5b94e6dc363c154b99e495cf/download/617217_FISH_BRF_PBI88904_ONTPromethION_fastq_pass.tar","md5sum":"b5e37dfd5b94e6dc363c154b99e495cf"}]},{"name":"bpa-ausarg-hi-c-353997-hmgmjdrxy","data_type":"Hi-C","r1":[{"url":"https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/resource/f3efb2a937921622b232115fd091f777/download/353997_AusARG_BRF_HMGMJDRXY_S4_L001_R1_001.fastq.gz","md5sum":"f3efb2a937921622b232115fd091f777","lane_number":"L0001"},{"url":"https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/resource/05f8d596dc3a8539d0aa4ed5223ec458/download/353997_AusARG_BRF_HMGMJDRXY_S4_L002_R1_001.fastq.gz","md5sum":"05f8d596dc3a8539d0aa4ed5223ec458","lane_number":"L0002"}],"r2":[{"url":"https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/resource/f11bb9b8a179fc1e5a0dce60c01b98fa/download/353997_AusARG_BRF_HMGMJDRXY_S4_L001_R2_001.fastq.gz","md5sum":"f11bb9b8a179fc1e5a0dce60c01b98fa","lane_number":"L0001"},{"url":"https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/resource/110f148a260ea7c7c57514fa59b3b15e/download/353997_AusARG_BRF_HMGMJDRXY_S4_L002_R2_001.fastq.gz","md5sum":"110f148a260ea7c7c57514fa59b3b15e","lane_number":"L0002"}]}]}
+{
+  "assembly_version": 6,
+  "dataset_id": "aBcDe1",
+  "scientific_name": "Saiphos equalis",
+  "taxon_id": 172942,
+  "busco_odb10_dataset_name": "sauropsida",
+  "busco_odb12_dataset_name": "squamata",
+  "ncbi_class": "Lepidosaura",
+  "hic_motif": "GATC,GANTC,CTNAG,TTAA",
+  "mito_code": 2,
+  "mitohifi_reference_species": "Cymbopogon citratus",
+  "oatk_hmm_name": "lepidosauria_mito",
+  "read_files": [
+    {
+      "name": "bpa-fish-ont-promethion-617217-pbi90024-1",
+      "data_type": "OXFORD_NANOPORE",
+      "single_end": [
+        {
+          "url": "https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi90024-1/resource/11ae622b57d6429f623fdbf430844f35/download/617217_FISH_BRF_PBI90024_ONTPromethION_fastq_pass.tar",
+          "md5sum": "11ae622b57d6429f623fdbf430844f35"
+        }
+      ]
+    },
+    {
+      "name": "bpa-fish-ont-promethion-617217-pbi88904-1",
+      "data_type": "OXFORD_NANOPORE",
+      "single_end": [
+        {
+          "url": "https://data.bioplatforms.com/dataset/bpa-fish-ont-promethion-617217-pbi88904-1/resource/b5e37dfd5b94e6dc363c154b99e495cf/download/617217_FISH_BRF_PBI88904_ONTPromethION_fastq_pass.tar",
+          "md5sum": "b5e37dfd5b94e6dc363c154b99e495cf"
+        }
+      ]
+    },
+    {
+      "name": "bpa-ausarg-hi-c-353997-hmgmjdrxy",
+      "data_type": "Hi-C",
+      "r1": [
+        {
+          "url": "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/resource/f3efb2a937921622b232115fd091f777/download/353997_AusARG_BRF_HMGMJDRXY_S4_L001_R1_001.fastq.gz",
+          "md5sum": "f3efb2a937921622b232115fd091f777",
+          "lane_number": "L0001"
+        },
+        {
+          "url": "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/resource/05f8d596dc3a8539d0aa4ed5223ec458/download/353997_AusARG_BRF_HMGMJDRXY_S4_L002_R1_001.fastq.gz",
+          "md5sum": "05f8d596dc3a8539d0aa4ed5223ec458",
+          "lane_number": "L0002"
+        }
+      ],
+      "r2": [
+        {
+          "url": "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/resource/f11bb9b8a179fc1e5a0dce60c01b98fa/download/353997_AusARG_BRF_HMGMJDRXY_S4_L001_R2_001.fastq.gz",
+          "md5sum": "f11bb9b8a179fc1e5a0dce60c01b98fa",
+          "lane_number": "L0001"
+        },
+        {
+          "url": "https://data.bioplatforms.com/dataset/bpa-ausarg-hi-c-353997-hmgmjdrxy/resource/110f148a260ea7c7c57514fa59b3b15e/download/353997_AusARG_BRF_HMGMJDRXY_S4_L002_R2_001.fastq.gz",
+          "md5sum": "110f148a260ea7c7c57514fa59b3b15e",
+          "lane_number": "L0002"
+        }
+      ]
+    }
+  ]
+}
