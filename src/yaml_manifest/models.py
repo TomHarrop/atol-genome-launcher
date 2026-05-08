@@ -214,7 +214,9 @@ def _resolve_assembly_types(
 
         elif assembler == "oatk":
             if oatk_hmm_name:
-                oatk_mito_hmm = _OATK_HMM_BASE_URL.format(hmm_name=oatk_hmm_name, organelle="mito")
+                oatk_mito_hmm = _OATK_HMM_BASE_URL.format(
+                    hmm_name=oatk_hmm_name, organelle="mito"
+                )
             if find_plastid and oatk_hmm_name:
                 oatk_plastid_hmm = _OATK_HMM_BASE_URL.format(
                     hmm_name=oatk_hmm_name, organelle="pltd"
