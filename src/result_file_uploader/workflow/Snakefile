@@ -10,16 +10,18 @@ upload_done = Path(tempdir, f"{local_path.name}.uploaded")
 checksum_file = Path(tempdir, f"{local_path.name}.sha256")
 checksum_verified = Path(tempdir, f"{local_path.name}.verified")
 
+endpoint = os.getenv(f"RCLONE_CONFIG_{RCLONE_REMOTE}_ENDPOINT", None)
+
 remote_dest = f"{RCLONE_REMOTE}:{bucket}/{remote_path}"
 remote_parent = f"{RCLONE_REMOTE}:{bucket}/{str(Path(remote_path).parent)}"
 remote_filename = Path(remote_path).name
 remote_include = f"/{remote_filename}"
 
-# FIXME debugging SSL certificate path
+# debugging SSL certificate path
 openssl_capath_env = get_default_verify_paths().openssl_capath_env
-logger.error(f"Debug. openssl_capath_env variable name: {openssl_capath_env}")
+logger.debug(f"Debug. openssl_capath_env variable name: {openssl_capath_env}")
 openssl_capath_env_value = os.getenv(openssl_capath_env, None)
-logger.error(f"Debug. openssl_capath_env value:         {openssl_capath_env_value}")
+logger.debug(f"Debug. openssl_capath_env value:         {openssl_capath_env_value}")
 
 
 envvars:
@@ -88,4 +90,14 @@ rule target:
 onsuccess:
     with open(checksum_file, "rt") as f:
         sha256sum = f.read().strip().split()[0]
-    print(f'{{"remote_path": "{remote_path}", "sha256sum": "{sha256sum}"}}', file=sys.stdout)
+    print(
+        (
+            "{"
+            f'"endpoint": "{endpoint}", '
+            f'"bucket": "{bucket}", '
+            f'"remote_path": "{remote_path}", '
+            f'"sha256sum": "{sha256sum}"'
+            "}"
+        ),
+        file=sys.stdout,
+    )
