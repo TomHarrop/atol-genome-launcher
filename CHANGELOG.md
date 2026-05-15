@@ -1,11 +1,52 @@
 Changelog
 =========
 
-0.13.1 (2026-05-08)
+0.14.0 (2026-05-15)
 -------------------
 
 New
 
+~~~
+- Request-assembly-repo (fixes #22) [Tom Harrop]
+
+Other
+~~~~~
+
+- Merge pull request #24 from TomHarrop/request-repo. [Tom Harrop]
+
+  Request an assembly repo from GitHub for a Manifest
+- Test github request. [Tom Harrop]
+
+0.13.4 (2026-05-13)
+-------------------
+
+Changes
+
+~~~~~~~
+- Result-file-uploader prints endpoint and bucket. Fixes #21. [Tom
+  Harrop]
+
+
+0.13.3 (2026-05-08)
+-------------------
+
+Fix
+~~~
+- OatK hmm typo. [Tom Harrop]
+
+
+0.13.2 (2026-05-08)
+-------------------
+
+Fix
+~~~
+- OatK hmm typo. [Tom Harrop]
+
+
+0.13.1 (2026-05-08)
+-------------------
+
+New
 ~~~
 - Print the config as YAML for the README. [Tom Harrop]
 - Demo manifest conversion. [Tom Harrop]
