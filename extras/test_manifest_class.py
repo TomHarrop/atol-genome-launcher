@@ -32,6 +32,9 @@ with open(json_manifest_file, "rb") as f:
     manifest = Manifest.model_validate_json(f.read())
 
 
+# After validation the input is available as validated_dict and validated_json
+manifest.validated_dict
+
 # print the manifest as human-readable yaml
 print(manifest.as_yaml)
 

@@ -613,6 +613,47 @@ have the same ToLID), they should have different assembly_versions.
 
         return parse_config(raw)
 
+    @computed_field
+    @property
+    def validated_dict(self) -> dict[str, Any]:
+        """
+        Wrapper to model_dump() for retrieving validated input without computed
+        fields, defaults and null values.
+        """
+        exclude_from_dumps = self._exclude_from_dumps
+        return self.model_dump(**exclude_from_dumps)
+
+    @computed_field
+    @property
+    def validated_json(self) -> str:
+        """
+        Wrapper to model_dump_json() for retrieving validated input without
+        computed fields, defaults and null values.
+        """
+
+        exclude_from_dumps = self._exclude_from_dumps
+        return self.model_dump_json(**exclude_from_dumps)
+
+    @property
+    def _exclude_from_dumps(self) -> dict[str, Any]:
+        """
+        Settings for filtering the validated models for printing.
+        """
+        return {
+            "exclude": {
+                "read_files": {
+                    "__all__": {
+                        "single_end": {"__all__": "raw_path"},
+                        "r1": {"__all__": "raw_path"},
+                        "r2": {"__all__": "raw_path"},
+                    }
+                }
+            },
+            "exclude_computed_fields": True,
+            "exclude_defaults": True,
+            "exclude_none": True,
+        }
+
     # Assembly types
 
     @computed_field

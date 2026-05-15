@@ -147,6 +147,32 @@ Settings:
   --force               Passed to snakedeploy (default: False)
 ```
 
+### request-assembly-repo
+
+Generate an assembly repo on GitHub for a `manifest` file.
+
+#### Usage
+
+```bash
+usage: request-assembly-repo [-h] [-n] [--assignees ASSIGNEES] [--label_flag LABEL_FLAG] [--token_env_var TOKEN_ENV_VAR] manifest
+
+positional arguments:
+  manifest
+
+options:
+  -h, --help            show this help message and exit
+
+Settings:
+  -n                    Dry run
+  --assignees ASSIGNEES
+                        GitHub user names to assign to the issue.
+  --label_flag LABEL_FLAG
+                        Label for this assembly.
+  --token_env_var TOKEN_ENV_VAR
+                        The name of the environment variable containing the GitHub personal access token with permission to run the Action.
+```
+
+
 ### assembly-data-downloader
 
 Read an assembly `manifest_file` and download the raw read files from BPA.
