@@ -3,10 +3,13 @@
 from functools import cache
 import json
 from os import getenv
+from pathlib import Path
+from tempfile import mkdtemp
 import urllib.parse
 
 from common import generate_parser
 import requests
+from snakemake.logging import logger
 from yaml_manifest import Manifest
 
 
@@ -17,11 +20,57 @@ def check_env_var(env_var_name: str) -> str:
     return env_var_value
 
 
-@cache
-def get_existing_manifests(taxon_id_str: str, canopy_token: str):
+def check_if_assembly_exists(
+    assembly: dict[str, str], taxid_manifests: requests.Response
+):
     """
+    For each viable_assembly either return the existing or request a new
+    manifest. There should be a check_for_manifest function that takes the long
+    read sample_id and optionally the hic sample_id, then:
+
+    1. checks for a manifest under the long_read sample_id
+    2. if there's a hi_c sample_id, checks if it's in the current manifest
+    3. returns (True, existing_manifest) or (False, None)
+
+    If existing_manifest is None we can request one. I think we need to
+    check/request the ToLID here and fill it in to the sample_dict.
+
+    Return the manifest if the assembly exists, or None if not.
+
+    """
+    assembly_manifest = None
+
+    if taxid_manifests.status_code == 404:
+        # this means not found
+        return None
+    elif taxid_manifests.status_code != 200:
+        raise NotImplementedError(
+            f"Manifest lookup returned {taxid_manifests.status_code}, but this is not handled."
+        )
+
+    this_assembly_samples = sorted(
+        set(
+            [assembly.get("long_read_specimen_sample_id", "")]
+            + assembly.get("hic_specimen_sample_ids", [])
+        )
+    )
+    # FIXME currently only looking at one manifest.
+    # for manifest in taxid_manifests...
+    current_manifest_samples = get_manifest_samples(taxid_manifests)
+
+    if this_assembly_samples == current_manifest_samples:
+        assembly_manifest = taxid_manifests.json().get("manifest", {})
+
+    return assembly_manifest
+
+
+def get_existing_manifests(taxon_id_str: str, canopy_token: str) -> requests.Response:
+    """
+    FIXME. Right now this endpoint only seems to return the *latest* assembly.
+    Tracked at https://github.com/AustralianBioCommons/atol-canopy/issues/34
+
     Have to pass the token because the headers dict would not be hashable
-    (can't be cached)
+    (can't be cached).
     """
     auth_header = {"Authorization": f"Bearer {canopy_token}"}
     # Get the existing assembly manifests. Returns 404 if there aren't any.
@@ -36,6 +85,20 @@ def get_existing_manifests(taxon_id_str: str, canopy_token: str):
 
 def get_inner_specimen_samples(specimen_samples: requests.Response):
     return specimen_samples.json().get("specimen_samples", [])
+
+
+@cache
+def get_manifest_samples(taxid_manifests: requests.Response) -> list[str]:
+    manifests_json = taxid_manifests.json()
+
+    # TODO We should be iterating over a list but right now there is only one
+    # Manifest.
+
+    manifest_samples = []
+    for read_file in manifests_json.get("manifest", {}).get("read_files", []):
+        manifest_samples.append(read_file.get("sample_id", ""))
+
+    return sorted(set(manifest_samples))
 
 
 def get_sample_data_types(specimen_samples: requests.Response):
@@ -66,15 +129,18 @@ def get_sample_data_types(specimen_samples: requests.Response):
     return long_read_samples, hic_samples
 
 
-def get_taxid_assemblies(taxon_id_str: str):
-    pass
-
-
 def parse_arguments():
 
     parser, inputs_parser, outputs_parser, settings_parser = generate_parser()
 
     _ = parser.add_argument("taxon_id", type=int)
+
+    _ = outputs_parser.add_argument(
+        "--outdir",
+        help=("Path to output manifest json files"),
+        type=Path,
+        default=Path(mkdtemp()),
+    )
 
     _ = settings_parser.add_argument(
         "--canopy_username_env_var",
@@ -97,6 +163,56 @@ def parse_arguments():
     )
 
     return parser.parse_args()
+
+
+def request_new_manifest(
+    assembly: dict[str, str], taxon_id_str: str
+) -> requests.Response:
+
+    raise NotImplementedError(
+        (
+            "Reached the request_new_manifest function. "
+            "We seem to need a new manifest for the following assembly. "
+            f"{json.dumps(assembly)}. "
+            "If we're ready to test this remove the Exception. "
+        )
+    )
+
+    new_manifest_url = urllib.parse.urljoin(
+        _api_url, _endpoints.get("new_manifest", "") + taxon_id_str
+    )
+
+    manifest = requests.post(
+        new_manifest_url, headers=auth_header, data=json.dumps(assembly)
+    )
+
+
+def write_manifest(manifest: Manifest, outdir: Path) -> None:
+    dataset_id = manifest.dataset_id
+
+    json_file = Path(outdir, f"{dataset_id}.json")
+
+    dump = manifest.model_dump_json(
+        exclude=manifest._exclude_from_dumps,
+        exclude_computed_fields=True,
+        exclude_defaults=True,
+        exclude_none=True,
+        exclude_unset=True,
+    ).encode()
+
+    logger.warning(f"Writing manifest for {dataset_id} files to {json_file}")
+    with open(json_file, "wb") as f:
+        f.write(dump)
+
+    # Sanity check
+    with open(json_file, "rb") as f:
+        try:
+            written_manifest = Manifest.model_validate_json(f.read())
+            logger.warning(f"{json_file} parses OK")
+
+        except:
+            print(f"Manifest {written_manifest} failed parsing")
+            raise
 
 
 # FIXME. Hard coded defaults for now.
@@ -139,56 +255,58 @@ def main():
     # get the sample_ids and data_types for the long read specimen_samples
     long_read_samples, hi_c_samples = get_sample_data_types(specimen_samples)
 
-    # TODO: logic for Hi-C.
+    # Shape of the assemblies for the request, tol_id and
+    # hic_specimen_sample_ids are optional.
+    # {
+    #   "tol_id": "string",
+    #   "long_read_specimen_sample_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    #   "hic_specimen_sample_ids": [
+    #     "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    #   ]
+    # }
+    viable_assemblies = []
+
+    # Logic for Hi-C:
     # If we have hi_c and long read from the same sample that is the
     # combination we want and we don't consider other samples.
     # Need to handle the case where we already have a manifest for the long
     # read sample and hi-c is added later.
+    for sample in long_read_samples:
+        sample_id = sample[0]
+        sample_dict = {"long_read_specimen_sample_id": sample_id}
+        if sample_id in hi_c_samples:
+            sample_dict["hic_specimen_sample_ids"] = [sample_id]
+            continue
+        # If there are no HiC samples hic_specimen_sample_ids will not be added
+        # to the sample_dict.
+        elif hi_c_samples:
+            # If we don't have a HiC library from this sample, we'll use
+            # everything we have from the organism.
+            sample_dict["hic_specimen_sample_ids"] = hi_c_samples
 
+        viable_assemblies.append(sample_dict)
+
+    # look up existsing assemblies in the DB
     taxid_manifests = get_existing_manifests(taxon_id_str, canopy_token)
 
-    raise ValueError(taxid_manifests.status_code)
+    # Prepare to output manifests
+    logger.warning(f"Outputting manifest files to {args.outdir}")
 
-    # for each combination of sample_id and data_types either return the
-    # existing or request a new manifest there should be a check_for_manifest
-    # function that takes the long read sample_id and optionally the hic
-    # sample_id, then:
+    assembly_manifests = []
+    for assembly in viable_assemblies:
+        manifest = check_if_assembly_exists(assembly, taxid_manifests)
+        if manifest is None:
+            manifest = request_new_manifest(assembly, taxon_id_str)
 
-    # 1. checks for a manifest under the long_read sample_id
-    # 2. if there's a hi_c sample_id, checks if it's in the current manifest
-    # 3. returns (True, existing_manifest) or (False, None)
+        # quick kludges that need to be updated in canopy
+        manifest["assembly_version"] = manifest.pop("version", 0)
+        manifest["mito_code"] = manifest.pop("mitochondrial_genetic_code_id", None)
+        manifest["dataset_id"] = "fixme_no_tolid"
+        manifest["hic_motif"] = "GATC,GANTC,CTNAG,TTAA"
 
-    # If existing_manifest is None we can request one.
-    for long_read_sample in long_read_samples:
-        pass
+        validated_manifest = Manifest(**manifest)
 
-    # demo, request a new manifest
-    new_manifest_url = urllib.parse.urljoin(
-        _api_url, _endpoints.get("new_manifest", "") + taxon_id_str
-    )
-
-    manifest_data = {
-        "long_read_specimen_sample_id": "df9c2dda-cd2c-47c8-a85f-4da7a27e1fc4"
-    }
-    manifest = requests.post(
-        new_manifest_url, headers=auth_header, data=json.dumps(manifest_data)
-    )
-
-    raise ValueError(manifest.json())
-
-    # demo, retrieve a manifest
-    retrieve_manifest_url = urllib.parse.urljoin(
-        _api_url, _endpoints.get("retrieve_manifest", "") + taxon_id_str
-    )
-    retrieved_manifest = requests.get(
-        retrieve_manifest_url,
-        headers=auth_header,
-    )
-
-    retrieved_json_manifest = retrieved_manifest.json()
-    print(json.dumps(retrieved_json_manifest))
-    validated_manifest = Manifest.model_validate_json(retrieved_json_manifest)
-    raise ValueError(validated_manifest)
+        write_manifest(validated_manifest, args.outdir)
 
 
 if __name__ == "__main__":
