@@ -171,10 +171,10 @@ def request_new_manifest(
 
     raise NotImplementedError(
         (
-            "Reached the request_new_manifest function. "
-            "We seem to need a new manifest for the following assembly. "
-            f"{json.dumps(assembly)}. "
-            "If we're ready to test this remove the Exception. "
+            "\n\nReached the request_new_manifest function.\n"
+            "We seem to need a new manifest for the following assembly:\n"
+            f"    {json.dumps(assembly)}\n"
+            "If we're ready to test this remove the Exception."
         )
     )
 
@@ -298,7 +298,11 @@ def main():
         if manifest is None:
             manifest = request_new_manifest(assembly, taxon_id_str)
 
-        # quick kludges that need to be updated in canopy
+        # TODO: make sure the manifest has a dataset_id (ToLID). I think the
+        # Launcher has to call the Broker cli tool, so we need to patch the
+        # Broker into the launcher or release the Broker as a standalone tool.
+
+        # FIXME. These kludges need to be addressed in canopy
         manifest["assembly_version"] = manifest.pop("version", 0)
         manifest["mito_code"] = manifest.pop("mitochondrial_genetic_code_id", None)
         manifest["dataset_id"] = "fixme_no_tolid"
