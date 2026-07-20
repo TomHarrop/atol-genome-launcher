@@ -238,6 +238,9 @@ def main():
         data={"username": args.canopy_username, "password": args.canopy_password},
     )
 
+    # Stop if login failed
+    login.raise_for_status()
+
     canopy_token = login.json().get("access_token")
 
     auth_header = {"Authorization": f"Bearer {canopy_token}"}
@@ -274,6 +277,11 @@ def main():
     for sample in long_read_samples:
         sample_id = sample[0]
         sample_dict = {"long_read_specimen_sample_id": sample_id}
+
+        # TODO: We have to check for a ToLID here, because Canopy doesn't
+        # return it with the Manifest, even if it's already been assigned for
+        # this sample_id.
+
         if sample_id in hi_c_samples:
             sample_dict["hic_specimen_sample_ids"] = [sample_id]
             continue
@@ -289,6 +297,7 @@ def main():
     # look up existsing assemblies in the DB
     taxid_manifests = get_existing_manifests(taxon_id_str, canopy_token)
 
+
     # Prepare to output manifests
     logger.warning(f"Outputting manifest files to {args.outdir}")
 
@@ -301,6 +310,8 @@ def main():
         # TODO: make sure the manifest has a dataset_id (ToLID). I think the
         # Launcher has to call the Broker cli tool, so we need to patch the
         # Broker into the launcher or release the Broker as a standalone tool.
+        # Note: the API doesn't return the ToLID even if it's in the DB, so we
+        # have to get the ToLID from the sample_id.
 
         # FIXME. These kludges need to be addressed in canopy
         manifest["assembly_version"] = manifest.pop("version", 0)
