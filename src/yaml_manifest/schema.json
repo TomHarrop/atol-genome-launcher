@@ -114,6 +114,7 @@
             "type": "object"
         }
     },
+    "additionalProperties": false,
     "description": "AToL manifest, defining the metadata and read data for an assembly.",
     "properties": {
         "assembly_version": {
@@ -157,16 +158,9 @@
             "title": "ncbi_class"
         },
         "find_plastid": {
-            "anyOf": [
-                {
-                    "type": "boolean"
-                },
-                {
-                    "type": "null"
-                }
-            ],
             "default": false,
-            "title": "find_plastid"
+            "title": "find_plastid",
+            "type": "boolean"
         },
         "hic_motif": {
             "anyOf": [
@@ -180,7 +174,7 @@
             "default": null,
             "title": "hic_motif"
         },
-        "mito_code": {
+        "mitochondrial_genetic_code_id": {
             "anyOf": [
                 {
                     "type": "integer"
@@ -190,7 +184,7 @@
                 }
             ],
             "default": null,
-            "title": "mito_code"
+            "title": "mitochondrial_genetic_code_id"
         },
         "mitohifi_reference_species": {
             "anyOf": [
@@ -216,18 +210,50 @@
             "default": null,
             "title": "oatk_hmm_name"
         },
+        "augustus_dataset_name": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "deprecated": true,
+            "title": "augustus_dataset_name"
+        },
+        "genetic_code_id": {
+            "anyOf": [
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "deprecated": true,
+            "title": "genetic_code_id"
+        },
+        "assembly_id": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "assembly_id"
+        },
         "read_files": {
             "items": {
                 "$ref": "#/$defs/ReadFile"
             },
             "title": "read_files",
             "type": "array"
-        },
-        "extra": {
-            "additionalProperties": true,
-            "default": {},
-            "title": "extra",
-            "type": "object"
         }
     },
     "required": [
