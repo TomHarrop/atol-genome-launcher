@@ -23,15 +23,17 @@ import yaml
 #         print(f"Manifest {dummy_manifest_file} couldn't be parsed:")
 #         print(e)
 
-# manifest_file = Path("test-data", "dummy_pb.yaml")
-
 
 json_manifest_file = Path("test-data", "dummy_pb.json")
+# json_manifest_file = Path("ilOchLuni1.1.json")
 with open(json_manifest_file, "rb") as f:
-    manifest = Manifest.model_validate_json(f.read())
-
+    json_data = f.read()
+    manifest = Manifest.model_validate_json(json_data)
 
 # After validation the input is available as validated_dict and validated_json
+print(manifest.validated_dict)
+
+# Dump the model for use elsewhere, e.g. during deploy
 print(manifest.validated_dict)
 
 # print the manifest as human-readable yaml
