@@ -564,7 +564,7 @@ class Manifest(BaseModel):
     ncbi_class: str | None = None
     find_plastid: bool = False
     hic_motif: str | None = None
-    mitochondrial_genetic_code_id: int | None = Field(default=None, alias="mito_code")
+    mitochondrial_genetic_code_id: int | None = None
     mitohifi_reference_species: str | None = None
     oatk_hmm_name: str | None = None
 

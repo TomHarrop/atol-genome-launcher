@@ -30,10 +30,8 @@ with open(json_manifest_file, "rb") as f:
     json_data = f.read()
     manifest = Manifest.model_validate_json(json_data)
 
-# After validation the input is available as validated_dict and validated_json
-print(manifest.validated_dict)
-
-# Dump the model for use elsewhere, e.g. during deploy
+# After validation the input is available as validated_dict and validated_json.
+# Used elsewhere, e.g. during deploy
 print(manifest.validated_dict)
 
 # print the manifest as human-readable yaml
@@ -83,6 +81,7 @@ hic_reads = [x.paths("qc") for x in manifest.hic_reads]
 # TODO. The manifest knows where *some* output should be, but it's not complete
 # yet.
 pacbio_hifi_phased = manifest.assembly_types[0]
+
 
 print(
     f"{pacbio_hifi_phased.name} primary output file: {pacbio_hifi_phased.outputs_for("genomeassembly")["PRIMARY"]}"
