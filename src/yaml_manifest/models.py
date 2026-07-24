@@ -78,12 +78,15 @@ class AssemblyType(BaseModel):
     find_plastid: bool = False
 
     # Optional assembler-specific configuration
-    busco_odb10_dataset_name: Optional[str] = None
-    busco_odb12_dataset_name: Optional[str] = None
-    mitohifi_mito_genetic_code: Optional[int] = None
-    mitohifi_reference_species: Optional[str] = None
-    oatk_mito_hmm: Optional[str] = None
-    oatk_plastid_hmm: Optional[str] = None
+    busco_odb10_dataset_name: str | None = None
+    busco_odb12_dataset_name: str | None = None
+    mitohifi_mito_genetic_code: int | None = None
+    mitohifi_reference_species: str | None = None
+    oatk_mito_hmm: str | None = None
+    oatk_plastid_hmm: str | None = None
+
+    # Optional assembly_id for BPA assemblies
+    assembly_id: str | None = None
 
     @computed_field
     @property
@@ -106,12 +109,13 @@ def _resolve_assembly_types(
     has_ont: bool,
     has_pacbio: bool,
     pipeline_base_dirs: dict[str, Path],
-    busco_odb10_dataset_name: Optional[str],
-    busco_odb12_dataset_name: Optional[str],
-    mito_code: Optional[int],
-    oatk_hmm_name: Optional[str],
-    find_plastid: Optional[bool] = False,
-    mitohifi_reference_species: Optional[str] = None,
+    busco_odb10_dataset_name: str | None = None,
+    busco_odb12_dataset_name: str | None = None,
+    mito_code: int | None = None,
+    oatk_hmm_name: str | None = None,
+    find_plastid: bool = False,
+    mitohifi_reference_species: str | None = None,
+    assembly_id: str | None = None,
 ) -> list[AssemblyType]:
     """Determine which assembly types apply based on available data."""
     results = []
@@ -241,6 +245,7 @@ def _resolve_assembly_types(
                 find_plastid=find_plastid or False,
                 busco_odb10_dataset_name=busco_odb10_dataset_name,
                 busco_odb12_dataset_name=busco_odb12_dataset_name,
+                assembly_id=assembly_id,
             )
         )
 
@@ -256,7 +261,7 @@ class BpaFile(BaseModel):
     url: str
     md5sum: str
     lane_number: str = "single_lane"
-    raw_path: Optional[Path] = None
+    raw_path: Path | None = None
 
     model_config = ConfigDict(
         field_title_generator=lambda field_name, field_info: field_name
@@ -555,13 +560,16 @@ class Manifest(BaseModel):
         description="Just the name, excluding the _odb12 suffix.",
     )
 
-    ncbi_class: Optional[str] = None
+    ncbi_class: str | None = None
 
-    find_plastid: Optional[bool] = False
-    hic_motif: Optional[str] = None
-    mito_code: Optional[int] = None
-    mitohifi_reference_species: Optional[str] = None
-    oatk_hmm_name: Optional[str] = None
+    find_plastid: bool = False
+    hic_motif: str | None = None
+    mito_code: int | None = None
+    mitohifi_reference_species: str | None = None
+    oatk_hmm_name: str | None = None
+
+    # Optional assembly_id for BPA assemblies
+    assembly_id: str | None = None
 
     # Read data
     read_files: list[ReadFile]

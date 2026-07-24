@@ -4,7 +4,7 @@ from pathlib import Path
 from yaml_manifest import Manifest, replace_ext
 import yaml
 
-# # check dummy manifests
+# check dummy manifests
 # dummy_manifest_files = [
 #     Path("test-data", "dummy_pb.yaml"),
 #     Path("test-data", "dummy_both.yaml"),
@@ -23,7 +23,6 @@ import yaml
 #         print(f"Manifest {dummy_manifest_file} couldn't be parsed:")
 #         print(e)
 
-
 # manifest_file = Path("test-data", "dummy_pb.yaml")
 
 
@@ -33,7 +32,7 @@ with open(json_manifest_file, "rb") as f:
 
 
 # After validation the input is available as validated_dict and validated_json
-manifest.validated_dict
+print(manifest.validated_dict)
 
 # print the manifest as human-readable yaml
 print(manifest.as_yaml)
