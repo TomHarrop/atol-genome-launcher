@@ -1,15 +1,18 @@
 {
     "config": "config",
     "downloads": "resources/raw_reads/{data_type}",
+    "git_logs": "results/git_logs",
     "logs": "logs/{stage}",
     "pipeline_output": "results/{pipeline}/{dataset_id}.{assembly_version}",
     "profiles": "profiles",
     "qc_reads": "results/qc/reads/{data_type}",
     "qc_stats": "results/qc/stats/{data_type}",
     "qc": "results/qc",
+    "receipts": "results/upload_receipts",
     "resources": "resources",
     "results": "results",
     "scripts": "scripts",
+    "status_updates": "results/update_assembly_status",
     "stages": {
         "raw": {
             "dir": "downloads",
