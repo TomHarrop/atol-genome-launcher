@@ -156,6 +156,8 @@ print(my_file.paths("qc"))
 print(my_file.stats_path("qc"))
 print(my_file.log_path("qc"))
 
+raise ValueError(manifest.get_dir("git_logs"))
+
 # looking up files that don't exist raises a KeyError
 try:
     my_file = manifest.reads.get("353997_AusARG_BRF_HMGMJDRXY")
