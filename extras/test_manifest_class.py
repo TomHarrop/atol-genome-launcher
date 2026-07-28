@@ -156,7 +156,11 @@ print(my_file.paths("qc"))
 print(my_file.stats_path("qc"))
 print(my_file.log_path("qc"))
 
-raise ValueError(manifest.get_dir("git_logs"))
+all_outputs=[]
+for pipeline, output_dict in manifest.treeval_assembly.outputs.items():
+    for output_type, output in output_dict.items():
+        all_outputs.append(output)
+raise ValueError(all_outputs)
 
 # looking up files that don't exist raises a KeyError
 try:
