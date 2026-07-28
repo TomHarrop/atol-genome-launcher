@@ -1,4 +1,5 @@
 {
+    "assembly_stats": "results/assembly_stats",
     "config": "config",
     "downloads": "resources/raw_reads/{data_type}",
     "git_logs": "results/git_logs",
