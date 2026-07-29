@@ -84,6 +84,23 @@
                 ]
             }
         },
+        "curation": {
+            "dir": "pipeline_output",
+            "logs": "logs/curation",
+            "pipeline_input": {
+                "agp": "curation/normal_curated_v1.pretext.agp_1",
+                "exclude": "curation/scaffolds_to_remove.txt"
+            },
+            "upload": {
+                "exclude_patterns": [],
+                "compress_extensions": [
+                    ".agp",
+                    ".csv",
+                    ".fa",
+                    ".log"
+                ]
+            }
+        },
         "curationpretext": {
             "dir": "pipeline_output",
             "logs": "logs/curationpretext",

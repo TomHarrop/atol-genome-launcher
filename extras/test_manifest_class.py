@@ -75,6 +75,9 @@ qc_reads_dir = manifest.get_dir("qc")
 # pipeline output is a bit different...
 ascc_dir = manifest.get_dir("pipeline_output", pipeline="ascc")
 
+# inputs are defined too
+curation_input = manifest.pipeline_input("curation")
+
 pacbio_read_paths = [x.paths("qc") for x in manifest.pacbio_reads]
 hic_reads = [x.paths("qc") for x in manifest.hic_reads]
 
@@ -156,11 +159,13 @@ print(my_file.paths("qc"))
 print(my_file.stats_path("qc"))
 print(my_file.log_path("qc"))
 
-all_outputs=[]
+# a list of all Assembly outputs
+all_outputs = []
 for pipeline, output_dict in manifest.treeval_assembly.outputs.items():
     for output_type, output in output_dict.items():
         all_outputs.append(output)
-raise ValueError(all_outputs)
+
+print(f"treeval_assembly outputs:\n    {all_outputs}")
 
 # looking up files that don't exist raises a KeyError
 try:
