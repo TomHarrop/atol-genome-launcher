@@ -43,8 +43,8 @@
                 "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
             },
             "curation": {
-                "HAP1": "{dataset_id}.hap1.{assembly_version}.primary.curated.fa",
-                "HAP2": "{dataset_id}.hap2.{assembly_version}.primary.curated.fa"
+                "HAP1": "{dataset_id}.hap1.{assembly_version}.primary.curated.fa.gz",
+                "HAP2": "{dataset_id}.hap2.{assembly_version}.primary.curated.fa.gz"
             }
         }
     },
@@ -62,8 +62,8 @@
                 "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
             },
             "curation": {
-                "HAP1": "{dataset_id}.hap1.{assembly_version}.primary.curated.fa",
-                "HAP2": "{dataset_id}.hap2.{assembly_version}.primary.curated.fa"
+                "HAP1": "{dataset_id}.hap1.{assembly_version}.primary.curated.fa.gz",
+                "HAP2": "{dataset_id}.hap2.{assembly_version}.primary.curated.fa.gz"
             }
         }
     },
