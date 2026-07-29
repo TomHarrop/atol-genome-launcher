@@ -7,7 +7,7 @@
   "busco_odb12_dataset_name": "squamata",
   "ncbi_class": "Lepidosaura",
   "hic_motif": "GATC,GANTC,CTNAG,TTAA",
-  "mito_code": 2,
+  "mitochondrial_genetic_code_id": 2,
   "mitohifi_reference_species": "Cymbopogon citratus",
   "oatk_hmm_name": "lepidosauria_mito",
   "read_files": [

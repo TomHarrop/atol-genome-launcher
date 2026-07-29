@@ -4,7 +4,7 @@ from pathlib import Path
 from yaml_manifest import Manifest, replace_ext
 import yaml
 
-# # check dummy manifests
+# check dummy manifests
 # dummy_manifest_files = [
 #     Path("test-data", "dummy_pb.yaml"),
 #     Path("test-data", "dummy_both.yaml"),
@@ -24,16 +24,15 @@ import yaml
 #         print(e)
 
 
-# manifest_file = Path("test-data", "dummy_pb.yaml")
-
-
 json_manifest_file = Path("test-data", "dummy_pb.json")
+# json_manifest_file = Path("ilOchLuni1.1.json")
 with open(json_manifest_file, "rb") as f:
-    manifest = Manifest.model_validate_json(f.read())
+    json_data = f.read()
+    manifest = Manifest.model_validate_json(json_data)
 
-
-# After validation the input is available as validated_dict and validated_json
-manifest.validated_dict
+# After validation the input is available as validated_dict and validated_json.
+# Used elsewhere, e.g. during deploy
+print(manifest.validated_dict)
 
 # print the manifest as human-readable yaml
 print(manifest.as_yaml)
@@ -76,12 +75,16 @@ qc_reads_dir = manifest.get_dir("qc")
 # pipeline output is a bit different...
 ascc_dir = manifest.get_dir("pipeline_output", pipeline="ascc")
 
+# inputs are defined too
+curation_input = manifest.pipeline_input("curation")
+
 pacbio_read_paths = [x.paths("qc") for x in manifest.pacbio_reads]
 hic_reads = [x.paths("qc") for x in manifest.hic_reads]
 
 # TODO. The manifest knows where *some* output should be, but it's not complete
 # yet.
 pacbio_hifi_phased = manifest.assembly_types[0]
+
 
 print(
     f"{pacbio_hifi_phased.name} primary output file: {pacbio_hifi_phased.outputs_for("genomeassembly")["PRIMARY"]}"
@@ -155,6 +158,14 @@ print(my_file.paths("raw"))
 print(my_file.paths("qc"))
 print(my_file.stats_path("qc"))
 print(my_file.log_path("qc"))
+
+# a list of all Assembly outputs
+all_outputs = []
+for pipeline, output_dict in manifest.treeval_assembly.outputs.items():
+    for output_type, output in output_dict.items():
+        all_outputs.append(output)
+
+print(f"treeval_assembly outputs:\n    {all_outputs}")
 
 # looking up files that don't exist raises a KeyError
 try:

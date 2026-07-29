@@ -78,12 +78,15 @@ class AssemblyType(BaseModel):
     find_plastid: bool = False
 
     # Optional assembler-specific configuration
-    busco_odb10_dataset_name: Optional[str] = None
-    busco_odb12_dataset_name: Optional[str] = None
-    mitohifi_mito_genetic_code: Optional[int] = None
-    mitohifi_reference_species: Optional[str] = None
-    oatk_mito_hmm: Optional[str] = None
-    oatk_plastid_hmm: Optional[str] = None
+    busco_odb10_dataset_name: str | None = None
+    busco_odb12_dataset_name: str | None = None
+    mitohifi_mito_genetic_code: int | None = None
+    mitohifi_reference_species: str | None = None
+    oatk_mito_hmm: str | None = None
+    oatk_plastid_hmm: str | None = None
+
+    # Optional assembly_id for BPA assemblies
+    assembly_id: str | None = None
 
     @computed_field
     @property
@@ -106,12 +109,13 @@ def _resolve_assembly_types(
     has_ont: bool,
     has_pacbio: bool,
     pipeline_base_dirs: dict[str, Path],
-    busco_odb10_dataset_name: Optional[str],
-    busco_odb12_dataset_name: Optional[str],
-    mito_code: Optional[int],
-    oatk_hmm_name: Optional[str],
-    find_plastid: Optional[bool] = False,
-    mitohifi_reference_species: Optional[str] = None,
+    busco_odb10_dataset_name: str | None = None,
+    busco_odb12_dataset_name: str | None = None,
+    mitochondrial_genetic_code_id: int | None = None,
+    oatk_hmm_name: str | None = None,
+    find_plastid: bool = False,
+    mitohifi_reference_species: str | None = None,
+    assembly_id: str | None = None,
 ) -> list[AssemblyType]:
     """Determine which assembly types apply based on available data."""
     results = []
@@ -188,13 +192,13 @@ def _resolve_assembly_types(
             if mitohifi_reference_species:
                 find_mito = True
                 mitohifi_ref_species = mitohifi_reference_species
-                mitohifi_mito_genetic_code = mito_code
+                mitohifi_mito_genetic_code = mitochondrial_genetic_code_id
             # FIXME. remove this else block after we have automatic
             # mitohifi_reference_species lookup
             else:
                 find_mito = True
                 mitohifi_ref_species = " # FIXME. Look up manually for now."
-                mitohifi_mito_genetic_code = mito_code
+                mitohifi_mito_genetic_code = mitochondrial_genetic_code_id
 
             if find_mito is True:
                 outputs["genomeassembly"]["MITO"] = Path(
@@ -224,7 +228,7 @@ def _resolve_assembly_types(
 
         elif assembler == "mitohifi":
             mitohifi_ref_species = mitohifi_reference_species
-            mitohifi_mito_genetic_code = mito_code
+            mitohifi_mito_genetic_code = mitochondrial_genetic_code_id
 
         results.append(
             AssemblyType(
@@ -241,6 +245,7 @@ def _resolve_assembly_types(
                 find_plastid=find_plastid or False,
                 busco_odb10_dataset_name=busco_odb10_dataset_name,
                 busco_odb12_dataset_name=busco_odb12_dataset_name,
+                assembly_id=assembly_id,
             )
         )
 
@@ -256,7 +261,7 @@ class BpaFile(BaseModel):
     url: str
     md5sum: str
     lane_number: str = "single_lane"
-    raw_path: Optional[Path] = None
+    raw_path: Path | None = None
 
     model_config = ConfigDict(
         field_title_generator=lambda field_name, field_info: field_name
@@ -555,22 +560,28 @@ class Manifest(BaseModel):
         description="Just the name, excluding the _odb12 suffix.",
     )
 
-    ncbi_class: Optional[str] = None
+    # Optional assembly metadata
+    ncbi_class: str | None = None
+    find_plastid: bool = False
+    hic_motif: str | None = None
+    mitochondrial_genetic_code_id: int | None = None
+    mitohifi_reference_species: str | None = None
+    oatk_hmm_name: str | None = None
 
-    find_plastid: Optional[bool] = False
-    hic_motif: Optional[str] = None
-    mito_code: Optional[int] = None
-    mitohifi_reference_species: Optional[str] = None
-    oatk_hmm_name: Optional[str] = None
+    # TODO will be used in future
+    augustus_dataset_name: str | None = Field(
+        default=None, deprecated="Not implemented"
+    )
+    genetic_code_id: int | None = Field(default=None, deprecated="Not implemented")
+
+    # Optional assembly_id for BPA assemblies
+    assembly_id: str | None = None
 
     # Read data
     read_files: list[ReadFile]
 
-    # Catch-all for unknown metadata fields
-    extra: dict[str, Any] = {}
-
     model_config = ConfigDict(
-        field_title_generator=lambda field_name, field_info: field_name
+        field_title_generator=lambda field_name, field_info: field_name, extra="forbid"
     )
 
     @model_validator(mode="after")
@@ -649,6 +660,7 @@ have the same ToLID), they should have different assembly_versions.
                     }
                 }
             },
+            "exclude_unset": True,
             "exclude_computed_fields": True,
             "exclude_defaults": True,
             "exclude_none": True,
@@ -677,7 +689,7 @@ have the same ToLID), they should have different assembly_versions.
             has_hic=has_hic,
             has_ont=has_ont,
             has_pacbio=has_pacbio,
-            mito_code=self.mito_code,
+            mitochondrial_genetic_code_id=self.mitochondrial_genetic_code_id,
             mitohifi_reference_species=self.mitohifi_reference_species,
             oatk_hmm_name=self.oatk_hmm_name,
             pipeline_base_dirs=pipeline_base_dirs,
