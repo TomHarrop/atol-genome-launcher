@@ -1,36 +1,60 @@
 Changelog
 =========
 
-0.14.0 (2026-05-15)
--------------------
-
-New
-
-~~~
-- Request-assembly-repo (fixes #22) [Tom Harrop]
-
-Other
-~~~~~
-
-- Merge pull request #24 from TomHarrop/request-repo. [Tom Harrop]
-
-  Request an assembly repo from GitHub for a Manifest
-- Test github request. [Tom Harrop]
-
-0.13.4 (2026-05-13)
+0.15.0 (2026-07-29)
 -------------------
 
 Changes
 
 ~~~~~~~
+- Bug fixes for production assemblies. [Tom Harrop]
+
+  Production updates (without manifest request code)
+
+Other
+~~~~~
+- Fix layout. [Tom Harrop]
+- Configure directories for curation fixes #23. [Tom Harrop]
+- Add assembly_stats directory For https://github.com/AToL-
+  Bioinformatics/genome-launcher-workflow/issues/29. [Tom Harrop]
+- Add more results directories for https://github.com/AToL-
+  Bioinformatics/genome-launcher-workflow/issues/23. [Tom Harrop]
+- Update schema. [Tom Harrop]
+- Use mitochondrial_genetic_code_id only (fixes #27) [Tom Harrop]
+- Update manifest to use mitochondrial_genetic_code_id (for #27) [Tom
+  Harrop]
+- Add assembly_id (fixes #25) [Tom Harrop]
+
+
+0.14.0 (2026-05-15)
+-------------------
+
+New
+~~~
+- Request-assembly-repo (fixes #22) [Tom Harrop]
+
+Other
+~~~~~
+- Merge pull request #24 from TomHarrop/request-repo. [Tom Harrop]
+
+  Request an assembly repo from GitHub for a Manifest
+- Test github request. [Tom Harrop]
+
+
+0.13.4 (2026-05-13)
+-------------------
+
+Changes
+~~~~~~~
+
 - Result-file-uploader prints endpoint and bucket. Fixes #21. [Tom
   Harrop]
-
 
 0.13.3 (2026-05-08)
 -------------------
 
 Fix
+
 ~~~
 - OatK hmm typo. [Tom Harrop]
 
@@ -40,13 +64,14 @@ Fix
 
 Fix
 ~~~
-- OatK hmm typo. [Tom Harrop]
 
+- OatK hmm typo. [Tom Harrop]
 
 0.13.1 (2026-05-08)
 -------------------
 
 New
+
 ~~~
 - Print the config as YAML for the README. [Tom Harrop]
 - Demo manifest conversion. [Tom Harrop]
