@@ -65,6 +65,8 @@
                 ],
                 "compress_extensions": [
                     ".bed",
+                    ".fa",
+                    ".fasta",
                     ".paf"
                 ]
             }
@@ -88,8 +90,8 @@
             "dir": "pipeline_output",
             "logs": "logs/curation",
             "pipeline_input": {
-                "agp": "curation/normal_curated_v1.pretext.agp_1",
-                "exclude": "curation/scaffolds_to_remove.txt"
+                "agp": "curation/{dataset_id}_{assembly_version}_.normal_curated_v{assembly_version}.pretext.agp_1",
+                "exclude": "curation/{dataset_id}.{assembly_version}_scaffolds_to_remove.txt"
             },
             "upload": {
                 "exclude_patterns": [],
@@ -105,7 +107,9 @@
         "curationpretext": {
             "dir": "pipeline_output",
             "logs": "logs/curationpretext",
-            "pipeline_input": "config/curationpretext.yaml",
+            "pipeline_input": {
+                "input": "config/curationpretext.yaml"
+            },
             "pipeline_runscript": "scripts/curationpretext.sh",
             "upload": {
                 "exclude_patterns": [],
@@ -115,7 +119,9 @@
         "treeval": {
             "dir": "pipeline_output",
             "logs": "logs/treeval",
-            "pipeline_input": "config/treeval.yaml",
+            "pipeline_input": {
+                "input": "config/treeval.yaml"
+            },
             "pipeline_runscript": "scripts/treeval.sh",
             "upload": {
                 "exclude_patterns": [
