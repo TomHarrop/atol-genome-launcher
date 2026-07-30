@@ -97,6 +97,7 @@
                     ".agp",
                     ".csv",
                     ".fa",
+                    ".fasta",
                     ".log"
                 ]
             }
