@@ -77,6 +77,7 @@ ascc_dir = manifest.get_dir("pipeline_output", pipeline="ascc")
 
 # inputs are defined too
 curation_input = manifest.pipeline_input("curation")
+print(f"curation_input: {curation_input}")
 
 pacbio_read_paths = [x.paths("qc") for x in manifest.pacbio_reads]
 hic_reads = [x.paths("qc") for x in manifest.hic_reads]

@@ -869,9 +869,7 @@ have the same ToLID), they should have different assembly_versions.
         return _collect_upload_files(stage, output_dir)
 
     def pipeline_input(self, stage: str) -> Path | dict[str, Path]:
-        return get_pipeline_input(
-            stage, assembly_version=self.assembly_version, dataset_id=self.dataset_id
-        )
+        return get_pipeline_input(stage, **self.model_dump())
 
     def pipeline_runscript(self, stage: str) -> Path:
         return get_pipeline_runscript(stage)

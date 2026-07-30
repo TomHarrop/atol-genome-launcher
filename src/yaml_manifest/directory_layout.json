@@ -90,7 +90,7 @@
             "dir": "pipeline_output",
             "logs": "logs/curation",
             "pipeline_input": {
-                "agp": "curation/{dataset_id}_{assembly_version}_.normal_curated_v{assembly_version}.pretext.agp_1",
+                "agp": "curation/{dataset_id}_{assembly_version}_normal_curated_v1.pretext.agp_1",
                 "exclude": "curation/{dataset_id}.{assembly_version}_scaffolds_to_remove.txt"
             },
             "upload": {
