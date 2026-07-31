@@ -603,6 +603,13 @@ have the same ToLID), they should have different assembly_versions.
 
         return self
 
+    @field_validator("oatk_hmm_name")
+    @classmethod
+    def _check_oatk_hmm_name(cls, value: str) -> str:
+        if "_mito" in value:
+            raise ValueError("Exclude the _mito suffix")
+        return value
+
     @field_validator("busco_odb10_dataset_name", "busco_odb12_dataset_name")
     @classmethod
     def _check_busco_dataset_name(cls, value: str) -> str:
