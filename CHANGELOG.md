@@ -1,6 +1,32 @@
 Changelog
 =========
 
+(unreleased)
+------------
+
+Changes
+
+~~~~~~~
+- Reject _mito suffix in oatk_hmm_name. [Tom Harrop]
+
+
+0.15.2 (2026-07-30)
+-------------------
+
+Fix
+~~~
+- Fix generation of curation outputs. [Tom Harrop]
+
+
+0.15.1 (2026-07-30)
+-------------------
+
+Changes
+~~~~~~~
+
+- Treeval template. [Tom Harrop]
+- Update yaml parser to use models directly. [Tom Harrop]
+
 0.15.0 (2026-07-29)
 -------------------
 
