@@ -124,7 +124,7 @@ def main():
             Path(path_to_templates, "sanger-tol_treeval_1.4.5.yaml.j2"),
             Path(
                 args.run_dir,
-                f"{manifest.pipeline_input("treeval")}.sample",
+                f"{manifest.pipeline_input("treeval")["input"]}.sample",
             ),
         )
 

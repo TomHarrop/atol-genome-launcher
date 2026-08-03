@@ -53,17 +53,16 @@ def get_stage_logs(stage_name: str) -> Path:
 
 def get_pipeline_input(stage_name: str, **kwargs) -> Path | dict[str, Path]:
     stage = get_stage(stage_name)
-    pipeline_input = stage.get("pipeline_input")
+    pipeline_input = stage.get("pipeline_input", {})
+
     if pipeline_input is None:
         raise ValueError(f"pipeline_input not defined for stage {stage_name}")
+    if not isinstance(pipeline_input, dict):
+        raise NotImplementedError(
+            f"pipeline_input for stage {stage_name} must be a dictionary"
+        )
 
-    def _resolve(value: str) -> Path:
-        return Path(value.format_map(_EmptyMissing(kwargs)))
-
-    if isinstance(pipeline_input, dict):
-        return {k: _resolve(v) for k, v in pipeline_input.items()}
-
-    return _resolve(pipeline_input)
+    return {k: v.format(**kwargs) for k, v in pipeline_input.items()}
 
 
 def get_pipeline_runscript(stage_name: str, **kwargs) -> Path:
