@@ -58,30 +58,24 @@ def check_if_assembly_exists(
     # for manifest in taxid_manifests...
     current_manifest_samples = get_manifest_samples(taxid_manifests)
 
-    if this_assembly_samples == current_manifest_samples:
-        assembly_manifest = taxid_manifests.json().get("manifest", {})
-
-    # TODO: if we have added reads we should request a new manifest (version
-    # increment). This currently doesn't handle the case where Hi-C reads have
-    # been added to an existing assembly. See
-    # https://docs.google.com/spreadsheets/d/1GCVJK376uO_qlNNC7VnC5NasgpmuVUAG4ihq1TxOaT4/edit?usp=sharing
-
-    # are we expecting to use HiC?
-    assembly_has_hic = True if assembly.get("hic_specimen_sample_ids") else False
-
-    # FIXME kludges for misshapen Canopy manifest
-    assembly_manifest["assembly_version"] = assembly_manifest.pop("version", 0)
-    assembly_manifest["dataset_id"] = "fixme_no_tolid"
-    assembly_manifest["hic_motif"] = "GATC,GANTC,CTNAG,TTAA"
-
-    my_manifest = Manifest.from_dict(assembly_manifest)
-
-    my_manifest_has_hi_c = len(my_manifest.hic_reads) > 0
-
-    if not my_manifest_has_hi_c == assembly_has_hic:
+    # if the samples aren't the same, we need a new manifest
+    if not this_assembly_samples == current_manifest_samples:
         return None
 
-    return assembly_manifest
+    # if the samples are the same, we need to check the existing manifest
+    raw_assembly_manifest = taxid_manifests.json().get("manifest", {})
+
+    current_manifest_hic_samples = []
+    for read_file_dict in raw_assembly_manifest.get("read_files", {}):
+        if read_file_dict.get("data_type", "") == "Hi-C":
+            current_manifest_hic_samples.append(read_file_dict.get("sample_id"))
+
+    if not sorted(set(current_manifest_hic_samples)) == sorted(
+        set(assembly.get("hic_specimen_sample_ids", []))
+    ):
+        return None
+
+    return raw_assembly_manifest
 
 
 def get_existing_manifests(taxon_id_str: str, canopy_token: str) -> requests.Response:
