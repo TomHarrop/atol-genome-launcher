@@ -61,6 +61,26 @@ def check_if_assembly_exists(
     if this_assembly_samples == current_manifest_samples:
         assembly_manifest = taxid_manifests.json().get("manifest", {})
 
+    # TODO: if we have added reads we should request a new manifest (version
+    # increment). This currently doesn't handle the case where Hi-C reads have
+    # been added to an existing assembly. See
+    # https://docs.google.com/spreadsheets/d/1GCVJK376uO_qlNNC7VnC5NasgpmuVUAG4ihq1TxOaT4/edit?usp=sharing
+
+    # are we expecting to use HiC?
+    assembly_has_hic = True if assembly.get("hic_specimen_sample_ids") else False
+
+    # FIXME kludges for misshapen Canopy manifest
+    assembly_manifest["assembly_version"] = assembly_manifest.pop("version", 0)
+    assembly_manifest["dataset_id"] = "fixme_no_tolid"
+    assembly_manifest["hic_motif"] = "GATC,GANTC,CTNAG,TTAA"
+
+    my_manifest = Manifest.from_dict(assembly_manifest)
+
+    my_manifest_has_hi_c = len(my_manifest.hic_reads) > 0
+
+    if not my_manifest_has_hi_c == assembly_has_hic:
+        return None
+
     return assembly_manifest
 
 
@@ -282,8 +302,11 @@ def main():
         # return it with the Manifest, even if it's already been assigned for
         # this sample_id.
 
+        # if we see a hi-c sample with the same sample id, we can exit straight
+        # away.
         if sample_id in hi_c_samples:
             sample_dict["hic_specimen_sample_ids"] = [sample_id]
+            viable_assemblies.append(sample_dict)
             continue
         # If there are no HiC samples hic_specimen_sample_ids will not be added
         # to the sample_dict.
@@ -296,7 +319,6 @@ def main():
 
     # look up existsing assemblies in the DB
     taxid_manifests = get_existing_manifests(taxon_id_str, canopy_token)
-
 
     # Prepare to output manifests
     logger.warning(f"Outputting manifest files to {args.outdir}")
@@ -315,7 +337,6 @@ def main():
 
         # FIXME. These kludges need to be addressed in canopy
         manifest["assembly_version"] = manifest.pop("version", 0)
-        manifest["mito_code"] = manifest.pop("mitochondrial_genetic_code_id", None)
         manifest["dataset_id"] = "fixme_no_tolid"
         manifest["hic_motif"] = "GATC,GANTC,CTNAG,TTAA"
 
