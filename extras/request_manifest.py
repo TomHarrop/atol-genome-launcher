@@ -7,6 +7,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 import urllib.parse
 
+from broker.cli import tolid_request
 from common import generate_parser
 import requests
 from snakemake.logging import logger
@@ -18,6 +19,93 @@ def check_env_var(env_var_name: str) -> str:
     if env_var_value is None:
         raise EnvironmentError(f"Set the {env_var_name} environment variable")
     return env_var_value
+
+
+def lookup_tolid_by_sample_id(
+    sample_id: str, auth_header: dict[str, str]
+) -> dict[str, str]:
+    # check the samples endpoint for a tolid
+    check_tolid_url = urllib.parse.urljoin(
+        _api_url, _endpoints.get("tolid_by_sample_id", "") + sample_id
+    )
+
+    # get the specimen_samples for the taxon id
+    specimen_tolid_response = requests.get(
+        check_tolid_url,
+        headers=auth_header,
+    )
+    specimen_tolid_response.raise_for_status()
+
+    return specimen_tolid_response.json()
+
+
+def check_for_tolid(
+    sample_id: str, auth_header: dict[str, str], force: bool = False
+) -> str:
+
+    # is there already a tolid for this sample?
+    tolid_status = lookup_tolid_by_sample_id(
+        sample_id=sample_id, auth_header=auth_header
+    )
+    my_tolid = tolid_status.get("tolid", None)
+    if my_tolid:
+        return my_tolid
+
+    # if there's no tolid, but there is an ena id, check the specimen-accession
+    # endpoint
+    my_ena_accession = tolid_status.get("specimen_id", None)
+
+    if my_ena_accession:
+        check_accession_url = urllib.parse.urljoin(
+            _api_url,
+            _endpoints.get("tolid_by_specimen_accession", "") + my_ena_accession,
+        )
+
+        tolid_by_specimen_accession_response = requests.get(
+            check_accession_url, headers=auth_header
+        )
+
+        tolid_by_specimen_accession_response.raise_for_status()
+
+        tolid_by_specimen_accession = tolid_by_specimen_accession_response.json()
+
+        # If we have an ENA accession but no ToLID, the broker can request one
+        # for us.
+        if not tolid_by_specimen_accession.get("tolid", None):
+            # tolid_request() always returns None
+            _ = tolid_request(
+                sample_accession=my_ena_accession, update_ena=force, prod=force
+            )
+
+            # if it worked, the new tolid should be in the DB.
+            new_tolid_status = lookup_tolid_by_sample_id(
+                sample_id=sample_id, auth_header=auth_header
+            )
+
+            new_tolid = new_tolid_status.get("tolid", None)
+            if new_tolid:
+                return new_tolid
+
+            raise NotImplementedError(
+                (
+                    f"We asked Canopy for a new tolid for {my_ena_accession}, "
+                    "but there is still no ToLID in the database. "
+                    "TODO: What should we do here?"
+                )
+            )
+
+    # if there is neither a tolid or an ena accession, raise an Error
+    logger.warning(
+        (
+            "\n\n"
+            "###########################################################\n"
+            "# There is no ToLID or ENA accession for                  #\n"
+            f"# {sample_id}.                   #\n"
+            "# The BioSample probably hasn't been brokered to ENA yet. #\n"
+            "###########################################################\n"
+        )
+    )
+    return None
 
 
 def check_if_assembly_exists(
@@ -270,6 +358,8 @@ _endpoints = {
     "specimen_samples": "assemblies/specimen-samples/",
     "new_manifest": "assemblies/intent/",
     "retrieve_manifest": "assemblies/manifest/",
+    "tolid_by_sample_id": "/api/v1/broker/tolids/",
+    "tolid_by_specimen_accession": "/api/v1/broker/tolids/by-specimen-accession/",
 }
 
 _long_read_types = ["PACBIO_SMRT", "OXFORD_NANOPORE"]
@@ -329,6 +419,10 @@ def main():
         # TODO: We have to check for a ToLID here, because Canopy doesn't
         # return it with the Manifest, even if it's already been assigned for
         # this sample_id.
+        sample_tolid = check_for_tolid(
+            sample_id=sample_id, auth_header=auth_header, force=args.force
+        )
+        sample_dict["dataset_id"] = sample_tolid if sample_tolid else "fixme_no_tolid"
 
         # if we see a hi-c sample with the same sample id, we can exit straight
         # away.
@@ -362,11 +456,12 @@ def main():
                 force=args.force,
             )
 
-        # TODO: make sure the manifest has a dataset_id (ToLID). I think the
-        # Launcher has to call the Broker cli tool, so we need to patch the
-        # Broker into the launcher or release the Broker as a standalone tool.
-        # Note: the API doesn't return the ToLID even if it's in the DB, so we
-        # have to get the ToLID from the sample_id.
+        # Make sure the manifest has a dataset_id (ToLID). Note: the API
+        # doesn't return the ToLID even if it's in the DB, so we have to get
+        # the ToLID from the sample_id.
+        if not manifest.get("dataset_id"):
+            manifest["dataset_id"] = assembly.get("dataset_id", "fixme_no_tolid")
+
 
         # FIXME. These kludges need to be addressed in canopy. Tracked in
         # https://github.com/AustralianBioCommons/atol-canopy/issues/43
