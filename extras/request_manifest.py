@@ -22,7 +22,7 @@ def check_env_var(env_var_name: str) -> str:
 
 def check_if_assembly_exists(
     assembly: dict[str, str], taxid_manifests: requests.Response
-):
+) -> dict[str, str]:
     """
     For each viable_assembly either return the existing or request a new
     manifest. There should be a check_for_manifest function that takes the long
@@ -176,29 +176,62 @@ def parse_arguments():
         dest="canopy_password",
     )
 
+    _ = settings_parser.add_argument(
+        "--force",
+        help=("""
+            Actually POST the new manifest request
+            """),
+        action="store_true",
+    )
+
     return parser.parse_args()
 
 
-def request_new_manifest(
-    assembly: dict[str, str], taxon_id_str: str
-) -> requests.Response:
+def raw_to_manifest(raw_manifest: dict[str, str]) -> Manifest:
 
-    raise NotImplementedError(
-        (
-            "\n\nReached the request_new_manifest function.\n"
-            "We seem to need a new manifest for the following assembly:\n"
-            f"    {json.dumps(assembly)}\n"
-            "If we're ready to test this remove the Exception."
-        )
-    )
+    # FIXME. These kludges need to be addressed in canopy. Tracked in
+    # https://github.com/AustralianBioCommons/atol-canopy/issues/43
+
+    if not raw_manifest.get("dataset_id"):
+        raw_manifest["dataset_id"] = "fixme_no_tolid"
+
+    if not raw_manifest.get("assembly_version"):
+        raw_manifest["assembly_version"] = raw_manifest.pop("version", 0)
+
+    if not raw_manifest.get("hic_motif"):
+        raw_manifest["hic_motif"] = "GATC,GANTC,CTNAG,TTAA"
+
+    return Manifest.from_dict(raw_manifest)
+
+
+def request_new_manifest(
+    assembly: dict[str, str],
+    taxon_id_str: str,
+    auth_header: dict[str, str],
+    force: bool = False,
+) -> dict[str, str]:
 
     new_manifest_url = urllib.parse.urljoin(
         _api_url, _endpoints.get("new_manifest", "") + taxon_id_str
     )
 
-    manifest = requests.post(
-        new_manifest_url, headers=auth_header, data=json.dumps(assembly)
+    if force is False:
+        raise NotImplementedError(
+            (
+                "\n\nReached the request_new_manifest function.\n"
+                "We seem to need a new manifest for the following assembly:\n"
+                f"    {json.dumps(assembly)}\n"
+                "If we're ready to test this remove the Exception.\n"
+            )
+        )
+
+    request_data = json.dumps(assembly)
+
+    raw_manifest = requests.post(
+        new_manifest_url, headers=auth_header, data=request_data
     )
+
+    return raw_manifest.json().get("manifest", {})
 
 
 def write_manifest(manifest: Manifest, outdir: Path) -> None:
@@ -244,6 +277,7 @@ _long_read_types = ["PACBIO_SMRT", "OXFORD_NANOPORE"]
 
 def main():
     args = parse_arguments()
+
     taxon_id_str = str(args.taxon_id)
 
     # log in to API
@@ -321,7 +355,12 @@ def main():
     for assembly in viable_assemblies:
         manifest = check_if_assembly_exists(assembly, taxid_manifests)
         if manifest is None:
-            manifest = request_new_manifest(assembly, taxon_id_str)
+            manifest = request_new_manifest(
+                assembly=assembly,
+                taxon_id_str=taxon_id_str,
+                auth_header=auth_header,
+                force=args.force,
+            )
 
         # TODO: make sure the manifest has a dataset_id (ToLID). I think the
         # Launcher has to call the Broker cli tool, so we need to patch the
@@ -329,12 +368,13 @@ def main():
         # Note: the API doesn't return the ToLID even if it's in the DB, so we
         # have to get the ToLID from the sample_id.
 
-        # FIXME. These kludges need to be addressed in canopy
-        manifest["assembly_version"] = manifest.pop("version", 0)
-        manifest["dataset_id"] = "fixme_no_tolid"
-        manifest["hic_motif"] = "GATC,GANTC,CTNAG,TTAA"
+        # FIXME. These kludges need to be addressed in canopy. Tracked in
+        # https://github.com/AustralianBioCommons/atol-canopy/issues/43
+        # manifest["assembly_version"] = manifest.pop("version", 0)
+        # manifest["dataset_id"] = "fixme_no_tolid"
+        # manifest["hic_motif"] = "GATC,GANTC,CTNAG,TTAA"
 
-        validated_manifest = Manifest(**manifest)
+        validated_manifest = raw_to_manifest(manifest)
 
         write_manifest(validated_manifest, args.outdir)
 
