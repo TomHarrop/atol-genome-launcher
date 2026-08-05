@@ -393,6 +393,11 @@ def main():
         headers=auth_header,
     )
 
+    if specimen_samples.status_code == 404:
+        logger.warning("No specimen samples found")
+
+    specimen_samples.raise_for_status()
+
     # get the sample_ids and data_types for the long read specimen_samples
     long_read_samples, hi_c_samples = get_sample_data_types(specimen_samples)
 
@@ -441,6 +446,10 @@ def main():
 
     # look up existsing assemblies in the DB
     taxid_manifests = get_existing_manifests(taxon_id_str, canopy_token)
+    if taxid_manifests.status_code == 404:
+        logger.warning(f"No existing manifest for taxon_id {taxon_id_str}")
+        if len(viable_assemblies) == 0:
+            raise ValueError("No viable assembly candidates")
 
     # Prepare to output manifests
     logger.warning(f"Outputting manifest files to {args.outdir}")
@@ -461,7 +470,6 @@ def main():
         # the ToLID from the sample_id.
         if not manifest.get("dataset_id"):
             manifest["dataset_id"] = assembly.get("dataset_id", "fixme_no_tolid")
-
 
         # FIXME. These kludges need to be addressed in canopy. Tracked in
         # https://github.com/AustralianBioCommons/atol-canopy/issues/43
