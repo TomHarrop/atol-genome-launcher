@@ -9,7 +9,7 @@
   "hic_motif": "GATC,GANTC,CTNAG,TTAA",
   "mitochondrial_genetic_code_id": 2,
   "mitohifi_reference_species": "Cymbopogon citratus",
-  "oatk_hmm_name": "lepidosauria_mito",
+  "oatk_hmm_name": "lepidosauria",
   "read_files": [
     {
       "name": "bpa-ausarg-pacbio-hifi-350822-da095606",
