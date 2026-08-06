@@ -29,6 +29,7 @@ dependencies = [
     "pydantic>=2.13.4",
     "snakedeploy>=0.11.0",
     "snakemake>=9.11.6,<10",
+    "atol-data-broker@git+https://github.com/AToL-Bioinformatics/data-broker.git@0.1.2",
 ]
 
 [project.urls]
