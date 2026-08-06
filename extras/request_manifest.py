@@ -21,26 +21,8 @@ def check_env_var(env_var_name: str) -> str:
     return env_var_value
 
 
-def lookup_tolid_by_sample_id(
-    sample_id: str, auth_header: dict[str, str]
-) -> dict[str, str]:
-    # check the samples endpoint for a tolid
-    check_tolid_url = urllib.parse.urljoin(
-        _api_url, _endpoints.get("tolid_by_sample_id", "") + sample_id
-    )
-
-    # get the specimen_samples for the taxon id
-    specimen_tolid_response = requests.get(
-        check_tolid_url,
-        headers=auth_header,
-    )
-    specimen_tolid_response.raise_for_status()
-
-    return specimen_tolid_response.json()
-
-
 def check_for_tolid(
-    sample_id: str, auth_header: dict[str, str], force: bool = False
+    sample_id: str, auth_header: dict[str, str], prod: bool = False
 ) -> str:
 
     # is there already a tolid for this sample?
@@ -74,7 +56,7 @@ def check_for_tolid(
         if not tolid_by_specimen_accession.get("tolid", None):
             # tolid_request() always returns None
             _ = tolid_request(
-                sample_accession=my_ena_accession, update_ena=force, prod=force
+                sample_accession=my_ena_accession, update_ena=prod, prod=prod
             )
 
             # if it worked, the new tolid should be in the DB.
@@ -94,7 +76,8 @@ def check_for_tolid(
                 )
             )
 
-    # if there is neither a tolid or an ena accession, raise an Error
+    # This is not an Exception because we could be doing an offline assembly
+    # (no ENA accession, no ToLID)
     logger.warning(
         (
             "\n\n"
@@ -126,8 +109,6 @@ def check_if_assembly_exists(
     Return the manifest if the assembly exists, or None if not.
 
     """
-    assembly_manifest = None
-
     if taxid_manifests.status_code == 404:
         # this means not found
         return None
@@ -142,8 +123,8 @@ def check_if_assembly_exists(
             + assembly.get("hic_specimen_sample_ids", [])
         )
     )
+
     # FIXME currently only looking at one manifest.
-    # for manifest in taxid_manifests...
     current_manifest_samples = get_manifest_samples(taxid_manifests)
 
     # if the samples aren't the same, we need a new manifest
@@ -158,6 +139,7 @@ def check_if_assembly_exists(
         if read_file_dict.get("data_type", "") == "Hi-C":
             current_manifest_hic_samples.append(read_file_dict.get("sample_id"))
 
+    # If the Hi-C samples aren't the same, we need a new manifest.
     if not sorted(set(current_manifest_hic_samples)) == sorted(
         set(assembly.get("hic_specimen_sample_ids", []))
     ):
@@ -168,11 +150,8 @@ def check_if_assembly_exists(
 
 def get_existing_manifests(taxon_id_str: str, canopy_token: str) -> requests.Response:
     """
-    FIXME. Right now this endpoint only seems to return the *latest* assembly.
-    Tracked at https://github.com/AustralianBioCommons/atol-canopy/issues/34
-
-    Have to pass the token because the headers dict would not be hashable
-    (can't be cached).
+    FIXME. Right now this endpoint only returns the *latest* assembly. Tracked
+    at https://github.com/AustralianBioCommons/atol-canopy/issues/34
     """
     auth_header = {"Authorization": f"Bearer {canopy_token}"}
     # Get the existing assembly manifests. Returns 404 if there aren't any.
@@ -231,6 +210,23 @@ def get_sample_data_types(specimen_samples: requests.Response):
     return long_read_samples, hic_samples
 
 
+def lookup_tolid_by_sample_id(
+    sample_id: str, auth_header: dict[str, str]
+) -> dict[str, str]:
+    # check the samples endpoint for a tolid
+    check_tolid_url = urllib.parse.urljoin(
+        _api_url, _endpoints.get("tolid_by_sample_id", "") + sample_id
+    )
+
+    # get the specimen_samples for the taxon id
+    specimen_tolid_response = requests.get(
+        check_tolid_url,
+        headers=auth_header,
+    )
+
+    return specimen_tolid_response.json()
+
+
 def parse_arguments():
 
     parser, inputs_parser, outputs_parser, settings_parser = generate_parser()
@@ -272,6 +268,14 @@ def parse_arguments():
         action="store_true",
     )
 
+    _ = settings_parser.add_argument(
+        "--prod",
+        help=("""
+            Request ToLIDs in production mode.
+            """),
+        action="store_true",
+    )
+
     return parser.parse_args()
 
 
@@ -307,17 +311,16 @@ def request_new_manifest(
         raise NotImplementedError(
             (
                 "\n\nReached the request_new_manifest function.\n"
-                "We seem to need a new manifest for the following assembly:\n"
+                "We need a new manifest for the following assembly:\n"
                 f"    {json.dumps(assembly)}\n"
-                "If we're ready to test this remove the Exception.\n"
+                "To have Canopy generate the manifest, pass `--force`.\n"
             )
         )
 
-    request_data = json.dumps(assembly)
-
     raw_manifest = requests.post(
-        new_manifest_url, headers=auth_header, data=request_data
+        new_manifest_url, headers=auth_header, data=json.dumps(assembly)
     )
+    raw_manifest.raise_for_status()
 
     return raw_manifest.json().get("manifest", {})
 
@@ -401,40 +404,28 @@ def main():
     # get the sample_ids and data_types for the long read specimen_samples
     long_read_samples, hi_c_samples = get_sample_data_types(specimen_samples)
 
-    # Shape of the assemblies for the request, tol_id and
-    # hic_specimen_sample_ids are optional.
-    # {
-    #   "tol_id": "string",
-    #   "long_read_specimen_sample_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    #   "hic_specimen_sample_ids": [
-    #     "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-    #   ]
-    # }
     viable_assemblies = []
 
-    # Logic for Hi-C:
-    # If we have hi_c and long read from the same sample that is the
-    # combination we want and we don't consider other samples.
-    # Need to handle the case where we already have a manifest for the long
-    # read sample and hi-c is added later.
+    # Logic for Hi-C: If we have hi_c and long read from the same sample, we
+    # don't consider using Hi-C data from other samples.
     for sample in long_read_samples:
         sample_id = sample[0]
         sample_dict = {"long_read_specimen_sample_id": sample_id}
 
-        # TODO: We have to check for a ToLID here, because Canopy doesn't
-        # return it with the Manifest, even if it's already been assigned for
-        # this sample_id.
+        # We have to check for a ToLID here, because Canopy doesn't return it
+        # with the Manifest, even if it's already been assigned for this
+        # sample_id.
         sample_tolid = check_for_tolid(
-            sample_id=sample_id, auth_header=auth_header, force=args.force
+            sample_id=sample_id, auth_header=auth_header, prod=args.prod
         )
         sample_dict["dataset_id"] = sample_tolid if sample_tolid else "fixme_no_tolid"
 
-        # if we see a hi-c sample with the same sample id, we can exit straight
-        # away.
+        # If we see a hi-c sample with the same sample id, we are done.
         if sample_id in hi_c_samples:
             sample_dict["hic_specimen_sample_ids"] = [sample_id]
             viable_assemblies.append(sample_dict)
             continue
+
         # If there are no HiC samples hic_specimen_sample_ids will not be added
         # to the sample_dict.
         elif hi_c_samples:
@@ -444,17 +435,19 @@ def main():
 
         viable_assemblies.append(sample_dict)
 
-    # look up existsing assemblies in the DB
+    if len(viable_assemblies) == 0:
+        raise ValueError("No viable assembly candidates found")
+
+    # TODO: handle the case where we already have a manifest for the long read
+    # sample and hi-c is added later. For now we just look up the latest
+    # assembly in the DB.
     taxid_manifests = get_existing_manifests(taxon_id_str, canopy_token)
     if taxid_manifests.status_code == 404:
         logger.warning(f"No existing manifest for taxon_id {taxon_id_str}")
-        if len(viable_assemblies) == 0:
-            raise ValueError("No viable assembly candidates")
 
-    # Prepare to output manifests
+    # Output manifests
     logger.warning(f"Outputting manifest files to {args.outdir}")
 
-    assembly_manifests = []
     for assembly in viable_assemblies:
         manifest = check_if_assembly_exists(assembly, taxid_manifests)
         if manifest is None:
@@ -466,8 +459,8 @@ def main():
             )
 
         # Make sure the manifest has a dataset_id (ToLID). Note: the API
-        # doesn't return the ToLID even if it's in the DB, so we have to get
-        # the ToLID from the sample_id.
+        # doesn't return the ToLID even if it's in the DB, so we get the ToLID
+        # from the sample_id (above).
         if not manifest.get("dataset_id"):
             manifest["dataset_id"] = assembly.get("dataset_id", "fixme_no_tolid")
 
