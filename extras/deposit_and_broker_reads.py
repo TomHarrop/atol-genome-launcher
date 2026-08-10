@@ -74,6 +74,8 @@ def main():
         manifest = Manifest.model_validate_json(f.read())
     assembly_id = manifest.assembly_id
 
+    raise ValueError(assembly_id)
+
     # this will be passed to canopy
     # raise ValueError(manifest.assembly_id)
 
@@ -88,6 +90,8 @@ def main():
     except HTTPError as e:
         print(e)
         raise NotImplementedError("TODO: check for an existing report for this sample")
+        # use the qc-reads endpoint; filter by assembly_id. match response to
+        # source file checksums? argh.
 
 
 # The trailing slash is important. It only works if you use the exact format on
@@ -95,8 +99,10 @@ def main():
 # /api/v1/assemblies/submission/ (trailing slash), but for QC report submission
 # its /api/v1/assemblies/{assembly_id}/qc-reads/report (no trailing slash).
 # Does it have something to do with the params?
-_endpoints = {"qc_reads_report": "/api/v1/assemblies/{assembly_id}/qc-reads/report"}
-
+_endpoints = {
+    "qc_reads_report": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
+    "qc_reads": "/api/v1/qc-reads/",
+}
 
 if __name__ == "__main__":
     main()
