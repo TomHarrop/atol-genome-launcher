@@ -4,8 +4,10 @@ import argparse
 import json
 from pathlib import Path
 
-from canopy_client import canopy_login, CanopySession
+from canopy_client import CanopySession, canopy_login
 from common import generate_parser
+from requests.models import Response
+from requests.exceptions import HTTPError
 from yaml_manifest import Manifest
 
 
@@ -36,7 +38,7 @@ def post_qc_reads_report(
     body: dict[str, str | int],
     canopy_session: CanopySession,
     endpoint: str = "qc_reads_report",
-):
+) -> Response:
     url_template = _endpoints.get(endpoint)
     url_suffix = url_template.format(assembly_id=assembly_id)
 
@@ -53,7 +55,7 @@ def post_qc_reads_report(
     response = canopy_session.post(url=url_suffix, data=json.dumps(body))
     response.raise_for_status()
 
-    raise ValueError(response.content)
+    return response
 
 
 def main():
@@ -79,9 +81,13 @@ def main():
     package_reads = manifest.reads.get(args.bpa_package_id)
     checksum_values = package_reads.all_md5sums
 
-    post_qc_reads_report(
-        assembly_id=assembly_id, canopy_session=canopy_session, body=qc_report_dict
-    )
+    try:
+        qc_reads_report = post_qc_reads_report(
+            assembly_id=assembly_id, canopy_session=canopy_session, body=qc_report_dict
+        )
+    except HTTPError as e:
+        print(e)
+        raise NotImplementedError("TODO: check for an existing report for this sample")
 
 
 # The trailing slash is important. It only works if you use the exact format on
