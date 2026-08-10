@@ -14,6 +14,13 @@ def parse_arguments() -> argparse.Namespace:
 
     _ = parser.add_argument("manifest", type=Path)
 
+    _ = inputs_parser.add_argument(
+        "--bpa_package_id",
+        help="Single `name` of the `read_files` to broker.",
+        type=str,
+        required=True,
+    )
+
     _ = inputs_parser.add_argument("--qc_reads_report", type=Path, required=True)
 
     return parser.parse_args()
@@ -30,15 +37,17 @@ def main():
 
     canopy_session = canopy_login()
 
+    qc_report_dict = read_json_from_path(args.qc_reads_report)
+
     with open(args.manifest, "rb") as f:
         manifest = Manifest.model_validate_json(f.read())
 
-    qc_report_dict = read_json_from_path(args.qc_reads_report)
+    # this will be passed to canopy
+    # raise ValueError(manifest.assembly_id)
 
-    # handle the keys
-    bpa_package_ids = sorted(set(qc_report_dict.get("checksums", {}).keys()))
-
-    raise ValueError(manifest.reads.get(bpa_package_ids[0]))
+    # Canopy needs the checksum values in an array
+    package_reads = manifest.reads.get(args.bpa_package_id)
+    checksum_values = package_reads.all_md5sums
 
 
 _endpoints = {"qc_reads_report": "/api/v1/assemblies/{assembly_id}/qc-reads/report"}

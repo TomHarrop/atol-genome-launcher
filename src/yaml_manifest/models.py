@@ -349,6 +349,13 @@ class ReadFile(BaseModel):
             lane_numbers.update(lf.lane_number for lf in lane_files)
         return sorted(lane_numbers, key=natural_sort_key)
 
+    @property
+    def all_md5sums(self) -> list[str]:
+        md5sums = set()
+        for lane_files in self._iter_lane_file_lists():
+            md5sums.update(lf.md5sum for lf in lane_files)
+        return sorted(md5sums, key=natural_sort_key)
+
     def lanes_for_read(self, read_number: str) -> list[BpaFile]:
         if read_number == "r1":
             lanes = self.r1 or []
