@@ -4,10 +4,11 @@ import argparse
 import json
 from pathlib import Path
 
+from broker.cli import submit_entity
 from canopy_client import CanopySession, canopy_login
 from common import generate_parser
-from requests.models import Response
 from requests.exceptions import HTTPError
+from requests.models import Response
 from yaml_manifest import Manifest
 
 
@@ -54,9 +55,6 @@ def post_qc_reads_report(
     # works - right now we get a validation error
     response = canopy_session.post(url=url_suffix, data=json.dumps(body))
     response.raise_for_status()
-
-    # TODO this should raise a specific exception if the qc_read already
-    # exists. Don't know what.
 
     return response
 
@@ -145,6 +143,10 @@ def main():
     )
     # raise ValueError(sample_id)
 
+    # add the info required by canopy
+    qc_report_dict["bpa_package_id"] = args.bpa_package_id
+    qc_report_dict["source_read_file_checksums"] = checksum_values
+
     # This whole mess gets the qc_read_id either by submitting the report and
     # reading the response, or (if the report has already been submitted)
     # trying to match the source_read_file_checksums against the existing
@@ -154,6 +156,7 @@ def main():
         qc_reads_report = post_qc_reads_report(
             assembly_id=assembly_id, canopy_session=canopy_session, body=qc_report_dict
         )
+        qc_read_id = qc_reads_report.json().get("id", "")
     # TODO. Check the value. We should stop if the HTTPError happens for any
     # reason other than the qc_read already exists. e.g. raise a specific error
     # in post_qc_reads_report if it already exists and handle it here.
@@ -161,7 +164,6 @@ def main():
         qc_reads_report = get_qc_reads_report(
             assembly_id=assembly_id, canopy_session=canopy_session
         )
-    finally:
         # Stuck. How do I get match the Run I want to submit to the list of
         # qc_read items? I think we need to match the experiment_id but there
         # is no way to look that up... Right now we just compare the checksums.
@@ -173,7 +175,9 @@ def main():
                 qc_read_id = qc_read_report.get("id", "")
                 continue
 
-    raise ValueError(qc_read_id)
+    submit_entity(
+        type_="run", id_=qc_read_id, dry_run=True, prod=True, hold_until="2028-07-30"
+    )
 
 
 # The trailing slash is important. It only works if you use the exact format on
