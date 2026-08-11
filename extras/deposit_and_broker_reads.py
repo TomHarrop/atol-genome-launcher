@@ -64,15 +64,33 @@ def get_qc_reads_report(
     canopy_session: CanopySession,
     endpoint: str = "qc_reads",
 ) -> Response:
-    """
-    Use the qc-reads endpoint; filter by assembly_id. match response to source
-    file checksums? argh.
-    """
+
     url_suffix = _endpoints.get(endpoint)
     response = canopy_session.get(url_suffix, params={"assembly_id": assembly_id})
     response.raise_for_status()
 
     return response
+
+
+def get_qc_reads_id(
+    qc_reads_response: Response, checksum_values: list[str]
+) -> str | None:
+    """
+    Filter by assembly_id and match response to source file checksums? argh. If
+    the report has already been submitted, we're trying to match the
+    source_read_file_checksums against the existing checksum_values. This can't
+    be the right way... see
+    https://github.com/AustralianBioCommons/atol-canopy/issues/47
+    """
+    for qc_read_report in qc_reads_response.json():
+        if (
+            sorted(set(qc_read_report.get("source_read_file_checksums")))
+            == checksum_values
+        ):
+            qc_read_id = qc_read_report.get("id", None)
+            return qc_read_id
+
+    return None
 
 
 def get_assembly(
@@ -109,26 +127,54 @@ def get_sample_id(
     raise ValueError((f"Could not find {bpa_package_id} in read_files:\n{read_files}"))
 
 
+def get_accession_from_submission(
+    submission: dict[str, str], entity_type: str | None = None
+) -> str | None:
+    authority = submission.get("authority", "")
+    status = submission.get("status", "")
+    accession = submission.get("accession", None)
+
+    if entity_type is not None:
+        entity_type_const = submission.get("entity_type_const", "")
+        entity_type_ok = entity_type_const == entity_type
+    else:
+        entity_type_ok = True
+
+    if (
+        authority == "ENA"
+        and status == "accepted"
+        and entity_type_ok == True
+        and accession is not None
+    ):
+        return accession
+
+    return None
+
+
+def get_accession_from_response(
+    response: Response, entity_type: str | None = None
+) -> str | None:
+    for submission in response.json():
+        accession = get_accession_from_submission(
+            submission=submission, entity_type=entity_type
+        )
+        if accession is not None:
+            return accession
+    return None
+
+
 def get_experiment_accession(
     bpa_package_id: str,
     canopy_session: CanopySession,
     endpoint: str = "experiment_submissions",
-) -> str:
+) -> str | None:
     url_suffix = _endpoints.get(endpoint, "")
     response = canopy_session.get(url_suffix, params={"bpa_package_id": bpa_package_id})
     response.raise_for_status()
 
-    for submission in response.json():
-        authority = submission.get("authority", "")
-        status = submission.get("status", "")
-        entity_type_const = submission.get("entity_type_const", "")
-
-        if (
-            authority == "ENA"
-            and status == "accepted"
-            and entity_type_const == "experiment"
-        ):
-            return submission.get("accession", None)
+    accession = get_accession_from_response(response, entity_type="experiment")
+    if accession is not None:
+        return accession
 
     raise ValueError(
         f"No experiment accession found for {bpa_package_id} in\n{response.content}"
@@ -173,58 +219,62 @@ def main():
     qc_report_dict["bpa_package_id"] = args.bpa_package_id
     qc_report_dict["source_read_file_checksums"] = checksum_values
 
-    # Possibly... get the BioSample from
-    # /api/v1/samples/submission/by-experiment/{bpa_package_id}. BioSample and
-    # BioProject have to be brokered before we start, to generate the TOLiD.
-    # It's currently not clear if the BioProject can be retrieved... but if
-    # this is the case, it can't be required for submitting the Experiment, so
-    # try to force-submit before giving up! See
-    # https://github.com/TomHarrop/atol-genome-launcher/issues/37
-
-    # YES! This works. We can get the ERX* from
-    # /api/v1/experiment-submissions/by-experiment-attr, if it already exists.
-    # if not, we can get the project and sample and submit the Experiment first.
-    # However, it's currently hard to get the
+    # an existing Experiment is required to broker the Run
     experiment_accession = get_experiment_accession(
         canopy_session=canopy_session, bpa_package_id=args.bpa_package_id
     )
+    if experiment_accession is None:
+        raise NotImplementedError("TODO: try to broker the Experiment")
+        # Get the BioSample from
+        # /api/v1/samples/submission/by-experiment/{bpa_package_id}. BioSample
+        # and BioProject have to be brokered before we start, to generate the
+        # TOLiD. It's currently not clear if the BioProject can be retrieved...
+        # but if this is the case, it can't be required for submitting the
+        # Experiment, so try to force-submit before giving up! See
+        # https://github.com/TomHarrop/atol-genome-launcher/issues/37
 
-    # FIXME THIS IS ALL WRONG - IT WILL CREATE A NEW QC_READ, EVEN IF IT
-    # ALREADY EXISTS. THE NEW QC_READ WILL HAVE A STATUS "DRAFT", SO THIS COULD
-    # RESULT IN DUPLICATE SUBMISSIONS
-    raise ValueError("STOP BROKEN")
+    # Check for existing qc_read
+    qc_reads_response = get_qc_reads_report(
+        assembly_id=assembly_id,
+        canopy_session=canopy_session,
+    )
 
-    # This whole mess gets the qc_read_id either by submitting the report and
-    # reading the response, or (if the report has already been submitted)
-    # trying to match the source_read_file_checksums against the existing
-    # checksum_values. This can't be the right way... see
-    # https://github.com/AustralianBioCommons/atol-canopy/issues/47
-    try:
+    qc_reads_id = get_qc_reads_id(
+        qc_reads_response=qc_reads_response,
+        checksum_values=checksum_values,
+    )
+
+    # Make sure the existing qc_read has not been submitted
+    for qc_read_report in qc_reads_response.json():
+        for submission in qc_read_report.get("submission_records", []):
+            accession = get_accession_from_submission(submission=submission)
+            if accession is not None:
+                raise ValueError(
+                    f"qc_read_id {qc_reads_id} is accessioned as {accession}"
+                )
+
+    # Submit the qc_read if we need to
+    if qc_reads_id is None:
         qc_reads_report = post_qc_reads_report(
             assembly_id=assembly_id, canopy_session=canopy_session, body=qc_report_dict
         )
-        qc_read_id = qc_reads_report.json().get("id", "")
-    # TODO. Check the value. We should stop if the HTTPError happens for any
-    # reason other than the qc_read already exists. e.g. raise a specific error
-    # in post_qc_reads_report if it already exists and handle it here.
-    except HTTPError as e:
-        qc_reads_report = get_qc_reads_report(
-            assembly_id=assembly_id, canopy_session=canopy_session
-        )
-        # Stuck. How do I get match the Run I want to submit to the list of
-        # qc_read items? I think we need to match the experiment_id but there
-        # is no way to look that up... Right now we just compare the checksums.
-        for qc_read_report in qc_reads_report.json():
-            if (
-                sorted(set(qc_read_report.get("source_read_file_checksums")))
-                == checksum_values
-            ):
-                qc_read_id = qc_read_report.get("id", "")
-                continue
+        qc_reads_id = qc_reads_report.json().get("id", None)
 
-    submit_entity(
-        type_="run", id_=qc_read_id, dry_run=True, prod=True, hold_until="2028-07-30"
-    )
+    if qc_reads_id is None:
+        raise TypeError("Could not generate qc_reads_id")
+
+    try:
+        run_submission = submit_entity(
+            type_="run",
+            id_=qc_reads_id,
+            dry_run=True,
+            prod=True,
+            hold_until="2028-07-30",
+        )
+    except Exception as e:
+        print(e)
+
+    raise ValueError(run_submission)
 
 
 # The trailing slash is important. It only works if you use the exact format on
