@@ -109,6 +109,32 @@ def get_sample_id(
     raise ValueError((f"Could not find {bpa_package_id} in read_files:\n{read_files}"))
 
 
+def get_experiment_accession(
+    bpa_package_id: str,
+    canopy_session: CanopySession,
+    endpoint: str = "experiment_submissions",
+) -> str:
+    url_suffix = _endpoints.get(endpoint, "")
+    response = canopy_session.get(url_suffix, params={"bpa_package_id": bpa_package_id})
+    response.raise_for_status()
+
+    for submission in response.json():
+        authority = submission.get("authority", "")
+        status = submission.get("status", "")
+        entity_type_const = submission.get("entity_type_const", "")
+
+        if (
+            authority == "ENA"
+            and status == "accepted"
+            and entity_type_const == "experiment"
+        ):
+            return submission.get("accession", None)
+
+    raise ValueError(
+        f"No experiment accession found for {bpa_package_id} in\n{response.content}"
+    )
+
+
 def main():
 
     args = parse_arguments()
@@ -146,6 +172,22 @@ def main():
     # add the info required by canopy
     qc_report_dict["bpa_package_id"] = args.bpa_package_id
     qc_report_dict["source_read_file_checksums"] = checksum_values
+
+    # Possibly... get the BioSample from
+    # /api/v1/samples/submission/by-experiment/{bpa_package_id}. BioSample and
+    # BioProject have to be brokered before we start, to generate the TOLiD.
+    # It's currently not clear if the BioProject can be retrieved... but if
+    # this is the case, it can't be required for submitting the Experiment, so
+    # try to force-submit before giving up! See
+    # https://github.com/TomHarrop/atol-genome-launcher/issues/37
+
+    # YES! This works. We can get the ERX* from
+    # /api/v1/experiment-submissions/by-experiment-attr, if it already exists.
+    # if not, we can get the project and sample and submit the Experiment first.
+    # However, it's currently hard to get the
+    experiment_accession = get_experiment_accession(
+        canopy_session=canopy_session, bpa_package_id=args.bpa_package_id
+    )
 
     # FIXME THIS IS ALL WRONG - IT WILL CREATE A NEW QC_READ, EVEN IF IT
     # ALREADY EXISTS. THE NEW QC_READ WILL HAVE A STATUS "DRAFT", SO THIS COULD
@@ -192,6 +234,7 @@ def main():
 # Does it have something to do with the params?
 _endpoints = {
     "assemblies": "/api/v1/assemblies/{assembly_id}",
+    "experiment_submissions": "/api/v1/experiment-submissions/by-experiment-attr",
     "qc_reads_report": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
     "qc_reads": "/api/v1/qc-reads/",
 }
