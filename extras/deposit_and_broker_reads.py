@@ -147,6 +147,11 @@ def main():
     qc_report_dict["bpa_package_id"] = args.bpa_package_id
     qc_report_dict["source_read_file_checksums"] = checksum_values
 
+    # FIXME THIS IS ALL WRONG - IT WILL CREATE A NEW QC_READ, EVEN IF IT
+    # ALREADY EXISTS. THE NEW QC_READ WILL HAVE A STATUS "DRAFT", SO THIS COULD
+    # RESULT IN DUPLICATE SUBMISSIONS
+    raise ValueError("STOP BROKEN")
+
     # This whole mess gets the qc_read_id either by submitting the report and
     # reading the response, or (if the report has already been submitted)
     # trying to match the source_read_file_checksums against the existing
