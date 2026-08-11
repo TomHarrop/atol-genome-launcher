@@ -58,6 +58,56 @@ def post_qc_reads_report(
     return response
 
 
+def get_qc_reads_report(
+    assembly_id: str,
+    canopy_session: CanopySession,
+    endpoint: str = "qc_reads",
+) -> Response:
+    """
+    Use the qc-reads endpoint; filter by assembly_id. match response to source
+    file checksums? argh.
+    """
+    url_suffix = _endpoints.get(endpoint)
+    response = canopy_session.get(url_suffix, params={"assembly_id": assembly_id})
+    response.raise_for_status()
+
+    return response
+
+
+def get_assembly(
+    assembly_id: str,
+    canopy_session: CanopySession,
+    endpoint: str = "assemblies",
+) -> Response:
+    url_template = _endpoints.get(endpoint, "")
+    url_suffix = url_template.format(assembly_id=assembly_id)
+
+    response = canopy_session.get(url_suffix)
+    response.raise_for_status()
+
+    return response
+
+
+def get_sample_id(
+    assembly_id: str,
+    bpa_package_id: str,
+    canopy_session: CanopySession,
+) -> str:
+    """
+    Use the assemblies endpoint to get the sample UUID
+    """
+    assembly = get_assembly(assembly_id=assembly_id, canopy_session=canopy_session)
+    assembly_json = assembly.json()
+
+    read_files = assembly_json.get("manifest_json", {}).get("read_files", {})
+
+    for read_file in read_files:
+        if read_file.get("name", "") == bpa_package_id:
+            return read_file.get("sample_id", None)
+
+    raise ValueError((f"Could not find {bpa_package_id} in read_files:\n{read_files}"))
+
+
 def main():
 
     args = parse_arguments()
@@ -74,8 +124,6 @@ def main():
         manifest = Manifest.model_validate_json(f.read())
     assembly_id = manifest.assembly_id
 
-    raise ValueError(assembly_id)
-
     # this will be passed to canopy
     # raise ValueError(manifest.assembly_id)
 
@@ -83,15 +131,24 @@ def main():
     package_reads = manifest.reads.get(args.bpa_package_id)
     checksum_values = package_reads.all_md5sums
 
+    # the qc-reads endpoints need the sample_id
+    sample_id = get_sample_id(
+        bpa_package_id=args.bpa_package_id,
+        assembly_id=assembly_id,
+        canopy_session=canopy_session,
+    )
+
     try:
         qc_reads_report = post_qc_reads_report(
             assembly_id=assembly_id, canopy_session=canopy_session, body=qc_report_dict
         )
+    # TODO. Check the value. We should stop if the HTTPError is
     except HTTPError as e:
-        print(e)
-        raise NotImplementedError("TODO: check for an existing report for this sample")
-        # use the qc-reads endpoint; filter by assembly_id. match response to
-        # source file checksums? argh.
+        qc_reads_report = get_qc_reads_report(
+            assembly_id=assembly_id, canopy_session=canopy_session
+        )
+    finally:
+        qc_reads_report.json().get("")
 
 
 # The trailing slash is important. It only works if you use the exact format on
@@ -100,6 +157,7 @@ def main():
 # its /api/v1/assemblies/{assembly_id}/qc-reads/report (no trailing slash).
 # Does it have something to do with the params?
 _endpoints = {
+    "assemblies": "/api/v1/assemblies/{assembly_id}",
     "qc_reads_report": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
     "qc_reads": "/api/v1/qc-reads/",
 }
