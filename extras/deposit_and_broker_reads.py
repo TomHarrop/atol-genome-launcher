@@ -55,6 +55,9 @@ def post_qc_reads_report(
     response = canopy_session.post(url=url_suffix, data=json.dumps(body))
     response.raise_for_status()
 
+    # TODO this should raise a specific exception if the qc_read already
+    # exists. Don't know what.
+
     return response
 
 
@@ -124,6 +127,9 @@ def main():
         manifest = Manifest.model_validate_json(f.read())
     assembly_id = manifest.assembly_id
 
+    if assembly_id is None:
+        raise ValueError("Interactions with Canopy require an assembly_id")
+
     # this will be passed to canopy
     # raise ValueError(manifest.assembly_id)
 
@@ -137,18 +143,37 @@ def main():
         assembly_id=assembly_id,
         canopy_session=canopy_session,
     )
+    # raise ValueError(sample_id)
 
+    # This whole mess gets the qc_read_id either by submitting the report and
+    # reading the response, or (if the report has already been submitted)
+    # trying to match the source_read_file_checksums against the existing
+    # checksum_values. This can't be the right way... see
+    # https://github.com/AustralianBioCommons/atol-canopy/issues/47
     try:
         qc_reads_report = post_qc_reads_report(
             assembly_id=assembly_id, canopy_session=canopy_session, body=qc_report_dict
         )
-    # TODO. Check the value. We should stop if the HTTPError is
+    # TODO. Check the value. We should stop if the HTTPError happens for any
+    # reason other than the qc_read already exists. e.g. raise a specific error
+    # in post_qc_reads_report if it already exists and handle it here.
     except HTTPError as e:
         qc_reads_report = get_qc_reads_report(
             assembly_id=assembly_id, canopy_session=canopy_session
         )
     finally:
-        qc_reads_report.json().get("")
+        # Stuck. How do I get match the Run I want to submit to the list of
+        # qc_read items? I think we need to match the experiment_id but there
+        # is no way to look that up... Right now we just compare the checksums.
+        for qc_read_report in qc_reads_report.json():
+            if (
+                sorted(set(qc_read_report.get("source_read_file_checksums")))
+                == checksum_values
+            ):
+                qc_read_id = qc_read_report.get("id", "")
+                continue
+
+    raise ValueError(qc_read_id)
 
 
 # The trailing slash is important. It only works if you use the exact format on
