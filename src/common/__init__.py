@@ -20,7 +20,7 @@ def generate_parser(
     argparse._ArgumentGroup,
     argparse._ArgumentGroup,
 ]:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=description)
     inputs_parser = parser.add_argument_group("Inputs")
     outputs_parser = parser.add_argument_group("Outputs")
     settings_parser = parser.add_argument_group("Settings")

@@ -12,7 +12,15 @@ from yaml_manifest import Manifest
 
 
 def parse_arguments() -> argparse.Namespace:
-    parser, inputs_parser, outputs_parser, settings_parser = generate_parser()
+    parser, inputs_parser, outputs_parser, settings_parser = generate_parser(
+        description=(
+            "Utility script for the genome-launcher-workflow. "
+            "After uploading the reads to the ENA file area, "
+            "run this script with the package ID and QC report. "
+            "The script will submit the Run (and Experiment if necessary), "
+            "or print an error if some prerequisite submissions are missing."
+        )
+    )
 
     _ = parser.add_argument("manifest", type=Path)
 
