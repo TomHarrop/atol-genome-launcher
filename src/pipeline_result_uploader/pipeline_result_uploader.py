@@ -13,19 +13,19 @@ def parse_arguments():
         ),
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "manifest",
         type=str,
         help="Path to the YAML manifest file.",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "receipts_file",
         type=str,
         help="jsonl file to store the upload receipts",
     )
 
-    settings_parser.add_argument(
+    _ = settings_parser.add_argument(
         "--stage",
         type=str,
         required=True,
@@ -34,26 +34,26 @@ def parse_arguments():
         ),
     )
 
-    settings_parser.add_argument(
+    _ = settings_parser.add_argument(
         "--bucket",
         type=str,
         required=True,
         help="Name of the S3 bucket.",
     )
 
-    settings_parser.add_argument(
+    _ = settings_parser.add_argument(
         "--parallel_downloads", type=int, help="Number of parallel downloads", default=1
     )
 
     # rclone remote name — env vars must match this
-    settings_parser.add_argument(
+    _ = settings_parser.add_argument(
         "--rclone_remote_name",
         dest="RCLONE_REMOTE",
         help=SUPPRESS,
         default="UPLOAD",
     )
 
-    inputs_parser.add_argument("--result_dir", help=SUPPRESS, type=Path)
+    _ = inputs_parser.add_argument("--result_dir", help=SUPPRESS, type=Path)
 
     return parser.parse_args()
 
