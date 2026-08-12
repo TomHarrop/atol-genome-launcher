@@ -1,8 +1,28 @@
 Changelog
 =========
 
-(unreleased)
-------------
+0.16.0 (2026-08-12)
+-------------------
+
+New
+
+~~~
+- Submit run to ENA. [Tom Harrop]
+
+  New: Submit run to ENA
+- Submit run to ENA" [Tom Harrop]
+
+
+0.15.5 (2026-08-06)
+-------------------
+
+Changes
+~~~~~~~
+
+- Reshape upload receipts to match Canopy. Fixes #34. [Tom Harrop]
+
+0.15.4 (2026-07-31)
+-------------------
 
 Changes
 

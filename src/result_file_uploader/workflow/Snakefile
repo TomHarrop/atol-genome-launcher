@@ -93,9 +93,10 @@ onsuccess:
     print(
         (
             "{"
+            '"storage_type": "s3", '
             f'"endpoint": "{endpoint}", '
-            f'"bucket": "{bucket}", '
-            f'"remote_path": "{remote_path}", '
+            f'"location_root": "{bucket}", '
+            f'"location_path": "{remote_path}", '
             f'"sha256sum": "{sha256sum}"'
             "}"
         ),

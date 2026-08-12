@@ -12,19 +12,19 @@ def parse_arguments():
         description="Upload a single file to S3-compatible object storage using rclone.",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "local_file",
         type=str,
         help="Path to the local file to upload.",
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "remote_path",
         type=str,
         help="Destination key/path within the bucket.",
     )
 
-    settings_parser.add_argument(
+    _ = settings_parser.add_argument(
         "--bucket",
         type=str,
         required=True,
@@ -32,7 +32,7 @@ def parse_arguments():
     )
 
     # rclone remote name — env vars must match this
-    settings_parser.add_argument(
+    _ = settings_parser.add_argument(
         "--rclone_remote_name",
         dest="RCLONE_REMOTE",
         help=SUPPRESS,
