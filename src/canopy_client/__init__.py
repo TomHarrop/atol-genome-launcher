@@ -2,6 +2,7 @@
 
 from datetime import date, timedelta
 from functools import cache
+import json
 from urllib.parse import urljoin
 
 from common import check_env_var
@@ -115,14 +116,43 @@ def get_biosample_id(
     return accession
 
 
-def get_experiment_accession(
+@cache
+def get_experiment_submission(
     bpa_package_id: str,
     canopy_session: CanopySession,
     endpoint: str = "experiment_submissions",
-) -> str | None:
+) -> requests.Response:
+
     url_suffix = _endpoints.get(endpoint, "")
     response = canopy_session.get(url_suffix, params={"bpa_package_id": bpa_package_id})
     response.raise_for_status()
+
+    return response
+
+
+def get_experiment_id(
+    bpa_package_id: str,
+    canopy_session: CanopySession,
+) -> str | None:
+    response = get_experiment_submission(
+        bpa_package_id=bpa_package_id, canopy_session=canopy_session
+    )
+    for submission in response.json():
+        experiment_id = submission.get("experiment_id", None)
+        if experiment_id is not None:
+            return experiment_id
+
+    return None
+
+
+def get_experiment_accession(
+    bpa_package_id: str,
+    canopy_session: CanopySession,
+) -> str | None:
+
+    response = get_experiment_submission(
+        bpa_package_id=bpa_package_id, canopy_session=canopy_session
+    )
 
     accession = get_accession_from_response(response, entity_type="experiment")
     if accession is not None:
