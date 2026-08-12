@@ -93,6 +93,17 @@ def main():
     )
 
     if experiment_accession is None:
+        biosample_id = canopy_client.get_biosample_id(
+            bpa_package_id=args.bpa_package_id, canopy_session=canopy_session
+        )
+        if biosample_id is None:
+            raise ValueError(
+                (
+                    f"sample_id {sample_id} for bpa_package_id {args.bpa_package_id} "
+                    "does not have a BioSample accession."
+                )
+            )
+
         raise NotImplementedError("TODO: try to broker the Experiment")
         # Get the BioSample from
         # /api/v1/samples/submission/by-experiment/{bpa_package_id}. BioSample

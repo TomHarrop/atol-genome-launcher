@@ -98,6 +98,24 @@ def get_assembly(
     return response
 
 
+def get_biosample_id(
+    bpa_package_id: str,
+    canopy_session: CanopySession,
+    endpoint: str = "submission_by_experiment",
+) -> str | None:
+
+    url_template = _endpoints.get(endpoint, "")
+    url_suffix = url_template.format(bpa_package_id=bpa_package_id)
+
+    response = canopy_session.get(url_suffix)
+    response.raise_for_status()
+
+    # TODO: check if this works with an actual brokered accession
+    accession = get_accession_from_response(response)
+
+    return accession
+
+
 def get_experiment_accession(
     bpa_package_id: str,
     canopy_session: CanopySession,
@@ -111,9 +129,7 @@ def get_experiment_accession(
     if accession is not None:
         return accession
 
-    raise ValueError(
-        f"No experiment accession found for {bpa_package_id} in\n{response.content}"
-    )
+    return None
 
 
 def get_qc_reads_report(
@@ -183,6 +199,7 @@ _endpoints = {
     "auth_login": "auth/login",
     "assemblies": "/api/v1/assemblies/{assembly_id}",
     "experiment_submissions": "/api/v1/experiment-submissions/by-experiment-attr",
+    "submission_by_experiment": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
     "qc_reads_report": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
     "qc_reads": "/api/v1/qc-reads/",
 }
