@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from datetime import date, timedelta
+from functools import cache
 from urllib.parse import urljoin
 
 from common import check_env_var
@@ -101,14 +103,11 @@ def get_assembly(
 def get_biosample_id(
     bpa_package_id: str,
     canopy_session: CanopySession,
-    endpoint: str = "submission_by_experiment",
 ) -> str | None:
 
-    url_template = _endpoints.get(endpoint, "")
-    url_suffix = url_template.format(bpa_package_id=bpa_package_id)
-
-    response = canopy_session.get(url_suffix)
-    response.raise_for_status()
+    response = get_submission_by_experiment(
+        bpa_package_id=bpa_package_id, canopy_session=canopy_session
+    )
 
     # TODO: check if this works with an actual brokered accession
     accession = get_accession_from_response(response)
@@ -146,23 +145,48 @@ def get_qc_reads_report(
 
 
 def get_sample_id(
-    assembly_id: str,
     bpa_package_id: str,
     canopy_session: CanopySession,
 ) -> str:
     """
-    Use the assemblies endpoint to get the sample UUID
+    Use the submission-by-experiment endpoint to get the sample UUID
     """
-    assembly = get_assembly(assembly_id=assembly_id, canopy_session=canopy_session)
-    assembly_json = assembly.json()
+    response = get_submission_by_experiment(
+        bpa_package_id=bpa_package_id, canopy_session=canopy_session
+    )
 
-    read_files = assembly_json.get("manifest_json", {}).get("read_files", [])
-
-    for read_file in read_files:
-        if read_file.get("name", "") == bpa_package_id:
-            return read_file.get("sample_id", None)
+    for sample in response.json():
+        sample_id = sample.get("sample_id", None)
+        if sample_id is not None:
+            return sample_id
 
     raise ValueError((f"Could not find {bpa_package_id} in read_files:\n{read_files}"))
+
+
+@cache
+def get_submission_by_experiment(
+    bpa_package_id: str,
+    canopy_session: CanopySession,
+    endpoint: str = "submission_by_experiment",
+) -> requests.Response:
+
+    url_template = _endpoints.get(endpoint, "")
+    url_suffix = url_template.format(bpa_package_id=bpa_package_id)
+
+    response = canopy_session.get(url_suffix)
+    response.raise_for_status()
+
+    return response
+
+
+def hold_until() -> str:
+    today = date.today()
+
+    day_after_release = today.replace(year=today.year + 2, day=1)
+
+    hold_date = day_after_release - timedelta(days=1)
+
+    return hold_date.isoformat()
 
 
 def post_qc_reads_report(

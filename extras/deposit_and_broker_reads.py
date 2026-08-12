@@ -60,6 +60,7 @@ def main():
 
     canopy_session = canopy_client.canopy_login()
     qc_report_dict = read_json_from_path(args.qc_reads_report)
+    hold_date = canopy_client.hold_until()
 
     with open(args.manifest, "rb") as f:
         manifest = Manifest.model_validate_json(f.read())
@@ -75,10 +76,9 @@ def main():
     package_reads = manifest.reads.get(args.bpa_package_id)
     checksum_values = package_reads.all_md5sums
 
-    # I thought the qc-reads endpoints needed the sample_id but maybe not?
+    # This is used for brokering
     sample_id = canopy_client.get_sample_id(
         bpa_package_id=args.bpa_package_id,
-        assembly_id=assembly_id,
         canopy_session=canopy_session,
     )
     # raise ValueError(sample_id)
@@ -93,18 +93,6 @@ def main():
     )
 
     if experiment_accession is None:
-        biosample_id = canopy_client.get_biosample_id(
-            bpa_package_id=args.bpa_package_id, canopy_session=canopy_session
-        )
-        if biosample_id is None:
-            raise ValueError(
-                (
-                    f"sample_id {sample_id} for bpa_package_id {args.bpa_package_id} "
-                    "does not have a BioSample accession."
-                )
-            )
-
-        raise NotImplementedError("TODO: try to broker the Experiment")
         # Get the BioSample from
         # /api/v1/samples/submission/by-experiment/{bpa_package_id}. BioSample
         # and BioProject have to be brokered before we start, to generate the
@@ -112,6 +100,23 @@ def main():
         # but if this is the case, it can't be required for submitting the
         # Experiment, so try to force-submit before giving up! See
         # https://github.com/TomHarrop/atol-genome-launcher/issues/37
+        biosample_id = canopy_client.get_biosample_id(
+            bpa_package_id=args.bpa_package_id, canopy_session=canopy_session
+        )
+        if biosample_id is None:
+            raise ValueError(
+                (
+                    f"sample_id {sample_id} for bpa_package_id {args.bpa_package_id} "
+                    "does not have a BioSample accession.\n\n"
+                    "This is currently blocked. The workaround is to look up the BioProject "
+                    "accession on Webin, then manually broker the sample like this:\n\n"
+                    "broker submit entity --type sample "
+                    f"--id {sample_id} --project-accession <PRJEB....> --hold_until {hold_date}\n\n"
+                    "See https://github.com/AustralianBioCommons/atol-canopy/issues/49"
+                )
+            )
+
+        raise NotImplementedError("TODO: try to broker the Experiment")
 
     # Check for existing qc_read
     qc_reads_response = canopy_client.get_qc_reads_report(
@@ -152,7 +157,7 @@ def main():
         experiment_accession=experiment_accession,
         dry_run=True,
         prod=True,
-        hold_until="2028-07-30",
+        hold_until=hold_date,
     )
 
 
