@@ -45,6 +45,7 @@ request-assembly-repo = "request_assembly_repo.request_assembly_repo:main"
 result-file-uploader = "result_file_uploader.result_file_uploader:main"
 rnaseq-manifest-generator = "rnaseq_manifest_generator.rnaseq_manifest_generator:main"
 rnaseq-reads-downloader = "rnaseq_reads_downloader.rnaseq_reads_downloader:main"
+submit-assembly-to-ena = "submit_assembly_to_ena.submit_assembly_to_ena:main"
 submit-run-to-ena = "submit_run_to_ena.submit_run_to_ena:main"
 
 [tool.setuptools.package-data]
