@@ -1,5 +1,6 @@
 import argparse
 from importlib.metadata import metadata
+import json
 from os import getenv
 
 from snakemake.logging import logger
@@ -38,3 +39,8 @@ def log_version():
     pkg_name = pkg_metadata.get("Name")
     pkg_version = pkg_metadata.get("Version")
     logger.warning(f"{pkg_name} version {pkg_version}")
+
+
+def read_json_from_path(path_to_json_file: Path) -> dict[str, str | int | list[str]]:
+    with open(path_to_json_file, "rb") as f:
+        return json.load(f)

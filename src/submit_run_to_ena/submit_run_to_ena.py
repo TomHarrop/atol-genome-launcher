@@ -6,7 +6,7 @@ from pathlib import Path
 
 from broker.cli import submit_entity
 import canopy_client
-from common import generate_parser
+from common import generate_parser, read_json_from_path
 from requests.models import Response
 from yaml_manifest import Manifest
 
@@ -34,11 +34,6 @@ def parse_arguments() -> argparse.Namespace:
     _ = inputs_parser.add_argument("--qc_reads_report", type=Path, required=True)
 
     return parser.parse_args()
-
-
-def read_json_from_path(path_to_json_file: Path) -> dict[str, str | int | list[str]]:
-    with open(path_to_json_file, "rb") as f:
-        return json.load(f)
 
 
 def get_qc_reads_id(

@@ -42,13 +42,28 @@ def main():
         manifest = Manifest.model_validate_json(f.read())
     assembly_id = manifest.assembly_id
 
+    # TODO. Before we get here, we need to submit the pipeline run and the file
+    # lists. Step 2 and 4 here:
+    # https://github.com/AustralianBioCommons/atol-canopy/blob/main/docs/assembly_reporting_api.md#assembly-reporting-api
+
+
     ###################################
     # harvest the required parameters #
     ###################################
 
+    assembly = canopy_client.get_assembly(
+        assembly_id=assembly_id, canopy_session=canopy_session
+    )
+    # raise ValueError(assembly.json())
+
     # bioproject_accession ############
 
     # biosample_accession #############
+
+    # the long read specimen is recorded in the assembly
+    long_read_specimen_sample_id = assembly.get("long_read_specimen_sample_id")
+
+    # need to get the BioSample ID from this
 
     # array_of_err_accessions #########
     err_accessions = ["TODO1", "TODO2"]

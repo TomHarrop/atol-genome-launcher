@@ -51,6 +51,39 @@ def canopy_login() -> CanopySession:
     return s
 
 
+def create_assembly_run(
+    assembly_id: str,
+    body: dict[str, str],
+    canopy_session: CanopySession,
+    endpoint: str = "create_assembly_run",
+) -> requests.Response:
+
+    url_template = _endpoints.get(endpoint, "")
+    url_suffix = url_template.format(assembly_id=assembly_id)
+
+    response = canopy_session.post(url=url_suffix, data=json.dumps(body))
+    response.raise_for_status()
+
+    return response
+
+
+def create_stage_run(
+    assembly_id: str,
+    run_id: str,
+    body: dict[str, str | list[dict[str, str]]],
+    canopy_session: CanopySession,
+    endpoint: str = "create_stage_run",
+) -> requests.Response:
+
+    url_template = _endpoints.get(endpoint, "")
+    url_suffix = url_template.format(assembly_id=assembly_id, run_id=run_id)
+
+    response = canopy_session.post(url=url_suffix, data=json.dumps(body))
+    response.raise_for_status()
+
+    return response
+
+
 def get_accession_from_response(
     response: requests.Response, entity_type: str | None = None
 ) -> str | None:
@@ -99,6 +132,22 @@ def get_assembly(
     response.raise_for_status()
 
     return response
+
+
+def get_assembly_run_id_by_hash(
+    assembly_id: str, canopy_session: CanopySession, github_repo: str, git_commit: str
+) -> str | None:
+    assembly_runs = list_assembly_runs(
+        assembly_id=assembly_id, canopy_session=canopy_session
+    )
+    for assembly_run in assembly_runs.json():
+        if (
+            assembly_run.get("github_repo") == github_repo
+            and assembly_run.get("git_commit") == git_commit
+        ):
+            return assembly_run.get("id", None)
+
+    return None
 
 
 def get_biosample_id(
@@ -219,6 +268,20 @@ def hold_until() -> str:
     return hold_date.isoformat()
 
 
+def list_assembly_runs(
+    assembly_id: str,
+    canopy_session: CanopySession,
+    endpoint: str = "list_assembly_runs",
+) -> requests.Response:
+    url_template = _endpoints.get(endpoint, "")
+    url_suffix = url_template.format(assembly_id=assembly_id)
+
+    response = canopy_session.get(url=url_suffix)
+    response.raise_for_status()
+
+    return response
+
+
 def post_qc_reads_report(
     assembly_id: str,
     body: dict[str, str | int | list[str]],
@@ -250,10 +313,13 @@ def post_qc_reads_report(
 # its /api/v1/assemblies/{assembly_id}/qc-reads/report (no trailing slash).
 # Does it have something to do with the params?
 _endpoints = {
-    "auth_login": "auth/login",
     "assemblies": "/api/v1/assemblies/{assembly_id}",
+    "auth_login": "auth/login",
+    "create_assembly_run": "/api/v1/assemblies/{assembly_id}/runs",
+    "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "experiment_submissions": "/api/v1/experiment-submissions/by-experiment-attr",
-    "submission_by_experiment": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
+    "list_assembly_runs": "/api/v1/assemblies/{assembly_id}/runs",
     "qc_reads_report": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
     "qc_reads": "/api/v1/qc-reads/",
+    "submission_by_experiment": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
 }
