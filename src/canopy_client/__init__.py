@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import date, timedelta
+from enum import Enum
 from functools import cache
 import json
 from urllib.parse import urljoin
@@ -18,6 +19,12 @@ class CanopySession(requests.Session):
         base_url = self.base_url + ("/" if not self.base_url.endswith("/") else "")
         joined_url = urljoin(base_url, url)
         return super().request(method, joined_url, *args, **kwargs)
+
+class ProjectType(Enum):
+    root=0
+    genomic_data=1
+    assembly=2
+
 
 
 def canopy_login() -> CanopySession:
@@ -65,6 +72,10 @@ def create_assembly_run(
     response.raise_for_status()
 
     return response
+
+
+def create_project(taxon_id: int, project_type: str) -> requests.Response:
+    pass
 
 
 def create_stage_run(
@@ -352,6 +363,7 @@ _endpoints = {
     "assemblies": "/api/v1/assemblies/{assembly_id}",
     "auth_login": "auth/login",
     "create_assembly_run": "/api/v1/assemblies/{assembly_id}/runs",
+    "create_project": "/api/v1/projects/",
     "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "experiment_submissions": "/api/v1/experiment-submissions/by-experiment-attr",
     "list_assembly_runs": "/api/v1/assemblies/{assembly_id}/runs",
@@ -360,3 +372,4 @@ _endpoints = {
     "qc_reads": "/api/v1/qc-reads/",
     "submission_by_experiment": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
 }
+

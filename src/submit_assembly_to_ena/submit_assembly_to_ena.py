@@ -46,7 +46,6 @@ def main():
     # lists. Step 2 and 4 here:
     # https://github.com/AustralianBioCommons/atol-canopy/blob/main/docs/assembly_reporting_api.md#assembly-reporting-api
 
-
     ###################################
     # harvest the required parameters #
     ###################################
@@ -54,7 +53,20 @@ def main():
     assembly = canopy_client.get_assembly(
         assembly_id=assembly_id, canopy_session=canopy_session
     )
-    # raise ValueError(assembly.json())
+    assembly_project_id = assembly.json().get("project_id")
+    if assembly_project_id is None:
+        print(assembly.json())
+        raise ValueError("POST a new project to the project endpoint")
+        # Requires:
+        # taxon_id
+        # project_type = "assembly"
+        # study_type = "Whole Genome Sequencing"
+        # alias = TODO
+        # title = "{scientific_name} ({common_name}) genome assembly, {tolid}.{assembly_version}"
+        # description = "TODO make a template"
+
+
+    raise ValueError(f"assembly_id {assembly_id}")
 
     # bioproject_accession ############
 
