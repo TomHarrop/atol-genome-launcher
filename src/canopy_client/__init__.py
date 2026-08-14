@@ -242,6 +242,26 @@ def get_sample_id(
     raise ValueError((f"Could not find {bpa_package_id} in read_files:\n{read_files}"))
 
 
+def get_stage_run_by_stage_name(
+    assembly_id: str,
+    run_id: str,
+    stage_name: str,
+    canopy_session: CanopySession,
+) -> dict[str, str] | None:
+    """
+    Note, this returns the whole stage run (not the ID) so we can compare the
+    file list
+    """
+    stage_runs = list_stage_runs(
+        assembly_id=assembly_id, run_id=run_id, canopy_session=canopy_session
+    )
+    for stage_run in stage_runs.json():
+        if stage_run.get("stage_name", None) == stage_name:
+            return stage_run
+
+    return None
+
+
 @cache
 def get_submission_by_experiment(
     bpa_package_id: str,
@@ -275,6 +295,22 @@ def list_assembly_runs(
 ) -> requests.Response:
     url_template = _endpoints.get(endpoint, "")
     url_suffix = url_template.format(assembly_id=assembly_id)
+
+    response = canopy_session.get(url=url_suffix)
+    response.raise_for_status()
+
+    return response
+
+
+@cache
+def list_stage_runs(
+    assembly_id: str,
+    run_id: str,
+    canopy_session: CanopySession,
+    endpoint: str = "list_stage_runs",
+) -> requests.Response:
+    url_template = _endpoints.get(endpoint, "")
+    url_suffix = url_template.format(assembly_id=assembly_id, run_id=run_id)
 
     response = canopy_session.get(url=url_suffix)
     response.raise_for_status()
@@ -319,6 +355,7 @@ _endpoints = {
     "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "experiment_submissions": "/api/v1/experiment-submissions/by-experiment-attr",
     "list_assembly_runs": "/api/v1/assemblies/{assembly_id}/runs",
+    "list_stage_runs": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "qc_reads_report": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
     "qc_reads": "/api/v1/qc-reads/",
     "submission_by_experiment": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",

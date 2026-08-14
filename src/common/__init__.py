@@ -2,6 +2,7 @@ import argparse
 from importlib.metadata import metadata
 import json
 from os import getenv
+from pathlib import Path
 
 from snakemake.logging import logger
 
@@ -11,6 +12,14 @@ def check_env_var(env_var_name: str) -> str:
     if env_var_value is None:
         raise EnvironmentError(f"Set the {env_var_name} environment variable")
     return env_var_value
+
+
+def existing_file(path: Path | str) -> Path:
+    if isinstance(path, str):
+        path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(path.as_posix())
+    return path
 
 
 def generate_parser(

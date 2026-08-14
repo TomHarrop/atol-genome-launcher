@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import canopy_client
-from common import generate_parser, read_json_from_path
+from common import generate_parser, read_json_from_path, existing_file
 from yaml_manifest import Manifest
 
 
@@ -19,18 +19,18 @@ def parse_arguments() -> argparse.Namespace:
     _ = inputs_parser.add_argument(
         "--git_log",
         help="Output from the record_git_info step",
-        type=Path,
+        type=existing_file,
         required=True,
     )
 
     _ = inputs_parser.add_argument(
         "--receipts",
         help="Output from the pipeline_result_uploader step",
-        type=Path,
+        type=existing_file,
         required=False,
     )
 
-    _ = parser.add_argument("manifest", type=Path)
+    _ = parser.add_argument("manifest", type=existing_file)
 
     _ = parser.add_argument(
         "stage_name",
@@ -42,6 +42,16 @@ def parse_arguments() -> argparse.Namespace:
 
 
 _git_host = "https://github.com"
+
+
+def get_hashes_from_stage_run_files(stage_run_files: dict[str, str]) -> list[str]:
+    hashes = set()
+    for file in stage_run_files:
+        sha256sum = file.get("sha256sum", None)
+        if sha256sum:
+            hashes.add(sha256sum)
+
+    return sorted(hashes)
 
 
 def read_receipts_from_path(receipts_file: Path) -> list[dict[str, str]]:
@@ -75,6 +85,13 @@ def main():
     if assembly_id is None:
         raise ValueError("assembly_id is required to broker the Run via Canopy.")
 
+    print(
+        (
+            f"Assembly {manifest.dataset_id}.{manifest.assembly_version} "
+            f"is registered in Canopy as assembly_id {assembly_id}."
+        )
+    )
+
     # check if the run is already registered
     assembly_run_id = canopy_client.get_assembly_run_id_by_hash(
         assembly_id=assembly_id, canopy_session=canopy_session, **request_body
@@ -89,23 +106,63 @@ def main():
     if assembly_run_id is None:
         raise ValueError(f"Failed to generate a run_id for assembly_id {assembly_id}")
 
-    raise ValueError(assembly_id, assembly_run_id)
-    # TODO: if create_stage_run (below) fails, PATCH instead
+    print(
+        (
+            f"Hash {git_log.get("git_commit_hash")} from repo {git_log.get("git_repo")} "
+            f"is registered in Canopy as assembly_run_id {assembly_run_id}."
+        )
+    )
 
+    # TODO: if create_stage_run (below) fails, PATCH instead
 
     # If the receipts file is provided, deposit it. There are no receipts for
     # QC and it's not a recognised stage, so it doesn't get reported. This is
     # handled by the Run broker instead.
     if args.receipts:
+
+        # we have to load this up front to compare the existing stage_runs
         receipt_list = read_receipts_from_path(args.receipts)
         stage_run_body = {"stage_name": args.stage_name, "files": receipt_list}
-        stage_run = canopy_client.create_stage_run(
+
+        receipt_files = get_hashes_from_stage_run_files(stage_run_body.get("files", {}))
+
+        # check for an existing stage_run. Note, this returns the whole stage
+        # run (not the ID) so we can compare the file list
+        stage_run_json = canopy_client.get_stage_run_by_stage_name(
             assembly_id=assembly_id,
             run_id=assembly_run_id,
-            body=stage_run_body,
+            stage_name=args.stage_name,
             canopy_session=canopy_session,
         )
+        stage_run_id = stage_run_json.get("id", None)
+        stage_run_files = get_hashes_from_stage_run_files(
+            stage_run_json.get("files", {})
+        )
 
+        if not stage_run_files == receipt_files:
+            stage_run_id = None
+            raise NotImplementedError("TODO: the files are different, we need to PATCH")
+
+        if stage_run_id is None:
+            stage_run = canopy_client.create_stage_run(
+                assembly_id=assembly_id,
+                run_id=assembly_run_id,
+                body=stage_run_body,
+                canopy_session=canopy_session,
+            )
+            stage_run_id = stage_run.json().get("id", None)
+
+        if stage_run_id is None:
+            raise ValueError(
+                f"Failed to generate a stage_run_id for assembly_id {assembly_id}"
+            )
+
+        print(
+            f"Files from stage {args.stage_name} are registered in Canopy as stage_run_id {stage_run_id}."
+        )
+
+    if args.stage_name == "qc":
+        print("QC files are not reported to Canopy.")
 
 if __name__ == "__main__":
     main()
