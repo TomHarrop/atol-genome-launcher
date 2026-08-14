@@ -20,11 +20,11 @@ class CanopySession(requests.Session):
         joined_url = urljoin(base_url, url)
         return super().request(method, joined_url, *args, **kwargs)
 
-class ProjectType(Enum):
-    root=0
-    genomic_data=1
-    assembly=2
 
+class ProjectType(Enum):
+    root = 0
+    genomic_data = 1
+    assembly = 2
 
 
 def canopy_login() -> CanopySession:
@@ -74,7 +74,7 @@ def create_assembly_run(
     return response
 
 
-def create_project(taxon_id: int, project_type: str) -> requests.Response:
+def create_project(taxon_id: int, project_type: ProjectType) -> requests.Response:
     pass
 
 
@@ -372,4 +372,3 @@ _endpoints = {
     "qc_reads": "/api/v1/qc-reads/",
     "submission_by_experiment": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
 }
-
