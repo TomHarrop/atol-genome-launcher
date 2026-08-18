@@ -6,7 +6,12 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import canopy_client
-from common import generate_parser, read_json_from_path, existing_file
+from common import (
+    generate_parser,
+    read_json_from_path,
+    existing_file,
+    read_receipts_from_path,
+)
 from yaml_manifest import Manifest
 
 
@@ -68,22 +73,11 @@ def get_hashes_from_stage_run_files(stage_run_files: dict[str, str]) -> list[str
     return sorted(hashes)
 
 
-def read_receipts_from_path(receipts_file: Path) -> list[dict[str, str]]:
-    records = []
-
-    with open(receipts_file, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                records.append(json.loads(line))
-
-    return records
-
-
 def main():
 
     args = parse_arguments()
-    canopy_session = canopy_client.canopy_login()
+
+    canopy_session = canopy_client.CanopySession()
     git_log = read_json_from_path(args.git_log)
 
     # we report git_repo for flexibility, but Canopy wants github_repo
@@ -107,13 +101,13 @@ def main():
     )
 
     # check if the run is already registered
-    assembly_run_id = canopy_client.get_assembly_run_id_by_hash(
-        assembly_id=assembly_id, canopy_session=canopy_session, **request_body
+    assembly_run_id = canopy_session.get_assembly_run_id_by_hash(
+        assembly_id=assembly_id, **request_body
     )
     if assembly_run_id is None:
         # register the run
-        assembly_run = canopy_client.create_assembly_run(
-            assembly_id=assembly_id, body=request_body, canopy_session=canopy_session
+        assembly_run = canopy_session.create_assembly_run(
+            assembly_id=assembly_id, body=request_body
         )
         assembly_run_id = assembly_run.json().get("id", None)
 
@@ -129,9 +123,8 @@ def main():
 
     # output the current assembly runs
     if args.assembly_run_list:
-        assembly_run_list = canopy_client.list_assembly_runs(
+        assembly_run_list = canopy_session.list_assembly_runs(
             assembly_id=assembly_id,
-            canopy_session=canopy_session,
         )
 
         _ = canopy_client.write_response_content(
@@ -153,11 +146,10 @@ def main():
 
         # check for an existing stage_run. Note, this returns the whole stage
         # run (not the ID) so we can compare the file list
-        stage_run_json = canopy_client.get_stage_run_by_stage_name(
+        stage_run_json = canopy_session.get_stage_run_by_stage_name(
             assembly_id=assembly_id,
             run_id=assembly_run_id,
             stage_name=args.stage_name,
-            canopy_session=canopy_session,
         )
         stage_run_id = stage_run_json.get("id", None)
         stage_run_files = get_hashes_from_stage_run_files(
@@ -169,11 +161,8 @@ def main():
             raise NotImplementedError("TODO: the files are different, we need to PATCH")
 
         if stage_run_id is None:
-            stage_run = canopy_client.create_stage_run(
-                assembly_id=assembly_id,
-                run_id=assembly_run_id,
-                body=stage_run_body,
-                canopy_session=canopy_session,
+            stage_run = canopy_session.create_stage_run(
+                assembly_id=assembly_id, run_id=assembly_run_id, body=stage_run_body
             )
             stage_run_id = stage_run.json().get("id", None)
 
@@ -191,10 +180,9 @@ def main():
 
     # output the current stage runs
     if args.stage_run_list:
-        stage_run_list = canopy_client.list_stage_runs(
+        stage_run_list = canopy_session.list_stage_runs(
             assembly_id=assembly_id,
             run_id=assembly_run_id,
-            canopy_session=canopy_session,
         )
         _ = canopy_client.write_response_content(
             response=stage_run_list, path=args.stage_run_list

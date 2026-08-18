@@ -35,7 +35,7 @@ def main():
 
     args = parse_arguments()
 
-    canopy_session = canopy_client.canopy_login()
+    canopy_session = canopy_client.CanopySession()
     hold_date = canopy_client.hold_until()
 
     with open(args.manifest, "rb") as f:
@@ -53,9 +53,7 @@ def main():
     # harvest the required parameters #
     ###################################
 
-    assembly = canopy_client.get_assembly(
-        assembly_id=assembly_id, canopy_session=canopy_session
-    )
+    assembly = canopy_session.read_assembly(assembly_id=assembly_id)
     assembly_project_id = assembly.json().get("project_id")
     if assembly_project_id is None:
         print(assembly.json())
