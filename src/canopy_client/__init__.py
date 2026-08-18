@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from enum import Enum
 from functools import cache
 import json
+from pathlib import Path
 from urllib.parse import urljoin
 
 from common import check_env_var
@@ -352,6 +353,12 @@ def post_qc_reads_report(
     response.raise_for_status()
 
     return response
+
+
+def write_response_content(response: requests.Response, path: Path) -> None:
+    with open(path, "wb") as f:
+        _ = f.write(response.content)
+    print(f"Response content written to {path}")
 
 
 # The trailing slash is important. It only works if you use the exact format on

@@ -40,7 +40,10 @@ def main():
 
     with open(args.manifest, "rb") as f:
         manifest = Manifest.model_validate_json(f.read())
+
     assembly_id = manifest.assembly_id
+    if assembly_id is None:
+        raise ValueError("assembly_id is required to broker the Assembly via Canopy.")
 
     # TODO. Before we get here, we need to submit the pipeline run and the file
     # lists. Step 2 and 4 here:
@@ -64,7 +67,6 @@ def main():
         # alias = TODO
         # title = "{scientific_name} ({common_name}) genome assembly, {tolid}.{assembly_version}"
         # description = "TODO make a template"
-
 
     raise ValueError(f"assembly_id {assembly_id}")
 

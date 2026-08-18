@@ -133,9 +133,10 @@ def main():
             assembly_id=assembly_id,
             canopy_session=canopy_session,
         )
-        with open(args.assembly_run_list, "w", encoding="utf-8") as f:
-            json.dump(assembly_run_list.json(), f)
-        print(f"assembly_run_list written to {args.assembly_run_list}.")
+
+        _ = canopy_client.write_response_content(
+            response=assembly_run_list, path=args.assembly_run_list
+        )
 
     # TODO: if create_stage_run (below) fails, PATCH instead
 
@@ -195,9 +196,9 @@ def main():
             run_id=assembly_run_id,
             canopy_session=canopy_session,
         )
-        with open(args.stage_run_list, "w", encoding="utf-8") as f:
-            json.dump(stage_run_list.json(), f)
-        print(f"stage_run_list written to {args.stage_run_list}.")
+        _ = canopy_client.write_response_content(
+            response=stage_run_list, path=args.stage_run_list
+        )
 
 
 if __name__ == "__main__":
