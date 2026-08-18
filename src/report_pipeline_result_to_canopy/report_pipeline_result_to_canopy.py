@@ -30,6 +30,20 @@ def parse_arguments() -> argparse.Namespace:
         required=False,
     )
 
+    _ = outputs_parser.add_argument(
+        "--assembly_run_list",
+        type=Path,
+        required=False,
+        help="Store the list of assembly_runs in JSON to ASSEMBLY_RUN_LIST",
+    )
+
+    _ = outputs_parser.add_argument(
+        "--stage_run_list",
+        type=Path,
+        required=False,
+        help="Store the list of stage_runs in JSON to STAGE_RUN_LIST",
+    )
+
     _ = parser.add_argument("manifest", type=existing_file)
 
     _ = parser.add_argument(
@@ -113,6 +127,16 @@ def main():
         )
     )
 
+    # output the current assembly runs
+    if args.assembly_run_list:
+        assembly_run_list = canopy_client.list_assembly_runs(
+            assembly_id=assembly_id,
+            canopy_session=canopy_session,
+        )
+        with open(args.assembly_run_list, "w", encoding="utf-8") as f:
+            json.dump(assembly_run_list.json(), f)
+        print(f"assembly_run_list written to {args.assembly_run_list}.")
+
     # TODO: if create_stage_run (below) fails, PATCH instead
 
     # If the receipts file is provided, deposit it. There are no receipts for
@@ -163,6 +187,18 @@ def main():
 
     if args.stage_name == "qc":
         print("QC files are not reported to Canopy.")
+
+    # output the current stage runs
+    if args.stage_run_list:
+        stage_run_list = canopy_client.list_stage_runs(
+            assembly_id=assembly_id,
+            run_id=assembly_run_id,
+            canopy_session=canopy_session,
+        )
+        with open(args.stage_run_list, "w", encoding="utf-8") as f:
+            json.dump(stage_run_list.json(), f)
+        print(f"stage_run_list written to {args.stage_run_list}.")
+
 
 if __name__ == "__main__":
     main()
