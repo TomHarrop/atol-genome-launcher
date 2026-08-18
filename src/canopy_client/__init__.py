@@ -169,7 +169,9 @@ class CanopySession(requests.Session):
         """
         Use the submission-by-experiment endpoint to get the sample UUID
         """
-        response = self.get_submission_by_experiment(bpa_package_id=bpa_package_id)
+        response = self.get_sample_submission_by_experiment_package_id(
+            bpa_package_id=bpa_package_id
+        )
 
         for sample in response.json():
             sample_id = sample.get("sample_id", None)
@@ -198,10 +200,10 @@ class CanopySession(requests.Session):
         return None
 
     @cache
-    def get_submission_by_experiment(
+    def get_sample_submission_by_experiment_package_id(
         self,
         bpa_package_id: str,
-        endpoint: str = "submission_by_experiment",
+        endpoint: str = "get_sample_submission_by_experiment_package_id",
     ) -> requests.Response:
 
         url_template = _endpoints.get(endpoint, "")
@@ -340,10 +342,10 @@ _endpoints = {
     "create_project": "/api/v1/projects/",
     "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "get_experiment_submission_by_experiment_attr": "/api/v1/experiment-submissions/by-experiment-attr",
+    "get_sample_submission_by_experiment_package_id": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
     "list_assembly_runs": "/api/v1/assemblies/{assembly_id}/runs",
     "list_qc_reads": "/api/v1/qc-reads/",
     "list_stage_runs": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "read_assembly": "/api/v1/assemblies/{assembly_id}",
     "report_assembly_qc_read": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
-    "submission_by_experiment": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
 }
