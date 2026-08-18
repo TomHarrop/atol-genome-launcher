@@ -101,7 +101,7 @@ def main():
         assembly_run = canopy_client.create_assembly_run(
             assembly_id=assembly_id, body=request_body, canopy_session=canopy_session
         )
-        assembly_run_id = assembly_id.json().get("id", None)
+        assembly_run_id = assembly_run.json().get("id", None)
 
     if assembly_run_id is None:
         raise ValueError(f"Failed to generate a run_id for assembly_id {assembly_id}")
