@@ -121,7 +121,7 @@ repository.
 
 #### Usage
 
-```bash
+```
 usage: deploy-pipeline [-h] [-n] [--workflow_url WORKFLOW_URL] [--workflow_tag WORKFLOW_TAG]
                        [--force] [--run-dir RUN_DIR]
                        manifest_file
@@ -153,7 +153,7 @@ Generate an assembly repo on GitHub for a `manifest` file.
 
 #### Usage
 
-```bash
+```
 usage: request-assembly-repo [-h] [-n] [--assignees ASSIGNEES] [--label_flag LABEL_FLAG] [--token_env_var TOKEN_ENV_VAR] manifest
 
 positional arguments:
@@ -179,7 +179,7 @@ Read an assembly `manifest_file` and download the raw read files from BPA.
 
 #### Usage
 
-```bash
+```
 usage: assembly-data-downloader [-h] [-n] [--parallel_downloads PARALLEL_DOWNLOADS] manifest_file
 
 positional arguments:
@@ -199,7 +199,7 @@ environment variable `BPA_APIKEY` to be set.
 
 #### Usage
 
-```bash
+```
 atol-genome-launcher version 0.1.3.dev0+g09f43177b.d20251021
 usage: bpa-file-downloader [-h] [--file_checksum FILE_CHECKSUM] bioplatforms_url file_name
 
@@ -272,7 +272,7 @@ to stdout.
 
 #### Usage
 
-```bash
+```
 usage: result-file-uploader [-h] --bucket BUCKET local_file remote_path
 
 Upload a single file to S3-compatible object storage using rclone.
@@ -286,15 +286,98 @@ options:
   --bucket BUCKET  Name of the S3 bucket.
 ```
 
+### report-pipeline-result-to-canopy
+
+Use the `create_assembly_run` and `create_stage_run` endpoints on Canopy's
+[Assembly Reporting
+API](https://github.com/AustralianBioCommons/atol-canopy/blob/main/docs/assembly_reporting_api.md#assembly-reporting-api)
+to register a pipeline run and report stage results.
+
+
+#### Usage
+
+```
+usage: report-pipeline-result-to-canopy [-h] [-n] --git_log GIT_LOG [--receipts RECEIPTS] [--assembly_run_list ASSEMBLY_RUN_LIST] [--stage_run_list STAGE_RUN_LIST] manifest stage_name
+
+Register the 'pipeline run' and report the 'results' to Canopy
+
+positional arguments:
+  manifest
+  stage_name            One of Canopy's known stages (https://github.com/AustralianBioCommons/atol-canopy/blob/main/docs/assembly_reporting_api.md#known-stages)
+
+options:
+  -h, --help            show this help message and exit
+
+Inputs:
+  --git_log GIT_LOG     Output from the record_git_info step
+  --receipts RECEIPTS   Output from the pipeline_result_uploader step
+
+Outputs:
+  --assembly_run_list ASSEMBLY_RUN_LIST
+                        Store the list of assembly_runs in JSON to ASSEMBLY_RUN_LIST
+  --stage_run_list STAGE_RUN_LIST
+                        Store the list of stage_runs in JSON to STAGE_RUN_LIST
+
+Settings:
+  -n                    Dry run
+```
+
+### submit-run-to-ena
+
+Use the `report_assembly_qc_read` endpoint on Canopy's [Assembly Reporting
+API](https://github.com/AustralianBioCommons/atol-canopy/blob/main/docs/assembly_reporting_api.md#assembly-reporting-api)
+to report QC reads, then call the [AToL data
+broker](https://github.com/AToL-Bioinformatics/data-broker#ena-submission-flow)
+to submit the Run (and Experiment if necessary) to ENA.
+
+#### Usage
+
+```
+usage: submit-run-to-ena [-h] [-n] --bpa_package_id BPA_PACKAGE_ID --qc_reads_report QC_READS_REPORT manifest
+
+Utility script for the genome-launcher-workflow. After uploading the reads to the ENA file area, run this script with the package ID and QC report. The script will submit the Run (and Experiment if
+necessary), or print an error if some prerequisite submissions are missing.
+
+positional arguments:
+  manifest
+
+options:
+  -h, --help            show this help message and exit
+
+Inputs:
+  --bpa_package_id BPA_PACKAGE_ID
+                        Single `name` of the `read_files` to broker.
+  --qc_reads_report QC_READS_REPORT
+
+Settings:
+  -n                    Dry run
+```
+
+### submit-assembly-to-ena
+
+TODO
+
+#### Usage
+
+```
+TODO
+```
+
+
+## The following modules are deprecated.
 
 ### rnaseq_manifest_generator
+
+> [!WARNING]
+>
+> Deprecated.
 
 Queries the mapped metadata for an organism (`organism_grouping_key`) and
 outputs a CSV-format manifest of RNASeq files.
 
 #### Usage
 
-```bash
+```
 usage: rnaseq-manifest-generator [-h] --resources RESOURCES --packages PACKAGES organism_grouping_key manifest
 
 Generate a manifest of RNAseq data for an organism.
@@ -313,12 +396,17 @@ options:
 
 ### rnaseq_reads_downloader
 
+> [!WARNING]
+>
+> Deprecated.
+
+
 Takes a CSV-format manifest of RNASeq files, runs the `bpa-file-downloader` for
 each file, and combines the downloaded files by sample.
 
 #### Usage
 
-```bash
+```
 usage: rnaseq-reads-downloader [-h] [--parallel_downloads PARALLEL_DOWNLOADS] manifest outdir
 
 positional arguments:
@@ -329,22 +417,4 @@ options:
   -h, --help            show this help message and exit
   --parallel_downloads PARALLEL_DOWNLOADS
                         Number of parallel downloads
-```
-
-### assembly_config_generator
-
-Generates config files for sanger-tol/genomeassembly pipeline 
-
-```bash
-usage: assembly-config-generator [-h] --long_reads LONG_READS [--hic_reads HIC_READS] [--template TEMPLATE] config pipeline_config
-
-positional arguments:
-  config
-  pipeline_config
-
-options:
-  -h, --help            show this help message and exit
-  --long_reads LONG_READS
-  --hic_reads HIC_READS
-  --template TEMPLATE
 ```
