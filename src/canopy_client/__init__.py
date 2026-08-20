@@ -252,6 +252,21 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix)
 
+    def read_project(
+        self,
+        project_id: str,
+        endpoint: str = "read_project",
+    ) -> requests.Response:
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(project_id=project_id)
+
+        return self._get(url=url_suffix)
+
+    def read_projects(self, endpoint: str = "read_projects") -> requests.Response:
+        url_suffix = _endpoints.get(endpoint, "")
+
+        return self._get(url=url_suffix)
+
     def report_assembly_qc_read(
         self,
         assembly_id: str,
@@ -347,5 +362,7 @@ _endpoints = {
     "list_qc_reads": "/api/v1/qc-reads/",
     "list_stage_runs": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "read_assembly": "/api/v1/assemblies/{assembly_id}",
+    "read_project": "/api/v1/projects/{project_id}",
+    "read_projects": "/api/v1/projects/",
     "report_assembly_qc_read": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
 }

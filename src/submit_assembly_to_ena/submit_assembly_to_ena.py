@@ -20,6 +20,18 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     _ = inputs_parser.add_argument(
+        "--project_id",
+        help=(
+            "UUID for an existing `assembly` project on Canopy. "
+            "If this isn't provided, an attempt will be made to "
+            "create a new project. "
+            "See https://github.com/AustralianBioCommons/atol-canopy/issues/53"
+        ),
+        required=False,
+        type=str,
+    )
+
+    _ = inputs_parser.add_argument(
         "--template",
         help="Template for the ENA assembly manifest",
         default=my_files.joinpath("templates/ena_manifest_template.txt.j2"),
@@ -53,7 +65,19 @@ def main():
     # harvest the required parameters #
     ###################################
 
-    assembly = canopy_session.read_assembly(assembly_id=assembly_id)
+    project_id = "4959b24b-27da-4fcf-8bf8-8877694de55b"
+    project = canopy_session.read_project(project_id=project_id)
+
+    raise ValueError(project.content)
+
+    projects = canopy_session.read_projects()
+    for project in projects.json():
+        project_taxon_id = project.get("taxon_id", None)
+        print(manifest.taxon_id == project_taxon_id)
+        if project_taxon_id == manifest.taxon_id:
+            print(project.get("project_type", None))
+
+    raise ValueError(projects.json()[0])
     assembly_project_id = assembly.json().get("project_id")
     if assembly_project_id is None:
         print(assembly.json())
