@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import date, timedelta
-from enum import Enum
+from enum import Enum, auto
 from functools import cache
 import json
 from pathlib import Path
@@ -34,7 +34,12 @@ class CanopySession(requests.Session):
 
     def _get(self, **kwargs) -> requests.Response:
         response = self.get(**kwargs)
-        response.raise_for_status()
+
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            print(response.text)
+            raise e
 
         return response
 
@@ -65,7 +70,12 @@ class CanopySession(requests.Session):
 
     def _post(self, **kwargs) -> requests.Response:
         response = self.post(**kwargs)
-        response.raise_for_status()
+
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            print(response.text)
+            raise e
 
         return response
 
@@ -78,6 +88,16 @@ class CanopySession(requests.Session):
 
         url_template = _endpoints.get(endpoint, "")
         url_suffix = url_template.format(assembly_id=assembly_id)
+
+        return self._post(url=url_suffix, data=json.dumps(body))
+
+    def create_project(
+        self,
+        body: dict[str, str | int],
+        endpoint: str = "create_project",
+    ) -> requests.Response:
+
+        url_suffix = _endpoints.get(endpoint, "")
 
         return self._post(url=url_suffix, data=json.dumps(body))
 
@@ -285,13 +305,9 @@ class CanopySession(requests.Session):
 
 
 class ProjectType(Enum):
-    root = 0
-    genomic_data = 1
-    assembly = 2
-
-
-def create_project(taxon_id: int, project_type: ProjectType) -> requests.Response:
-    pass
+    root = auto()
+    genomic_data = auto()
+    assembly = auto()
 
 
 def get_accession_from_response(

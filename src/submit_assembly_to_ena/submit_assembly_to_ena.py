@@ -6,6 +6,7 @@ from pathlib import Path
 
 import canopy_client
 from common import generate_parser
+from requests.exceptions import HTTPError
 from yaml_manifest import Manifest
 
 
@@ -65,32 +66,45 @@ def main():
     # harvest the required parameters #
     ###################################
 
-    project_id = "4959b24b-27da-4fcf-8bf8-8877694de55b"
-    project = canopy_session.read_project(project_id=project_id)
+    assembly_project_id = args.project_id
 
-    raise ValueError(project.content)
-
-    projects = canopy_session.read_projects()
-    for project in projects.json():
-        project_taxon_id = project.get("taxon_id", None)
-        print(manifest.taxon_id == project_taxon_id)
-        if project_taxon_id == manifest.taxon_id:
-            print(project.get("project_type", None))
-
-    raise ValueError(projects.json()[0])
-    assembly_project_id = assembly.json().get("project_id")
     if assembly_project_id is None:
-        print(assembly.json())
-        raise ValueError("POST a new project to the project endpoint")
-        # Requires:
-        # taxon_id
-        # project_type = "assembly"
-        # study_type = "Whole Genome Sequencing"
-        # alias = TODO
-        # title = "{scientific_name} ({common_name}) genome assembly, {tolid}.{assembly_version}"
-        # description = "TODO make a template"
 
-    raise ValueError(f"assembly_id {assembly_id}")
+        # TODO template this
+        project_body = {
+            "alias": "alias",
+            "description": "description",
+            "project_type": canopy_client.ProjectType.genomic_data.name,
+            "study_type": "Whole Genome Sequencing",
+            "taxon_id": manifest.taxon_id,
+            "title": "title",
+        }
+
+        try:
+            project_response = canopy_session.create_project(body=project_body)
+            assembly_project_id = project_response.get("id", None)
+        except HTTPError as e:
+            if e.response.status_code == 500:
+                raise RuntimeError(
+                    (
+                        f"\n\nTried to submit a project but the POST returned '{e.response.text}'.\n\n"
+                        "This probably means the project has already been submitted to Canopy, "
+                        "but we can't look up the project_id. See "
+                        "https://github.com/AustralianBioCommons/atol-canopy/issues/53.\n\n"
+                        "Either manually retrieve the project_id from Canopy "
+                        "and supply it as --project_id, "
+                        "or do the brokering steps manually.\n"
+                    )
+                )
+            else:
+                raise e
+
+        raise NotImplementedError("try creating a project")
+
+        # TODO: after creating use the PUT /api/v1/assemblies/{assembly_id} to
+        # add the project id to the assembly
+
+    raise ValueError(f"assembly_project_id {assembly_project_id}")
 
     # bioproject_accession ############
 
