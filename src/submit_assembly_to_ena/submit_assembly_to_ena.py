@@ -176,6 +176,8 @@ def main():
         ),
     )
 
+    # TODO use the new filter on the project endpoint to check for an existing
+    # project id
     assembly_project_id = args.project_id
     if assembly_project_id is None:
 
