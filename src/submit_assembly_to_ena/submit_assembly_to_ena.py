@@ -89,9 +89,24 @@ def main():
             )
         )
 
-    # TODO. Before we get here, we need to submit the pipeline run and the file
-    # lists. Step 2 and 4 here:
-    # https://github.com/AustralianBioCommons/atol-canopy/blob/main/docs/assembly_reporting_api.md#assembly-reporting-api
+    # check if the project is registered
+    taxon_id = manifest.taxon_id
+    assembly_type = canopy_client.ProjectType.ASSEMBLY
+
+    projects = canopy_session.read_projects(
+        taxon_id=taxon_id, project_type=assembly_type
+    ).json()
+    if len(projects) > 1:
+        raise NotImplementedError(
+            (
+                f"Multiple projects for {taxon_id} of type {assembly_type}. "
+                "This is not handled yet. See "
+                "https://github.com/AustralianBioCommons/atol-canopy/issues/46"
+            )
+        )
+
+    assembly_project_id = projects[0].get("id", None)
+    raise ValueError(assembly_project_id)
 
     ###################################
     # harvest the required parameters #
@@ -100,7 +115,6 @@ def main():
     assembly_version = manifest.assembly_version
     dataset_id = manifest.dataset_id
     scientific_name = manifest.scientific_name
-    taxon_id = manifest.taxon_id
 
     # 1. Taxonomy #####################
     taxonomy_info = canopy_session.get_taxonomy_info(taxon_id=taxon_id).json()

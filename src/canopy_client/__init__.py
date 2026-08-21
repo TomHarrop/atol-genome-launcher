@@ -231,17 +231,16 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix)
 
-
     def get_taxonomy_info(
-            self,
-            taxon_id: int,
-            endpoint: str = "get_taxonomy_info",
-        ) -> requests.Response:
-    
-            url_template = _endpoints.get(endpoint, "")
-            url_suffix = url_template.format(taxon_id=taxon_id)
-    
-            return self._get(url=url_suffix)
+        self,
+        taxon_id: int,
+        endpoint: str = "get_taxonomy_info",
+    ) -> requests.Response:
+
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(taxon_id=taxon_id)
+
+        return self._get(url=url_suffix)
 
     def list_assembly_runs(
         self,
@@ -315,10 +314,17 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix)
 
-    def read_projects(self, endpoint: str = "read_projects") -> requests.Response:
+    def read_projects(
+        self,
+        taxon_id: int = None,
+        project_type: ProjectType = None,
+        endpoint: str = "read_projects",
+    ) -> requests.Response:
         url_suffix = _endpoints.get(endpoint, "")
 
-        return self._get(url=url_suffix)
+        params = {"taxon_id": taxon_id, "project_type": project_type}
+
+        return self._get(url=url_suffix, params=params)
 
     def read_sample(
         self,
