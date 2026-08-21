@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import date, timedelta
-from enum import Enum, auto
+from enum import StrEnum, auto
 from functools import cache
 import json
 from pathlib import Path
@@ -135,7 +135,7 @@ class CanopySession(requests.Session):
         bpa_package_id: str,
     ) -> str | None:
 
-        response = self.get_experiment_submission_by_experiment_attr(
+        response = self.get_sample_submission_by_experiment_package_id(
             bpa_package_id=bpa_package_id
         )
 
@@ -231,6 +231,18 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix)
 
+
+    def get_taxonomy_info(
+            self,
+            taxon_id: int,
+            endpoint: str = "get_taxonomy_info",
+        ) -> requests.Response:
+    
+            url_template = _endpoints.get(endpoint, "")
+            url_suffix = url_template.format(taxon_id=taxon_id)
+    
+            return self._get(url=url_suffix)
+
     def list_assembly_runs(
         self,
         assembly_id: str,
@@ -272,6 +284,27 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix)
 
+    def read_bpa_initiative(
+        self,
+        initiative_id: str,
+        endpoint: str = "read_bpa_initiative",
+    ) -> requests.Response:
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(initiative_id=initiative_id)
+
+        return self._get(url=url_suffix)
+
+    @cache
+    def read_experiment(
+        self,
+        experiment_id: str,
+        endpoint: str = "read_experiment",
+    ) -> requests.Response:
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(experiment_id=experiment_id)
+
+        return self._get(url=url_suffix)
+
     def read_project(
         self,
         project_id: str,
@@ -284,6 +317,16 @@ class CanopySession(requests.Session):
 
     def read_projects(self, endpoint: str = "read_projects") -> requests.Response:
         url_suffix = _endpoints.get(endpoint, "")
+
+        return self._get(url=url_suffix)
+
+    def read_sample(
+        self,
+        sample_id: str,
+        endpoint: str = "read_sample",
+    ) -> requests.Response:
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(sample_id=sample_id)
 
         return self._get(url=url_suffix)
 
@@ -304,10 +347,15 @@ class CanopySession(requests.Session):
         return super().request(method, joined_url, *args, **kwargs)
 
 
-class ProjectType(Enum):
-    root = auto()
-    genomic_data = auto()
-    assembly = auto()
+class ProjectType(StrEnum):
+    ROOT = auto()
+    GENOMIC_DATA = auto()
+    ASSEMBLY = auto()
+
+
+class AssemblyType(StrEnum):
+    PRIMARY = auto()
+    SECONDARY = auto()
 
 
 def get_accession_from_response(
@@ -374,11 +422,15 @@ _endpoints = {
     "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "get_experiment_submission_by_experiment_attr": "/api/v1/experiment-submissions/by-experiment-attr",
     "get_sample_submission_by_experiment_package_id": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
+    "get_taxonomy_info": "/api/v1/taxonomy-info/{taxon_id}",
     "list_assembly_runs": "/api/v1/assemblies/{assembly_id}/runs",
     "list_qc_reads": "/api/v1/qc-reads/",
     "list_stage_runs": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "read_assembly": "/api/v1/assemblies/{assembly_id}",
+    "read_bpa_initiative": "/api/v1/bpa-initiatives/{initiative_id}",
+    "read_experiment": "/api/v1/experiments/{experiment_id}",
     "read_project": "/api/v1/projects/{project_id}",
     "read_projects": "/api/v1/projects/",
+    "read_sample": "/api/v1/samples/{sample_id}",
     "report_assembly_qc_read": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
 }
