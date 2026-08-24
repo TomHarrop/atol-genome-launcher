@@ -5,8 +5,9 @@ import importlib.resources as pkg_resources
 from pathlib import Path
 
 from broker.cli import submit_entity
+from typer._click.exceptions import Exit as TyperExit
 import canopy_client
-from common import generate_parser
+from common import generate_parser, logger
 from requests import Response
 from requests.exceptions import HTTPError
 from yaml_manifest import Manifest
@@ -31,9 +32,7 @@ def broker_sample(sample_id: str, dry_run: bool, hold_date: str) -> Response:
 
     canopy_long_read_specimen_sample = canopy_session.read_sample(
         sample_id=long_read_specimen_sample_id
-    ).json()
-
-    biosample_accession = canopy_long_read_specimen_sample.get("biosample_accession")
+    )
 
     return canopy_long_read_specimen_sample
 
@@ -320,22 +319,25 @@ def main():
                 dry_run=args.dry_run,
                 hold_date=hold_date,
             )
-            biosample_accession = canopy_long_read_specimen_sample.get(
+            biosample_accession = canopy_long_read_specimen_sample.json().get(
                 "biosample_accession"
             )
-        except Exception as e:
-            raise NotImplementedError(
+        except TyperExit as e:
+            logger.warning(
                 (
-                    "This doesn't work, because the read_sample_submissions "
-                    "endpoint doesn't return all the samples."
+                    "Broker failed. "
+                    "If the broker prints a message like "
+                    '"No claimable submission found for entity" '
+                    "it could mean the specimen-level BioSample has not been accessioned."
                 )
-            )
-            biosample_id = canopy_session.get_biosample_id_from_accepted_submissions(
-                sample_id=long_read_specimen_sample_id
             )
 
     if biosample_accession is None:
         raise ValueError(f"Broker failed to generate a BioSample accession.")
+        # next try
+        # biosample_id = canopy_session.get_biosample_id_from_accepted_submissions(
+        #     sample_id=long_read_specimen_sample_id
+        # )
 
     raise ValueError(biosample_accession)
 
