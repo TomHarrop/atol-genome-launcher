@@ -4,10 +4,120 @@ import argparse
 import importlib.resources as pkg_resources
 from pathlib import Path
 
+from broker.cli import submit_entity
 import canopy_client
 from common import generate_parser
+from requests import Response
 from requests.exceptions import HTTPError
 from yaml_manifest import Manifest
+
+
+def broker_sample(sample_id: str, dry_run: bool, hold_date: str) -> Response:
+    # Try brokering if we don't have an accession
+    _ = submit_entity(
+        type_="sample",
+        id_=sample_id,
+        dry_run=dry_run,
+        prod=True,
+        hold_until=hold_date,
+    )
+
+    if args.dry_run == True:
+        # We have to stop here, because the rest of the submission depends
+        # on the project being brokered
+        raise AssertionError(
+            f"Dry run is {args.dry_run}, so the Sample hasn't been brokered."
+        )
+
+    canopy_long_read_specimen_sample = canopy_session.read_sample(
+        sample_id=long_read_specimen_sample_id
+    ).json()
+
+    biosample_accession = canopy_long_read_specimen_sample.get("biosample_accession")
+
+    return canopy_long_read_specimen_sample
+
+
+def generate_title_alias_description(
+    canopy_session: canopy_client.CanopySession,
+    manifest: Manifest,
+    assembly_type: canopy_client.AssemblyType,
+    description_template: Path,
+) -> tuple[str, str, str]:
+
+    taxon_id = manifest.taxon_id
+    assembly_version = manifest.assembly_version
+    dataset_id = manifest.dataset_id
+    scientific_name = manifest.scientific_name
+
+    # Get taxonomy info
+    taxonomy_info = canopy_session.get_taxonomy_info(taxon_id=taxon_id).json()
+    common_name = taxonomy_info.get("ncbi_common_name", None)
+    common_name_string = f" ({common_name})" if common_name else ""
+
+    bioplatforms_project_ids = set()
+    data_owners = set()
+    project_collaborators = set()
+
+    # Metadata for the assembly description will come from the long read files
+    # (not the hi-c)
+    for bpa_package_id in manifest.long_reads.names:
+        # get owners and collaborators from the experiments endpoint
+        experiment_id = canopy_session.get_experiment_id(bpa_package_id=bpa_package_id)
+
+        experiment = canopy_session.read_experiment(experiment_id=experiment_id).json()
+
+        data_owners.add(experiment.get("data_owner", None))
+        project_collaborators.add(experiment.get("project_collaborators", None))
+
+        # get the bioplatforms_project_id from the sample endpiont
+        sample_id = canopy_session.get_sample_id(bpa_package_id=bpa_package_id)
+        sample = canopy_session.read_sample(sample_id=sample_id).json()
+        bioplatforms_project_ids.add(sample.get("bioplatforms_project_id", None))
+
+    # process the results
+    bioplatforms_project_ids.discard(None)
+    data_owners.discard(None)
+    project_collaborators.discard(None)
+
+    if not len(data_owners) == 1:
+        raise NotImplementedError(
+            f"Don't know how to handle multiple data owners {data_owners}"
+        )
+    else:
+        data_owner = data_owners.pop()
+
+    if not len(bioplatforms_project_ids) == 1:
+        raise NotImplementedError(
+            f"Don't know how to handle multiple bioplatforms_project_ids {bioplatforms_project_ids}"
+        )
+    else:
+        # some endpoints return arrays so we have to take the first hit (pop)
+        initiative_id = bioplatforms_project_ids.pop()
+        bpa_initiative = canopy_session.read_bpa_initiative(
+            initiative_id=initiative_id
+        ).json()
+        bpa_initiative_title = bpa_initiative.get("title", None)
+        bpa_initiative_url = bpa_initiative.get("url", None)
+
+    # TODO better formatting for this string
+    project_collaborators = (
+        ", ".join(sorted(project_collaborators)) if project_collaborators else None
+    )
+
+    title = f"{scientific_name}{common_name_string} genome assembly, {dataset_id}.{assembly_version}"
+    alias = f"atol_{taxon_id}_{dataset_id}.{assembly_version}_{assembly_type}"
+    description = remove_whitespace_from_description(
+        manifest.render_template_file(
+            description_template,
+            bpa_initiative_title=bpa_initiative_title,
+            bpa_initiative_url=bpa_initiative_url,
+            data_owner=data_owner,
+            project_collaborators=project_collaborators,
+        ),
+    )
+
+    return (title, alias, description)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -18,18 +128,6 @@ def parse_arguments() -> argparse.Namespace:
             "Utility script for the genome-launcher-workflow. "
             "After completing the assembly process, FIXME "
         )
-    )
-
-    _ = inputs_parser.add_argument(
-        "--project_id",
-        help=(
-            "UUID for an existing `assembly` project on Canopy. "
-            "If this isn't provided, an attempt will be made to "
-            "create a new project. "
-            "See https://github.com/AustralianBioCommons/atol-canopy/issues/53"
-        ),
-        required=False,
-        type=str,
     )
 
     _ = inputs_parser.add_argument(
@@ -91,7 +189,7 @@ def main():
 
     # check if the project is registered
     taxon_id = manifest.taxon_id
-    assembly_type = canopy_client.ProjectType.ASSEMBLY
+    assembly_type = canopy_client.ProjectType.ASSEMBLY  # FIXME hard-coded
 
     projects = canopy_session.read_projects(
         taxon_id=taxon_id, project_type=assembly_type
@@ -106,96 +204,16 @@ def main():
         )
 
     assembly_project_id = projects[0].get("id", None)
-    raise ValueError(assembly_project_id)
 
-    ###################################
-    # harvest the required parameters #
-    ###################################
-
-    assembly_version = manifest.assembly_version
-    dataset_id = manifest.dataset_id
-    scientific_name = manifest.scientific_name
-
-    # 1. Taxonomy #####################
-    taxonomy_info = canopy_session.get_taxonomy_info(taxon_id=taxon_id).json()
-    common_name = taxonomy_info.get("ncbi_common_name", None)
-    common_name_string = f" ({common_name})" if common_name else ""
-
-    # TODO these should be methods on the canopy client
-
-    # Preference is to use the sample-level sample ID to filter experiments on
-    # the Read Experiments endpoint (/api/v1/experiments/). The experiments
-    # have `data_owner` and `project_collaborators` keys.
-
-    # We can get the sample-level details from the
-    # /api/v1/samples/submission/by-experiment/{bpa_package_id} endpoint. The
-    # sample-level has the `bpa_initiative` key
-
-    # Metadata for the assembly description will come from the long read files
-    # (not the hi-c)
-    bioplatforms_project_ids = set()
-    data_owners = set()
-    project_collaborators = set()
-
-    # 1. data owners ##################
-    for bpa_package_id in manifest.long_reads.names:
-        # get owners and collaborators from the experiments endpoint
-        experiment_id = canopy_session.get_experiment_id(bpa_package_id=bpa_package_id)
-
-        experiment = canopy_session.read_experiment(experiment_id=experiment_id).json()
-
-        data_owners.add(experiment.get("data_owner", None))
-        project_collaborators.add(experiment.get("project_collaborators", None))
-
-        # get the bioplatforms_project_id from the sample endpiont
-        sample_id = canopy_session.get_sample_id(bpa_package_id=bpa_package_id)
-        sample = canopy_session.read_sample(sample_id=sample_id).json()
-        bioplatforms_project_ids.add(sample.get("bioplatforms_project_id", None))
-
-    bioplatforms_project_ids.discard(None)
-    data_owners.discard(None)
-    project_collaborators.discard(None)
-
-    if not len(data_owners) == 1:
-        raise NotImplementedError(
-            f"Don't know how to handle multiple data owners {data_owners}"
-        )
-    else:
-        data_owner = data_owners.pop()
-
-    if not len(bioplatforms_project_ids) == 1:
-        raise NotImplementedError(
-            f"Don't know how to handle multiple bioplatforms_project_ids {bioplatforms_project_ids}"
-        )
-    else:
-        initiative_id = bioplatforms_project_ids.pop()
-        bpa_initiative = canopy_session.read_bpa_initiative(initiative_id=initiative_id)
-        bpa_initiative_json = bpa_initiative.json()
-        bpa_initiative_title = bpa_initiative_json.get("title", None)
-        bpa_initiative_url = bpa_initiative_json.get("url", None)
-
-    project_collaborators = (
-        ", ".join(sorted(project_collaborators)) if project_collaborators else None
-    )
-
-    title = f"{scientific_name}{common_name_string} genome assembly, {dataset_id}.{assembly_version}"
-    alias = f"atol_{taxon_id}_{dataset_id}.{assembly_version}_{args.assembly_type}"
-    description = remove_whitespace_from_description(
-        manifest.render_template_file(
-            args.description_template,
-            bpa_initiative_title=bpa_initiative_title,
-            bpa_initiative_url=bpa_initiative_url,
-            data_owner=data_owner,
-            project_collaborators=project_collaborators,
-        ),
-    )
-
-    # TODO use the new filter on the project endpoint to check for an existing
-    # project id
-    assembly_project_id = args.project_id
+    # if the project doesn't exist we can try to submit it
     if assembly_project_id is None:
 
-        # TODO template this
+        title, alias, description = generate_title_alias_description(
+            canopy_session=canopy_session,
+            manifest=manifest,
+            assembly_type=args.assembly_type,
+            description_template=args.description_template,
+        )
         project_body = {
             "alias": alias,
             "description": description,
@@ -215,38 +233,111 @@ def main():
                         "\n\nTried to submit a project but the POST returned "
                         f"'{e.response.status_code} {e.response.text}'.\n\n"
                         "This probably means the project has already been submitted to Canopy, "
-                        "but we can't look up the project_id. See "
-                        "https://github.com/AustralianBioCommons/atol-canopy/issues/53.\n\n"
-                        "Either manually retrieve the project_id from Canopy "
-                        "and supply it as --project_id, "
-                        "or do the brokering steps manually.\n"
+                        "but we couldn't look up the project_id. See "
+                        "https://github.com/AustralianBioCommons/atol-canopy/issues/53."
                     )
                 )
             else:
                 raise e
 
-        # raise NotImplementedError("try creating a project")
+    if assembly_project_id is None:
+        raise ValueError("Failed to submit the assembly project.")
 
-        # TODO: after creating use the PUT /api/v1/assemblies/{assembly_id} to
-        # add the project id to the assembly
+    canopy_project = canopy_session.read_project(project_id=assembly_project_id).json()
+    canopy_assembly = canopy_session.read_assembly(assembly_id=assembly_id).json()
 
-    raise ValueError(f"assembly_project_id {assembly_project_id}")
+    # Use the PUT /api/v1/assemblies/{assembly_id} to add the project id to the
+    # assembly
+    registered_assembly_project_id = canopy_assembly.get("project_id")
+    if registered_assembly_project_id is None:
+        canopy_session.update_assembly(
+            assembly_id=assembly_id, body={"project_id": assembly_project_id}
+        )
+        canopy_assembly = canopy_session.read_assembly(assembly_id=assembly_id).json()
+    elif not registered_assembly_project_id == assembly_project_id:
+        raise ValueError(
+            (
+                f"Canopy assembly {assembly_id} already has project_id {registered_assembly_project_id}, "
+                f"but the current Assembly project_id is {assembly_project_id}. Fix this manually and "
+                "try again."
+            )
+        )
+
+    # bioproject_accession ############
+    bioproject_accession = canopy_project.get("project_accession")
+
+    if bioproject_accession is None:
+        # Try brokering if we don't have an accession
+        _ = submit_entity(
+            type_="project",
+            id_=assembly_project_id,
+            dry_run=args.dry_run,
+            prod=True,
+            hold_until=hold_date,
+        )
+
+        if args.dry_run == True:
+            # We have to stop here, because the rest of the submission depends
+            # on the project being brokered
+            raise AssertionError(
+                f"Dry run is {args.dry_run}, so the Project hasn't been brokered."
+            )
+
+        canopy_project = canopy_session.read_project(
+            project_id=assembly_project_id
+        ).json()
+        bioproject_accession = canopy_project.get("project_accession")
+
+    if bioproject_accession is None:
+        raise ValueError(f"Broker failed to generate a BioProject accession.")
+
+    ###################################
+    # harvest the required parameters #
+    ###################################
+
+    long_read_platform = manifest.long_reads.data_types[0]
 
     # The canopy_assembly has the specimen-level sample details
-    canopy_assembly = canopy_session.read_assembly(assembly_id=assembly_id)
-    sample_id = canopy_assembly.json().get("sample_id", None)
-    long_read_specimen_sample_id = canopy_assembly.json().get(
+    sample_id = canopy_assembly.get("sample_id", None)
+
+    # we want to register the assembly to the specimen-level BioSample. See
+    # https://github.com/TomHarrop/atol-genome-launcher/issues/41#issuecomment-5348971596
+    long_read_specimen_sample_id = canopy_assembly.get(
         "long_read_specimen_sample_id", None
     )
 
-    # bioproject_accession ############
-
     # biosample_accession #############
+    canopy_long_read_specimen_sample = canopy_session.read_sample(
+        sample_id=long_read_specimen_sample_id
+    ).json()
 
-    # the long read specimen is recorded in the assembly
-    long_read_specimen_sample_id = assembly.get("long_read_specimen_sample_id")
+    biosample_accession = canopy_long_read_specimen_sample.get("biosample_accession")
 
-    # need to get the BioSample ID from this
+    if biosample_accession is None:
+        try:
+            canopy_long_read_specimen_sample = broker_sample(
+                sample_id=long_read_specimen_sample_id,
+                dry_run=args.dry_run,
+                hold_date=hold_date,
+            )
+            biosample_accession = canopy_long_read_specimen_sample.get(
+                "biosample_accession"
+            )
+        except Exception as e:
+            raise NotImplementedError(
+                (
+                    "This doesn't work, because the read_sample_submissions "
+                    "endpoint doesn't return all the samples."
+                )
+            )
+            biosample_id = canopy_session.get_biosample_id_from_accepted_submissions(
+                sample_id=long_read_specimen_sample_id
+            )
+
+    if biosample_accession is None:
+        raise ValueError(f"Broker failed to generate a BioSample accession.")
+
+    raise ValueError(biosample_accession)
 
     # array_of_err_accessions #########
     err_accessions = ["TODO1", "TODO2"]

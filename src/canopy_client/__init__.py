@@ -79,6 +79,17 @@ class CanopySession(requests.Session):
 
         return response
 
+    def _put(self, **kwargs) -> requests.Response:
+        response = self.put(**kwargs)
+
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            print(response.text)
+            raise e
+
+        return response
+
     def create_assembly_run(
         self,
         assembly_id: str,
@@ -142,6 +153,24 @@ class CanopySession(requests.Session):
         accession = get_accession_from_response(response)
 
         return accession
+
+    def get_biosample_id_from_accepted_submissions(
+        self,
+        sample_id: str,
+    ) -> str | None:
+        response = self.read_sample_submissions(
+            submission_status=SubmissionStatus.ACCEPTED
+        )
+
+        for submission in response.json():
+            if submission.get("sample_id") == sample_id:
+                accession = get_accession_from_submission(
+                    submission=submission, entity_type="sample"
+                )
+                if accession is not None:
+                    return accession
+
+        return None
 
     def get_experiment_accession(
         self,
@@ -336,6 +365,17 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix)
 
+    def read_sample_submissions(
+        self,
+        submission_status: SubmissionStatus,
+        endpoint: str = "read_sample_submissions",
+    ) -> requests.Response:
+        url_suffix = _endpoints.get(endpoint, "")
+
+        return self._get(
+            url=url_suffix, params={"submission_status": submission_status.value}
+        )
+
     def report_assembly_qc_read(
         self,
         assembly_id: str,
@@ -352,6 +392,22 @@ class CanopySession(requests.Session):
         joined_url = urljoin(base_url, url)
         return super().request(method, joined_url, *args, **kwargs)
 
+    def update_assembly(
+        self,
+        assembly_id: str,
+        body: dict[str, str | int | list[str]],
+        endpoint: str = "update_assembly",
+    ) -> requests.Response:
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(assembly_id=assembly_id)
+
+        return self._put(url=url_suffix, data=json.dumps(body))
+
+
+class AssemblyType(StrEnum):
+    PRIMARY = auto()
+    SECONDARY = auto()
+
 
 class ProjectType(StrEnum):
     ROOT = auto()
@@ -359,9 +415,12 @@ class ProjectType(StrEnum):
     ASSEMBLY = auto()
 
 
-class AssemblyType(StrEnum):
-    PRIMARY = auto()
-    SECONDARY = auto()
+class SubmissionStatus(StrEnum):
+    ACCEPTED = auto()
+    DRAFT = auto()
+    READY = auto()
+    REJECTED = auto()
+    SUBMITTING = auto()
 
 
 def get_accession_from_response(
@@ -438,5 +497,7 @@ _endpoints = {
     "read_project": "/api/v1/projects/{project_id}",
     "read_projects": "/api/v1/projects/",
     "read_sample": "/api/v1/samples/{sample_id}",
+    "read_sample_submissions": "/api/v1/sample-submissions/",
     "report_assembly_qc_read": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
+    "update_assembly": "/api/v1/assemblies/{assembly_id}",
 }
