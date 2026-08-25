@@ -166,6 +166,7 @@ def remove_whitespace_from_description(descripion: str) -> str:
 
 def main():
 
+    logger.name = __name__ if __name__ else "submit-assembly-to-ena"
     args = parse_arguments()
 
     canopy_session = canopy_client.CanopySession()
@@ -290,6 +291,8 @@ def main():
     if bioproject_accession is None:
         raise ValueError(f"Broker failed to generate a BioProject accession.")
 
+    logger.info(f"Using BioProject accession {bioproject_accession}")
+
     ###################################
     # harvest the required parameters #
     ###################################
@@ -323,7 +326,7 @@ def main():
                 "biosample_accession"
             )
         except TyperExit as e:
-            logger.warning(
+            logger.info(
                 (
                     "Broker failed. "
                     "If the broker prints a message like "
@@ -333,12 +336,20 @@ def main():
             )
 
     if biosample_accession is None:
-        raise ValueError(f"Broker failed to generate a BioSample accession.")
-        # next try
-        # biosample_id = canopy_session.get_biosample_id_from_accepted_submissions(
-        #     sample_id=long_read_specimen_sample_id
-        # )
+        logger.info("Trying to find a BioSample ID for the sample-level entity.")
+        long_read_bpa_package_ids = manifest.long_reads.names
+        for long_read_bpa_package_id in long_read_bpa_package_ids:
+            biosample_accession = canopy_session.get_biosample_id(
+                bpa_package_id=long_read_bpa_package_id
+            )
+            if bioproject_accession is not None:
+                logger.info(f"Found BioSample id for {long_read_bpa_package_id}")
+                break
 
+    if biosample_accession is None:
+        raise ValueError(f"No accessioned samples found for assembly {assembly_id}")
+
+    logger.info(f"Using BioSample accession {biosample_accession}")
     raise ValueError(biosample_accession)
 
     # array_of_err_accessions #########
