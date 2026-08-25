@@ -297,8 +297,6 @@ def main():
     # harvest the required parameters #
     ###################################
 
-    long_read_platform = manifest.long_reads.data_types[0]
-
     # The canopy_assembly has the specimen-level sample details
     sample_id = canopy_assembly.get("sample_id", None)
 
@@ -350,16 +348,31 @@ def main():
         raise ValueError(f"No accessioned samples found for assembly {assembly_id}")
 
     logger.info(f"Using BioSample accession {biosample_accession}")
-    raise ValueError(biosample_accession)
 
     # array_of_err_accessions #########
-    err_accessions = ["TODO1", "TODO2"]
+    err_accessions = set()
+    assembly_qc_reads = canopy_session.list_qc_reads(assembly_id=assembly_id)
+    for qc_read in assembly_qc_reads.json():
+        submission_records = qc_read.get("submission_records", [])
+        for submission in submission_records:
+            err_accession = canopy_client.get_accession_from_submission(
+                submission=submission
+            )
+            if err_accession is not None:
+                logger.info(
+                    f"qc_read {qc_read.get("id")} is registered as {err_accession}"
+                )
+                err_accessions.add(err_accession)
 
     # generate the context
     context = {
-        "bioproject_accession": "TODO",
-        "biosample_accession": "TODO",
+        "bioproject_accession": bioproject_accession,
+        "biosample_accession": biosample_accession,
         "err_accessions": ",".join(err_accessions),
+        "coverage": "FIXME pass depth stats",
+        "long_read_platform": manifest.long_reads.data_types[0],
+        "TODO": "TODO",
+        **canopy_project,
     }
 
     # render the template
