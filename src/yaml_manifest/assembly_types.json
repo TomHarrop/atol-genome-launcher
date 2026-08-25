@@ -36,11 +36,25 @@
         "outputs": {
             "genomeassembly": {
                 "PRIMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/asm_hap1_scaffolds_final.fa.gz",
-                "HAPLO": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/asm_hap2_scaffolds_final.fa.gz"
+                "HAPLO": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/asm_hap2_scaffolds_final.fa.gz",
+                "PRIMARY_BUSCO_TABLE": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco/asm_hap1_scaffolds_final.fa/run_{busco_odb12_dataset_name}_odb12/full_table.tsv",
+                "HAPLO_BUSCO_TABLE": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco/asm_hap2_scaffolds_final.fa/run_{busco_odb12_dataset_name}_odb12/full_table.tsv"
             },
             "ascc": {
                 "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
-                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
+                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta",
+                "PRIMARY_ABNORMAL_CHECK": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_ABNORMAL_CHECK.csv",
+                "PRIMARY_CHECK_SUMMARY": "{dataset_id}.{assembly_version}_PRIMARY/ascc_main_output/{dataset_id}.{assembly_version}_PRIMARY_contamination_check_merged_table.csv",
+                "PRIMARY_REMOVED_SEQUENCES": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/assembly_filtering_removed_sequences.txt",
+                "PRIMARY_MT_CONTIGS": "{dataset_id}.{assembly_version}_PRIMARY/organelle_contamination_recommendations/{dataset_id}.{assembly_version}_PRIMARY-{dataset_id}.{assembly_version}_MITO.contamination_recommendation",
+                "HAPLO_ABNORMAL_CHECK": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_ABNORMAL_CHECK.csv",
+                "HAPLO_CHECK_SUMMARY": "{dataset_id}.{assembly_version}_HAPLO/ascc_main_output/{dataset_id}.{assembly_version}_HAPLO_contamination_check_merged_table.csv",
+                "HAPLO_REMOVED_SEQUENCES": "{dataset_id}.{assembly_version}_HAPLO/autofilter/assembly_filtering_removed_sequences.txt",
+                "HAPLO_MT_CONTIGS": "{dataset_id}.{assembly_version}_HAPLO/organelle_contamination_recommendations/{dataset_id}.{assembly_version}_HAPLO-{dataset_id}.{assembly_version}_MITO.contamination_recommendation"
+            },
+            "treeval": {
+                "HIRES_PRETEXT": "hic_files/{dataset_id}_{assembly_version}_hr.pretext",
+                "NORMAL_PRETEXT": "hic_files/{dataset_id}_{assembly_version}_normal.pretext"
             },
             "curation": {
                 "HAP1": "{dataset_id}.hap1.{assembly_version}.primary.curated.fa.gz",

@@ -122,6 +122,7 @@ def _resolve_assembly_types(
     fmt = {
         "dataset_id": dataset_id,
         "assembly_version": assembly_version,
+        "busco_odb12_dataset_name": busco_odb12_dataset_name,
     }
 
     for type_name, config in _ASSEMBLY_TYPES.items():
