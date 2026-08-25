@@ -179,6 +179,17 @@ def main():
     if assembly_id is None:
         raise ValueError("assembly_id is required to broker the Assembly via Canopy.")
 
+    # work out which FASTA we're brokering
+    assembly_type_upper = args.assembly_type.upper()
+    if manifest.treeval_assembly.is_phased:
+        fasta_file = manifest.treeval_assembly.outputs_for("treeval").get(
+            assembly_type_upper
+        )
+    else:
+        fasta_file = manifest.treeval_assembly.outputs_for("ascc").get(
+            assembly_type_upper
+        )
+
     if not args.assembly_type == canopy_client.AssemblyType.PRIMARY:
         raise NotImplementedError(
             (
@@ -268,6 +279,7 @@ def main():
 
     if bioproject_accession is None:
         # Try brokering if we don't have an accession
+        logger.info(f"Trying to broker project {assembly_project_id}")
         _ = submit_entity(
             type_="project",
             id_=assembly_project_id,
@@ -291,7 +303,9 @@ def main():
     if bioproject_accession is None:
         raise ValueError(f"Broker failed to generate a BioProject accession.")
 
-    logger.info(f"Using BioProject accession {bioproject_accession}")
+    logger.info(
+        f"Canopy project {canopy_project.get("id")} is registered as BioProject {bioproject_accession}"
+    )
 
     ###################################
     # harvest the required parameters #
@@ -315,6 +329,7 @@ def main():
 
     if biosample_accession is None:
         try:
+            logger.info(f"Trying to broker sample {long_read_specimen_sample_id}")
             canopy_long_read_specimen_sample = broker_sample(
                 sample_id=long_read_specimen_sample_id,
                 dry_run=args.dry_run,
@@ -324,30 +339,35 @@ def main():
                 "biosample_accession"
             )
         except TyperExit as e:
-            logger.info(
+            logger.warning(
                 (
                     "Broker failed. "
-                    "If the broker prints a message like "
+                    "If the broker prints an Error like "
                     '"No claimable submission found for entity" '
                     "it could mean the specimen-level BioSample has not been accessioned."
                 )
             )
 
     if biosample_accession is None:
-        logger.info("Trying to find a BioSample ID for the sample-level entity.")
+        logger.info(
+            "Trying to find a BioSample ID using the bpa_package_ids from the assembly Manifest."
+        )
         long_read_bpa_package_ids = manifest.long_reads.names
         for long_read_bpa_package_id in long_read_bpa_package_ids:
             biosample_accession = canopy_session.get_biosample_id(
                 bpa_package_id=long_read_bpa_package_id
             )
             if bioproject_accession is not None:
-                logger.info(f"Found BioSample id for {long_read_bpa_package_id}")
+                logger.info(
+                    (
+                        f"Found BioSample accession {biosample_accession} "
+                        f"for bpa_package_id {long_read_bpa_package_id}"
+                    )
+                )
                 break
 
     if biosample_accession is None:
         raise ValueError(f"No accessioned samples found for assembly {assembly_id}")
-
-    logger.info(f"Using BioSample accession {biosample_accession}")
 
     # array_of_err_accessions #########
     err_accessions = set()
@@ -360,7 +380,7 @@ def main():
             )
             if err_accession is not None:
                 logger.info(
-                    f"qc_read {qc_read.get("id")} is registered as {err_accession}"
+                    f"Canopy qc_read {qc_read.get("id")} is registered as {err_accession}"
                 )
                 err_accessions.add(err_accession)
 
@@ -368,8 +388,9 @@ def main():
     context = {
         "bioproject_accession": bioproject_accession,
         "biosample_accession": biosample_accession,
-        "err_accessions": ",".join(err_accessions),
         "coverage": "FIXME pass depth stats",
+        "err_accessions": ",".join(err_accessions),
+        "fasta_file": fasta_file,
         "long_read_platform": manifest.long_reads.data_types[0],
         "TODO": "TODO",
         **canopy_project,
