@@ -353,14 +353,54 @@ Settings:
   -n                    Dry run
 ```
 
-### submit-assembly-to-ena
+### generate-ena-assembly-manifest
 
-TODO
+Generate an [ENA Manifest
+file](https://ena-docs.readthedocs.io/en/latest/submit/assembly/genome.html#manifest-files)
+for an assembly, using project metadata from the `read_projects` endpoint and
+assembly metadata from the `read_assembly` endpoint.
+
+If the project is missing on Canopy, this script will try to register it.
+
+If the BioProject and/or BioSample accessions are missing, this script will
+call the Broker to try to get them.
+
 
 #### Usage
 
 ```
-TODO
+usage: generate-ena-assembly-manifest [-h] [-n] --fasta_file FASTA_FILE [--chromosome_list CHROMOSOME_LIST] [--template TEMPLATE] [--description_template DESCRIPTION_TEMPLATE]
+                                      [--program_template PROGRAM_TEMPLATE] --sequencing_depth SEQUENCING_DEPTH [--assembly_type {primary,secondary}]
+                                      manifest ena_manifest
+
+Utility script for the genome-launcher-workflow. After completing the assembly process, run this script to generate an ENA Manifest file (https://ena-
+docs.readthedocs.io/en/latest/submit/assembly/genome.html#manifest-files) for the assembly.
+
+positional arguments:
+  manifest              AToL assembly manifest.
+  ena_manifest          Path to output the rendered ENA manifest.
+
+options:
+  -h, --help            show this help message and exit
+
+Inputs:
+  --fasta_file FASTA_FILE
+                        Path to the FASTA file for the assembly
+  --chromosome_list CHROMOSOME_LIST
+                        ENA Chromosome List File (https://ena-docs.readthedocs.io/en/latest/submit/fileprep/assembly.html#chromosome-list-file). Include this if the assembly is
+                        scaffolded and/or includes organelle sequences.
+  --template TEMPLATE   Template for the ENA assembly manifest
+  --description_template DESCRIPTION_TEMPLATE
+                        Template for the description string
+  --program_template PROGRAM_TEMPLATE
+                        Template for the program string
+
+Settings:
+  -n                    Dry run
+  --sequencing_depth SEQUENCING_DEPTH
+                        Sequencing depth for the fasta_file
+  --assembly_type {primary,secondary}
+                        Brokering secondary assemblies is not implemented. See https://github.com/AustralianBioCommons/atol-canopy/issues/46.
 ```
 
 
