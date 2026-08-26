@@ -363,7 +363,7 @@ assembly metadata from the `read_assembly` endpoint.
 If the project is missing on Canopy, this script will try to register it.
 
 If the BioProject and/or BioSample accessions are missing, this script will
-call the Broker to try to get them.
+call the Broker to try to register the project and/or sample on ENA.
 
 
 #### Usage
