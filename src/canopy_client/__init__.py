@@ -260,6 +260,17 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix)
 
+    def get_specimen_samples_for_assembly(
+        self,
+        taxon_id: int,
+        endpoint: str = "get_specimen_samples_for_assembly",
+    ) -> requests.Response:
+
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(taxon_id=taxon_id)
+
+        return self._get(url=url_suffix)
+
     def get_taxonomy_info(
         self,
         taxon_id: int,
@@ -487,6 +498,7 @@ _endpoints = {
     "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "get_experiment_submission_by_experiment_attr": "/api/v1/experiment-submissions/by-experiment-attr",
     "get_sample_submission_by_experiment_package_id": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
+    "get_specimen_samples_for_assembly": "/api/v1/assemblies/specimen-samples/{taxon_id}",
     "get_taxonomy_info": "/api/v1/taxonomy-info/{taxon_id}",
     "list_assembly_runs": "/api/v1/assemblies/{assembly_id}/runs",
     "list_qc_reads": "/api/v1/qc-reads/",

@@ -2,23 +2,15 @@
 
 from functools import cache
 import json
-from os import getenv
 from pathlib import Path
 from tempfile import mkdtemp
 import urllib.parse
 
 from broker.cli import tolid_request
-from common import generate_parser
-import requests
+import canopy_client
+from common import check_env_var, generate_parser
 from snakemake.logging import logger
 from yaml_manifest import Manifest
-
-
-def check_env_var(env_var_name: str) -> str:
-    env_var_value = getenv(env_var_name)
-    if env_var_value is None:
-        raise EnvironmentError(f"Set the {env_var_name} environment variable")
-    return env_var_value
 
 
 def check_for_tolid(
@@ -357,8 +349,6 @@ def write_manifest(manifest: Manifest, outdir: Path) -> None:
 _api_url = "https://api.atol.test.biocommons.org.au/api/v1/"
 
 _endpoints = {
-    "login": "auth/login",
-    "specimen_samples": "assemblies/specimen-samples/",
     "new_manifest": "assemblies/intent/",
     "retrieve_manifest": "assemblies/manifest/",
     "tolid_by_sample_id": "/api/v1/broker/tolids/",
@@ -369,40 +359,32 @@ _long_read_types = ["PACBIO_SMRT", "OXFORD_NANOPORE"]
 
 
 def main():
+
+    logger.name = "request-manifest-from-canopy"
     args = parse_arguments()
 
-    taxon_id_str = str(args.taxon_id)
-
     # log in to API
-    login = requests.post(
-        urllib.parse.urljoin(_api_url, _endpoints.get("login")),
-        data={"username": args.canopy_username, "password": args.canopy_password},
+    canopy_session = canopy_client.CanopySession()
+    hold_date = canopy_client.hold_until()
+
+    taxon_id = args.taxon_id
+
+    specimen_samples = canopy_session.get_specimen_samples_for_assembly(
+        taxon_id=taxon_id
     )
-
-    # Stop if login failed
-    login.raise_for_status()
-
-    canopy_token = login.json().get("access_token")
-
-    auth_header = {"Authorization": f"Bearer {canopy_token}"}
-
-    specimen_samples_url = urllib.parse.urljoin(
-        _api_url, _endpoints.get("specimen_samples", "") + taxon_id_str
-    )
-
-    # get the specimen_samples for the taxon id
-    specimen_samples = requests.get(
-        specimen_samples_url,
-        headers=auth_header,
-    )
-
-    if specimen_samples.status_code == 404:
-        logger.warning("No specimen samples found")
-
-    specimen_samples.raise_for_status()
 
     # get the sample_ids and data_types for the long read specimen_samples
     long_read_samples, hi_c_samples = get_sample_data_types(specimen_samples)
+
+    logger.info(
+        (
+            f"specimen_samples for taxon_id {taxon_id}:\n"
+            f"             long_read_samples: {long_read_samples}\n"
+            f"                  hi_c_samples: {hi_c_samples}"
+        )
+    )
+
+    raise ValueError("TODO up to here")
 
     viable_assemblies = []
 
