@@ -6,7 +6,7 @@ from pathlib import Path
 
 from broker.cli import submit_entity
 import canopy_client
-from common import generate_parser
+from common import generate_parser, read_json_from_path, existing_file
 from requests.models import Response
 from yaml_manifest import Manifest
 
@@ -22,7 +22,7 @@ def parse_arguments() -> argparse.Namespace:
         )
     )
 
-    _ = parser.add_argument("manifest", type=Path)
+    _ = parser.add_argument("manifest", type=existing_file)
 
     _ = inputs_parser.add_argument(
         "--bpa_package_id",
@@ -31,14 +31,11 @@ def parse_arguments() -> argparse.Namespace:
         required=True,
     )
 
-    _ = inputs_parser.add_argument("--qc_reads_report", type=Path, required=True)
+    _ = inputs_parser.add_argument(
+        "--qc_reads_report", type=existing_file, required=True
+    )
 
     return parser.parse_args()
-
-
-def read_json_from_path(path_to_json_file: Path) -> dict[str, str | int | list[str]]:
-    with open(path_to_json_file, "rb") as f:
-        return json.load(f)
 
 
 def get_qc_reads_id(
@@ -66,7 +63,7 @@ def main():
 
     args = parse_arguments()
 
-    canopy_session = canopy_client.canopy_login()
+    canopy_session = canopy_client.CanopySession()
     qc_report_dict = read_json_from_path(args.qc_reads_report)
     hold_date = canopy_client.hold_until()
 
@@ -82,9 +79,8 @@ def main():
     checksum_values = package_reads.all_md5sums
 
     # This is used for brokering
-    sample_id = canopy_client.get_sample_id(
+    sample_id = canopy_session.get_sample_id(
         bpa_package_id=args.bpa_package_id,
-        canopy_session=canopy_session,
     )
 
     # add the info required by canopy
@@ -92,14 +88,15 @@ def main():
     qc_report_dict["source_read_file_checksums"] = checksum_values
 
     # an existing Experiment is required to broker the Run
-    experiment_accession = canopy_client.get_experiment_accession(
-        canopy_session=canopy_session, bpa_package_id=args.bpa_package_id
+    experiment_accession = canopy_session.get_experiment_accession(
+        bpa_package_id=args.bpa_package_id
     )
 
     if experiment_accession is None:
-        biosample_id = canopy_client.get_biosample_id(
-            bpa_package_id=args.bpa_package_id, canopy_session=canopy_session
+        biosample_id = canopy_session.get_biosample_id(
+            bpa_package_id=args.bpa_package_id
         )
+
         if biosample_id is None:
             raise ValueError(
                 (
@@ -114,9 +111,10 @@ def main():
             )
 
         # Experiment UUID for brokering
-        experiment_id = canopy_client.get_experiment_id(
-            bpa_package_id=args.bpa_package_id, canopy_session=canopy_session
+        experiment_id = canopy_session.get_experiment_id(
+            bpa_package_id=args.bpa_package_id
         )
+
         if experiment_id is None:
             raise ValueError(
                 (
@@ -145,8 +143,8 @@ def main():
                 f"Dry run is {args.dry_run}, so the Experiment hasn't been brokered."
             )
 
-        experiment_accession = canopy_client.get_experiment_accession(
-            canopy_session=canopy_session, bpa_package_id=args.bpa_package_id
+        experiment_accession = canopy_session.get_experiment_accession(
+            bpa_package_id=args.bpa_package_id
         )
         if experiment_accession is None:
             raise ValueError(
@@ -154,9 +152,8 @@ def main():
             )
 
     # Check for existing qc_read
-    qc_reads_response = canopy_client.get_qc_reads_report(
+    qc_reads_response = canopy_session.list_qc_reads(
         assembly_id=assembly_id,
-        canopy_session=canopy_session,
     )
 
     qc_reads_id = get_qc_reads_id(
@@ -177,8 +174,8 @@ def main():
 
     # Submit the qc_read if we need to
     if qc_reads_id is None:
-        qc_reads_report = canopy_client.post_qc_reads_report(
-            assembly_id=assembly_id, canopy_session=canopy_session, body=qc_report_dict
+        qc_reads_report = canopy_session.report_assembly_qc_read(
+            assembly_id=assembly_id, body=qc_report_dict
         )
         qc_reads_id = qc_reads_report.json().get("id", None)
 
