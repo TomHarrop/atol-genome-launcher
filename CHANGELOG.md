@@ -1,6 +1,23 @@
 Changelog
 =========
 
+0.17.0 (2026-08-26)
+-------------------
+
+New
+
+~~~
+- Scripts to generate ENA Manifest file and report pipeline results to
+  Canopy. [Tom Harrop]
+- Scripts to generate ENA Manifest file and report pipeline results to
+  Canopy. [Tom Harrop]
+- Report pipeline results to Canopy. [Tom Harrop]
+
+Other
+~~~~~
+
+- Initial code for reporting pipeline results. [Tom Harrop]
+
 0.16.0 (2026-08-12)
 -------------------
 
