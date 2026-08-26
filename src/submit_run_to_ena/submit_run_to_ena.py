@@ -6,7 +6,7 @@ from pathlib import Path
 
 from broker.cli import submit_entity
 import canopy_client
-from common import generate_parser, read_json_from_path
+from common import generate_parser, read_json_from_path, existing_file
 from requests.models import Response
 from yaml_manifest import Manifest
 
@@ -22,7 +22,7 @@ def parse_arguments() -> argparse.Namespace:
         )
     )
 
-    _ = parser.add_argument("manifest", type=Path)
+    _ = parser.add_argument("manifest", type=existing_file)
 
     _ = inputs_parser.add_argument(
         "--bpa_package_id",
@@ -31,7 +31,9 @@ def parse_arguments() -> argparse.Namespace:
         required=True,
     )
 
-    _ = inputs_parser.add_argument("--qc_reads_report", type=Path, required=True)
+    _ = inputs_parser.add_argument(
+        "--qc_reads_report", type=existing_file, required=True
+    )
 
     return parser.parse_args()
 
