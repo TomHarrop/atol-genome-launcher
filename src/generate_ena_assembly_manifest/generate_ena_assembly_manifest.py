@@ -7,7 +7,7 @@ from pathlib import Path
 from broker.cli import submit_entity
 from typer._click.exceptions import Exit as TyperExit
 import canopy_client
-from common import generate_parser, logger
+from common import generate_parser, logger, existing_file
 from requests import Response
 from requests.exceptions import HTTPError
 from yaml_manifest import Manifest
@@ -136,7 +136,7 @@ def parse_arguments() -> argparse.Namespace:
         "--fasta_file",
         help="Path to the FASTA file for the assembly",
         required=True,
-        type=Path,
+        type=existing_file,
     )
 
     _ = inputs_parser.add_argument(
@@ -147,28 +147,28 @@ def parse_arguments() -> argparse.Namespace:
             "Include this if the assembly is scaffolded and/or includes organelle sequences."
         ),
         required=False,
-        type=Path,
+        type=existing_file,
     )
 
     _ = inputs_parser.add_argument(
         "--template",
         help="Template for the ENA assembly manifest",
         default=my_files.joinpath("templates/ena_manifest_template.txt.j2"),
-        type=Path,
+        type=existing_file,
     )
 
     _ = inputs_parser.add_argument(
         "--description_template",
         help="Template for the description string",
         default=my_files.joinpath("templates/assembly_level_study_description.txt.j2"),
-        type=Path,
+        type=existing_file,
     )
 
     _ = inputs_parser.add_argument(
         "--program_template",
         help="Template for the program string",
         default=my_files.joinpath("templates/assembly_program_template.txt.j2"),
-        type=Path,
+        type=existing_file,
     )
 
     _ = settings_parser.add_argument(
@@ -189,7 +189,9 @@ def parse_arguments() -> argparse.Namespace:
         type=canopy_client.AssemblyType,
     )
 
-    _ = parser.add_argument("manifest", type=Path, help="AToL assembly manifest.")
+    _ = parser.add_argument(
+        "manifest", type=existing_file, help="AToL assembly manifest."
+    )
 
     _ = parser.add_argument(
         "ena_manifest",
