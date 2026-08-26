@@ -125,7 +125,10 @@ def parse_arguments() -> argparse.Namespace:
     parser, inputs_parser, outputs_parser, settings_parser = generate_parser(
         description=(
             "Utility script for the genome-launcher-workflow. "
-            "After completing the assembly process, FIXME "
+            "After completing the assembly process, run this "
+            "script to generate an ENA Manifest file "
+            "(https://ena-docs.readthedocs.io/en/latest/submit/assembly/genome.html#manifest-files) "
+            "for the assembly."
         )
     )
 
@@ -140,6 +143,13 @@ def parse_arguments() -> argparse.Namespace:
         "--description_template",
         help="Template for the description string",
         default=my_files.joinpath("templates/assembly_level_study_description.txt.j2"),
+        type=Path,
+    )
+
+    _ = inputs_parser.add_argument(
+        "--program_template",
+        help="Template for the program string",
+        default=my_files.joinpath("templates/assembly_program_template.txt.j2"),
         type=Path,
     )
 
@@ -225,6 +235,7 @@ def main():
             assembly_type=args.assembly_type,
             description_template=args.description_template,
         )
+
         project_body = {
             "alias": alias,
             "description": description,
@@ -273,6 +284,21 @@ def main():
                 "try again."
             )
         )
+
+    # Generate the program string. Even if the project is registered most don't
+    # have this filled out, so we will need it anyway.
+    if canopy_assembly.get("program") is None:
+        program_string = remove_whitespace_from_description(
+            manifest.render_template_file(
+                args.program_template, is_phased=manifest.treeval_assembly.is_phased
+            ),
+        )
+        canopy_session.update_assembly(
+            assembly_id=assembly_id, body={"program": program_string}
+        )
+        canopy_assembly = canopy_session.read_assembly(assembly_id=assembly_id).json()
+
+    program_string = canopy_assembly.get("program")
 
     # bioproject_accession ############
     bioproject_accession = canopy_project.get("project_accession")
@@ -392,6 +418,7 @@ def main():
         "err_accessions": ",".join(err_accessions),
         "fasta_file": fasta_file,
         "long_read_platform": manifest.long_reads.data_types[0],
+        "program": program_string,
         "TODO": "TODO",
         **canopy_project,
     }
