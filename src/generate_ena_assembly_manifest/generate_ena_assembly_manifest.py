@@ -189,7 +189,13 @@ def parse_arguments() -> argparse.Namespace:
         type=canopy_client.AssemblyType,
     )
 
-    _ = parser.add_argument("manifest", type=Path)
+    _ = parser.add_argument("manifest", type=Path, help="AToL assembly manifest.")
+
+    _ = parser.add_argument(
+        "ena_manifest",
+        type=Path,
+        help="Path to output the rendered ENA manifest.",
+    )
 
     return parser.parse_args()
 
@@ -201,7 +207,7 @@ def remove_whitespace_from_description(descripion: str) -> str:
 
 def main():
 
-    logger.name = __name__ if __name__ else "submit-assembly-to-ena"
+    logger.name = __name__ if __name__ else "generate-ena-assembly-manifest"
     args = parse_arguments()
 
     canopy_session = canopy_client.CanopySession()
@@ -442,7 +448,11 @@ def main():
     # render the template
     rendered = manifest.render_template_file(args.template, **context)
 
-    raise ValueError(rendered)
+    logger.info(f"Manifest generated:\n\n{rendered}")
+    logger.info(f"Writing ENA Manifest to file {args.ena_manifest}")
+
+    with open(args.ena_manifest, "wt") as f:
+        f.write(rendered)
 
 
 if __name__ == "__main__":
