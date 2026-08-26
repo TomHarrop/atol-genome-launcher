@@ -133,6 +133,24 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     _ = inputs_parser.add_argument(
+        "--fasta_file",
+        help="Path to the FASTA file for the assembly",
+        required=True,
+        type=Path,
+    )
+
+    _ = inputs_parser.add_argument(
+        "--chromosome_list",
+        help=(
+            "ENA Chromosome List File "
+            "(https://ena-docs.readthedocs.io/en/latest/submit/fileprep/assembly.html#chromosome-list-file). "
+            "Include this if the assembly is scaffolded and/or includes organelle sequences."
+        ),
+        required=False,
+        type=Path,
+    )
+
+    _ = inputs_parser.add_argument(
         "--template",
         help="Template for the ENA assembly manifest",
         default=my_files.joinpath("templates/ena_manifest_template.txt.j2"),
@@ -151,6 +169,13 @@ def parse_arguments() -> argparse.Namespace:
         help="Template for the program string",
         default=my_files.joinpath("templates/assembly_program_template.txt.j2"),
         type=Path,
+    )
+
+    _ = settings_parser.add_argument(
+        "--sequencing_depth",
+        help="Sequencing depth for the fasta_file",
+        required=True,
+        type=int,
     )
 
     _ = settings_parser.add_argument(
@@ -188,17 +213,6 @@ def main():
     assembly_id = manifest.assembly_id
     if assembly_id is None:
         raise ValueError("assembly_id is required to broker the Assembly via Canopy.")
-
-    # work out which FASTA we're brokering
-    assembly_type_upper = args.assembly_type.upper()
-    if manifest.treeval_assembly.is_phased:
-        fasta_file = manifest.treeval_assembly.outputs_for("treeval").get(
-            assembly_type_upper
-        )
-    else:
-        fasta_file = manifest.treeval_assembly.outputs_for("ascc").get(
-            assembly_type_upper
-        )
 
     if not args.assembly_type == canopy_client.AssemblyType.PRIMARY:
         raise NotImplementedError(
@@ -414,14 +428,16 @@ def main():
     context = {
         "bioproject_accession": bioproject_accession,
         "biosample_accession": biosample_accession,
-        "coverage": "FIXME pass depth stats",
+        "coverage": args.sequencing_depth,
         "err_accessions": ",".join(err_accessions),
-        "fasta_file": fasta_file,
+        "fasta_file": args.fasta_file,
         "long_read_platform": manifest.long_reads.data_types[0],
         "program": program_string,
-        "TODO": "TODO",
         **canopy_project,
     }
+
+    if args.chromosome_list:
+        context.setdefault("chromosome_list", args.chromosome_list)
 
     # render the template
     rendered = manifest.render_template_file(args.template, **context)

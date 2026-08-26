@@ -10,4 +10,4 @@ DESCRIPTION     {{ description }}
 FASTA           {{ fasta_file }}
 MINGAPLENGTH    100
 RUN_REF         {{ err_accessions }}
-CHROMOSOME_LIST {{ TODO }}
+{% if chromosome_list %}CHROMOSOME_LIST {{ chromosome_list }}{% endif %}
