@@ -52,6 +52,7 @@ submit-run-to-ena = "submit_run_to_ena.submit_run_to_ena:main"
 [tool.setuptools.package-data]
 "assembly_data_downloader" = ["workflow/Snakefile"]
 "bpa_file_downloader" = ["workflow/Snakefile"]
+"generate_ena_assembly_manifest" = ["templates/*.j2"]
 "pipeline_config_generator" = ["templates/*.j2"]
 "pipeline_result_uploader" = ["workflow/Snakefile"]
 "result_file_uploader" = ["workflow/Snakefile"]
