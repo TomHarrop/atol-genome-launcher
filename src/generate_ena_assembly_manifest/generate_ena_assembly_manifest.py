@@ -209,7 +209,7 @@ def remove_whitespace_from_description(descripion: str) -> str:
 
 def main():
 
-    logger.name = __name__ if __name__ else "generate-ena-assembly-manifest"
+    logger.name = "generate-ena-assembly-manifest"
     args = parse_arguments()
 
     canopy_session = canopy_client.CanopySession()
@@ -451,10 +451,11 @@ def main():
     rendered = manifest.render_template_file(args.template, **context)
 
     logger.info(f"Manifest generated:\n\n{rendered}")
-    logger.info(f"Writing ENA Manifest to file {args.ena_manifest}")
 
-    with open(args.ena_manifest, "wt") as f:
-        f.write(rendered)
+    if args.dry_run == False:
+        logger.info(f"Writing ENA Manifest to file {args.ena_manifest}")
+        with open(args.ena_manifest, "wt") as f:
+            f.write(rendered)
 
 
 if __name__ == "__main__":
