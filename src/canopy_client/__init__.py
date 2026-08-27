@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from urllib.parse import urljoin
 
-from common import check_env_var
+from common import check_env_var, logger
 import requests
 
 
@@ -24,6 +24,8 @@ class CanopySession(requests.Session):
 
     def __init__(self, base_url: str = None):
         super().__init__()
+
+        self.logger = logger
 
         if base_url is None:
             base_url = check_env_var("CANOPY_BASE_URL")
@@ -89,6 +91,31 @@ class CanopySession(requests.Session):
             raise e
 
         return response
+
+    def check_for_tolid(self, sample_id: str) -> tuple[str | None, str]:
+        """
+        Return a tuple of (accession, accession_type) so we can action ENA
+        accessions
+        """
+        tolid_status = self.get_tolid_by_sample(sample_id=sample_id).json()
+        sample_tolid = tolid_status.get("tolid", None)
+        if sample_tolid is not None:
+            return (sample_tolid, "tolid")
+
+        # try to search by ENA accession, if there is one
+        ena_accession = tolid_status.get("specimen_id", None)
+        if ena_accession is not None:
+
+            tolid_by_specimen_accession = self.get_tolid_by_specimen_accession(
+                specimen_id=ena_accession
+            ).json()
+            accession_tolid = tolid_by_specimen_accession.get("tolid", None)
+            if accession_tolid is not None:
+                return (accession_tolid, "tolid")
+
+            return (ena_accession, "ena")
+
+        return (None, "")
 
     def create_assembly_run(
         self,
@@ -279,6 +306,27 @@ class CanopySession(requests.Session):
 
         url_template = _endpoints.get(endpoint, "")
         url_suffix = url_template.format(taxon_id=taxon_id)
+
+        return self._get(url=url_suffix)
+
+    def get_tolid_by_sample(
+        self,
+        sample_id: int,
+        endpoint: str = "get_tolid_by_sample",
+    ) -> requests.Response:
+
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(sample_id=sample_id)
+
+        return self._get(url=url_suffix)
+
+    def get_tolid_by_specimen_accession(
+        self,
+        specimen_id: str,
+        endpoint: str = "get_tolid_by_specimen_accession",
+    ) -> requests.Response:
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(specimen_id=specimen_id)
 
         return self._get(url=url_suffix)
 
@@ -500,7 +548,9 @@ _endpoints = {
     "get_sample_submission_by_experiment_package_id": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
     "get_specimen_samples_for_assembly": "/api/v1/assemblies/specimen-samples/{taxon_id}",
     "get_taxonomy_info": "/api/v1/taxonomy-info/{taxon_id}",
+    "get_tolid_by_sample": "/api/v1/broker/tolids/{sample_id}",
     "list_assembly_runs": "/api/v1/assemblies/{assembly_id}/runs",
+    "get_tolid_by_specimen_accession": "/api/v1/broker/tolids/by-specimen-accession/{specimen_id}",
     "list_qc_reads": "/api/v1/qc-reads/",
     "list_stage_runs": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "read_assembly": "/api/v1/assemblies/{assembly_id}",

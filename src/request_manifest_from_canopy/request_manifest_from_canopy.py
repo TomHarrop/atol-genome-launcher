@@ -13,76 +13,6 @@ from snakemake.logging import logger
 from yaml_manifest import Manifest
 
 
-def check_for_tolid(
-    sample_id: str, auth_header: dict[str, str], prod: bool = False
-) -> str:
-
-    # is there already a tolid for this sample?
-    tolid_status = lookup_tolid_by_sample_id(
-        sample_id=sample_id, auth_header=auth_header
-    )
-    my_tolid = tolid_status.get("tolid", None)
-    if my_tolid:
-        return my_tolid
-
-    # if there's no tolid, but there is an ena id, check the specimen-accession
-    # endpoint
-    my_ena_accession = tolid_status.get("specimen_id", None)
-
-    if my_ena_accession:
-        check_accession_url = urllib.parse.urljoin(
-            _api_url,
-            _endpoints.get("tolid_by_specimen_accession", "") + my_ena_accession,
-        )
-
-        tolid_by_specimen_accession_response = requests.get(
-            check_accession_url, headers=auth_header
-        )
-
-        tolid_by_specimen_accession_response.raise_for_status()
-
-        tolid_by_specimen_accession = tolid_by_specimen_accession_response.json()
-
-        # If we have an ENA accession but no ToLID, the broker can request one
-        # for us.
-        if not tolid_by_specimen_accession.get("tolid", None):
-            # tolid_request() always returns None
-            _ = tolid_request(
-                sample_accession=my_ena_accession, update_ena=prod, prod=prod
-            )
-
-            # if it worked, the new tolid should be in the DB.
-            new_tolid_status = lookup_tolid_by_sample_id(
-                sample_id=sample_id, auth_header=auth_header
-            )
-
-            new_tolid = new_tolid_status.get("tolid", None)
-            if new_tolid:
-                return new_tolid
-
-            raise NotImplementedError(
-                (
-                    f"We asked Canopy for a new tolid for {my_ena_accession}, "
-                    "but there is still no ToLID in the database. "
-                    "TODO: What should we do here?"
-                )
-            )
-
-    # This is not an Exception because we could be doing an offline assembly
-    # (no ENA accession, no ToLID)
-    logger.warning(
-        (
-            "\n\n"
-            "###########################################################\n"
-            "# There is no ToLID or ENA accession for                  #\n"
-            f"# {sample_id}.                   #\n"
-            "# The BioSample probably hasn't been brokered to ENA yet. #\n"
-            "###########################################################\n"
-        )
-    )
-    return None
-
-
 def check_if_assembly_exists(
     assembly: dict[str, str], taxid_manifests: requests.Response
 ) -> dict[str, str]:
@@ -200,23 +130,6 @@ def get_sample_data_types(specimen_samples: requests.Response):
                 long_read_samples.append((specimen_sample_id, data_type))
 
     return long_read_samples, hic_samples
-
-
-def lookup_tolid_by_sample_id(
-    sample_id: str, auth_header: dict[str, str]
-) -> dict[str, str]:
-    # check the samples endpoint for a tolid
-    check_tolid_url = urllib.parse.urljoin(
-        _api_url, _endpoints.get("tolid_by_sample_id", "") + sample_id
-    )
-
-    # get the specimen_samples for the taxon id
-    specimen_tolid_response = requests.get(
-        check_tolid_url,
-        headers=auth_header,
-    )
-
-    return specimen_tolid_response.json()
 
 
 def parse_arguments():
@@ -384,8 +297,6 @@ def main():
         )
     )
 
-    raise ValueError("TODO up to here")
-
     viable_assemblies = []
 
     # Logic for Hi-C: If we have hi_c and long read from the same sample, we
@@ -397,10 +308,63 @@ def main():
         # We have to check for a ToLID here, because Canopy doesn't return it
         # with the Manifest, even if it's already been assigned for this
         # sample_id.
-        sample_tolid = check_for_tolid(
-            sample_id=sample_id, auth_header=auth_header, prod=args.prod
-        )
-        sample_dict["dataset_id"] = sample_tolid if sample_tolid else "fixme_no_tolid"
+        accession, accession_type = canopy_session.check_for_tolid(sample_id=sample_id)
+
+        if accession is None:
+            logger.warning(
+                (
+                    "\n\n"
+                    "###########################################################\n"
+                    "# There is no ToLID or ENA accession for sample_id        #\n"
+                    f"# {sample_id}.                   #\n"
+                    "# The BioSample probably hasn't been brokered to ENA yet. #\n"
+                    "###########################################################\n"
+                )
+            )
+
+            sample_tolid = "fixme_no_tolid"
+        elif accession_type == "ena":
+            logger.info(
+                (
+                    f"Canopy has no ToLID registered, but sample_id {sample_id} "
+                    f"is accessioned as {accession}."
+                )
+            )
+
+            _ = tolid_request(
+                sample_accession=accession, update_ena=args.prod, prod=args.prod
+            )
+
+            # if it worked, the new tolid should be in the DB.
+            accession, accession_type = canopy_session.check_for_tolid(
+                sample_id=sample_id
+            )
+
+            if accession_type == "tolid":
+                sample_tolid = accession
+            else:
+                raise NotImplementedError(
+                    (
+                        f"We asked Canopy for a new tolid for {accession}, "
+                        "but there is still no ToLID in the database. "
+                        "TODO: What should we do here?"
+                    )
+                )
+
+        elif accession_type == "tolid":
+            sample_tolid = accession
+        else:
+            raise ValueError(
+                f"check_for_tolid returned ({accession}, {accession_type})"
+            )
+
+        logger.info(f"Using ToLID {sample_tolid} for sample_id {sample_id}.")
+
+        sample_dict["dataset_id"] = sample_tolid
+
+        raise ValueError(sample_dict)
+
+        raise NotImplementedError("TODO up to here")
 
         # If we see a hi-c sample with the same sample id, we are done.
         if sample_id in hi_c_samples:
