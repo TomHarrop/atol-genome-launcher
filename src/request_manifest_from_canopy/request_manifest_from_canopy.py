@@ -69,23 +69,6 @@ def check_if_assembly_exists(
 
     return raw_assembly_manifest
 
-
-def get_existing_manifests(taxon_id_str: str, canopy_token: str) -> requests.Response:
-    """
-    FIXME. Right now this endpoint only returns the *latest* assembly. Tracked
-    at https://github.com/AustralianBioCommons/atol-canopy/issues/34
-    """
-    auth_header = {"Authorization": f"Bearer {canopy_token}"}
-    # Get the existing assembly manifests. Returns 404 if there aren't any.
-    taxid_manifests = requests.get(
-        urllib.parse.urljoin(
-            _api_url, _endpoints.get("retrieve_manifest", "") + taxon_id_str
-        ),
-        headers=auth_header,
-    )
-    return taxid_manifests
-
-
 def get_inner_specimen_samples(specimen_samples: requests.Response):
     return specimen_samples.json().get("specimen_samples", [])
 
@@ -362,10 +345,6 @@ def main():
 
         sample_dict["dataset_id"] = sample_tolid
 
-        raise ValueError(sample_dict)
-
-        raise NotImplementedError("TODO up to here")
-
         # If we see a hi-c sample with the same sample id, we are done.
         if sample_id in hi_c_samples:
             sample_dict["hic_specimen_sample_ids"] = [sample_id]
@@ -387,9 +366,13 @@ def main():
     # TODO: handle the case where we already have a manifest for the long read
     # sample and hi-c is added later. For now we just look up the latest
     # assembly in the DB.
-    taxid_manifests = get_existing_manifests(taxon_id_str, canopy_token)
-    if taxid_manifests.status_code == 404:
-        logger.warning(f"No existing manifest for taxon_id {taxon_id_str}")
+    taxid_manifests = canopy_session.get_all_assembly_manifests(
+        taxon_id=taxon_id
+    ).json()
+
+    raise ValueError(taxid_manifests)
+
+    raise NotImplementedError("TODO up to here")
 
     # Output manifests
     logger.warning(f"Outputting manifest files to {args.outdir}")

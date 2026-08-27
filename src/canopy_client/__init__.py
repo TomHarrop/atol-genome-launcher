@@ -152,6 +152,15 @@ class CanopySession(requests.Session):
 
         return self._post(url=url_suffix, data=json.dumps(body))
 
+    def get_all_assembly_manifests(
+        self, taxon_id: int, endpoint: str = "get_all_assembly_manifests"
+    ) -> requests.Response:
+
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(taxon_id=taxon_id)
+
+        return self._get(url=url_suffix)
+
     def get_assembly_run_id_by_hash(
         self,
         assembly_id: str,
@@ -255,7 +264,7 @@ class CanopySession(requests.Session):
                 return sample_id
 
         raise ValueError(
-            (f"Could not find {bpa_package_id} in read_files:\n{read_files}")
+            (f"Could not find {bpa_package_id} in read_files:\n{response.json()}")
         )
 
     def get_stage_run_by_stage_name(
@@ -544,13 +553,14 @@ _endpoints = {
     "create_assembly_run": "/api/v1/assemblies/{assembly_id}/runs",
     "create_project": "/api/v1/projects/",
     "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
+    "get_all_assembly_manifests": "/api/v1/assemblies/all-manifests/{taxon_id}",
     "get_experiment_submission_by_experiment_attr": "/api/v1/experiment-submissions/by-experiment-attr",
     "get_sample_submission_by_experiment_package_id": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
     "get_specimen_samples_for_assembly": "/api/v1/assemblies/specimen-samples/{taxon_id}",
     "get_taxonomy_info": "/api/v1/taxonomy-info/{taxon_id}",
     "get_tolid_by_sample": "/api/v1/broker/tolids/{sample_id}",
-    "list_assembly_runs": "/api/v1/assemblies/{assembly_id}/runs",
     "get_tolid_by_specimen_accession": "/api/v1/broker/tolids/by-specimen-accession/{specimen_id}",
+    "list_assembly_runs": "/api/v1/assemblies/{assembly_id}/runs",
     "list_qc_reads": "/api/v1/qc-reads/",
     "list_stage_runs": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "read_assembly": "/api/v1/assemblies/{assembly_id}",
@@ -558,8 +568,8 @@ _endpoints = {
     "read_experiment": "/api/v1/experiments/{experiment_id}",
     "read_project": "/api/v1/projects/{project_id}",
     "read_projects": "/api/v1/projects/",
-    "read_sample": "/api/v1/samples/{sample_id}",
     "read_sample_submissions": "/api/v1/sample-submissions/",
+    "read_sample": "/api/v1/samples/{sample_id}",
     "report_assembly_qc_read": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
     "update_assembly": "/api/v1/assemblies/{assembly_id}",
 }
