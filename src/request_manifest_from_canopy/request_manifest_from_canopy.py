@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from functools import cache
 import json
 from pathlib import Path
 from tempfile import mkdtemp
@@ -374,7 +373,7 @@ def main():
 
     for assembly in viable_assemblies:
         manifest = check_if_assembly_exists(assembly, taxid_manifests)
-        raise ValueError(manifest)
+        raise NotImplementedError("TODO: continue from here")
         if manifest is None:
             manifest = request_new_manifest(
                 assembly=assembly,
