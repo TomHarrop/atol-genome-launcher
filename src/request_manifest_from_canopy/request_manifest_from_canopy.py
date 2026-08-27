@@ -47,41 +47,42 @@ def check_if_assembly_exists(
     )
 
     # FIXME currently only looking at one manifest.
-    current_manifest_samples = get_manifest_samples(taxid_manifests)
+    matching_manifest = None
+    current_manifests = taxid_manifests.json()
+    for current_manifest in current_manifests:
+        current_manifest_samples = get_manifest_samples(current_manifest)
+        if this_assembly_samples == current_manifest_samples:
+            matching_manifest = current_manifest
+            break
 
-    # if the samples aren't the same, we need a new manifest
-    if not this_assembly_samples == current_manifest_samples:
+    if matching_manifest is None:
         return None
 
     # if the samples are the same, we need to check the existing manifest
-    raw_assembly_manifest = taxid_manifests.json().get("manifest", {})
+    raw_assembly_manifest = matching_manifest.get("manifest", {})
 
     current_manifest_hic_samples = []
     for read_file_dict in raw_assembly_manifest.get("read_files", {}):
         if read_file_dict.get("data_type", "") == "Hi-C":
             current_manifest_hic_samples.append(read_file_dict.get("sample_id"))
 
-    # If the Hi-C samples aren't the same, we need a new manifest.
-    if not sorted(set(current_manifest_hic_samples)) == sorted(
+    # If the Hi-C samples are the same, we can use the existing manifest
+    if sorted(set(current_manifest_hic_samples)) == sorted(
         set(assembly.get("hic_specimen_sample_ids", []))
     ):
-        return None
+        return raw_assembly_manifest
 
-    return raw_assembly_manifest
+    return None
+
 
 def get_inner_specimen_samples(specimen_samples: requests.Response):
     return specimen_samples.json().get("specimen_samples", [])
 
 
-@cache
-def get_manifest_samples(taxid_manifests: requests.Response) -> list[str]:
-    manifests_json = taxid_manifests.json()
-
-    # TODO We should be iterating over a list but right now there is only one
-    # Manifest.
+def get_manifest_samples(manifest_json: dict[str, str]) -> list[str]:
 
     manifest_samples = []
-    for read_file in manifests_json.get("manifest", {}).get("read_files", []):
+    for read_file in manifest_json.get("manifest", {}).get("read_files", []):
         manifest_samples.append(read_file.get("sample_id", ""))
 
     return sorted(set(manifest_samples))
@@ -366,19 +367,14 @@ def main():
     # TODO: handle the case where we already have a manifest for the long read
     # sample and hi-c is added later. For now we just look up the latest
     # assembly in the DB.
-    taxid_manifests = canopy_session.get_all_assembly_manifests(
-        taxon_id=taxon_id
-    ).json()
-
-    raise ValueError(taxid_manifests)
-
-    raise NotImplementedError("TODO up to here")
+    taxid_manifests = canopy_session.get_all_assembly_manifests(taxon_id=taxon_id)
 
     # Output manifests
     logger.warning(f"Outputting manifest files to {args.outdir}")
 
     for assembly in viable_assemblies:
         manifest = check_if_assembly_exists(assembly, taxid_manifests)
+        raise ValueError(manifest)
         if manifest is None:
             manifest = request_new_manifest(
                 assembly=assembly,
