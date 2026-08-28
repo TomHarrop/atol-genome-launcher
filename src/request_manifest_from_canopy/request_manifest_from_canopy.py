@@ -13,29 +13,24 @@ from yaml_manifest import Manifest
 
 
 def check_if_assembly_exists(
-    assembly: dict[str, str], taxid_manifests: requests.Response
+    assembly: dict[str, str], canopy_manifests: requests.Response
 ) -> dict[str, str]:
     """
-    For each viable_assembly either return the existing or request a new
-    manifest. There should be a check_for_manifest function that takes the long
-    read sample_id and optionally the hic sample_id, then:
+    Check if any of the canopy_manifests match this assembly.
 
-    1. checks for a manifest under the long_read sample_id
-    2. if there's a hi_c sample_id, checks if it's in the current manifest
-    3. returns (True, existing_manifest) or (False, None)
+    1. Compare the sample_ids in assembly with the sample_ids in canopy_manifests.
+    2. If they match, check if the Hi-C samples are the same.
+    3. If there is more than one match from 2, check the version.
+    4. Otherwise return None, meaning a new Manifest is needed.
 
-    If existing_manifest is None we can request one. I think we need to
-    check/request the ToLID here and fill it in to the sample_dict.
-
-    Return the manifest if the assembly exists, or None if not.
 
     """
-    if taxid_manifests.status_code == 404:
+    if canopy_manifests.status_code == 404:
         # this means not found
         return None
-    elif taxid_manifests.status_code != 200:
+    elif canopy_manifests.status_code != 200:
         raise NotImplementedError(
-            f"Manifest lookup returned {taxid_manifests.status_code}, but this is not handled."
+            f"Manifest lookup returned {canopy_manifests.status_code}, but this is not handled."
         )
 
     this_assembly_samples = sorted(
@@ -45,33 +40,60 @@ def check_if_assembly_exists(
         )
     )
 
-    # FIXME currently only looking at one manifest.
-    matching_manifest = None
-    current_manifests = taxid_manifests.json()
+    matching_manifests = []
+    current_manifests = canopy_manifests.json()
     for current_manifest in current_manifests:
         current_manifest_samples = get_manifest_samples(current_manifest)
         if this_assembly_samples == current_manifest_samples:
-            matching_manifest = current_manifest
-            break
+            matching_manifests.append(current_manifest)
 
-    if matching_manifest is None:
+    if len(matching_manifests) == 0:
+        logger.info("No matching Canopy manifests.")
         return None
 
-    # if the samples are the same, we need to check the existing manifest
-    raw_assembly_manifest = matching_manifest.get("manifest", {})
+    logger.info(
+        f"    {len(matching_manifests)} assembly/assemblies on Canopy have the same sample_ids."
+    )
 
-    current_manifest_hic_samples = []
-    for read_file_dict in raw_assembly_manifest.get("read_files", {}):
-        if read_file_dict.get("data_type", "") == "Hi-C":
-            current_manifest_hic_samples.append(read_file_dict.get("sample_id"))
+    raw_assembly_manifests = []
+    for matching_manifest in matching_manifests:
+        matching_manifest_id = matching_manifest.get("assembly_id", "")
+        logger.info(f"    Checking Canopy assembly {matching_manifest_id}")
+        # if the samples are the same, we need to check the existing manifest
+        raw_assembly_manifest = matching_manifest.get("manifest", {})
 
-    # If the Hi-C samples are the same, we can use the existing manifest
-    if sorted(set(current_manifest_hic_samples)) == sorted(
-        set(assembly.get("hic_specimen_sample_ids", []))
-    ):
-        return raw_assembly_manifest
+        current_manifest_hic_samples = []
+        for read_file_dict in raw_assembly_manifest.get("read_files", {}):
+            if read_file_dict.get("data_type", "") == "Hi-C":
+                current_manifest_hic_samples.append(read_file_dict.get("sample_id"))
+        logger.info(
+            f"        Canopy assembly has {len(current_manifest_hic_samples)} Hi-C sample/s."
+        )
 
-    return None
+        # If the Hi-C samples are the same, we can use the existing manifest
+        if sorted(set(current_manifest_hic_samples)) == sorted(
+            set(assembly.get("hic_specimen_sample_ids", []))
+        ):
+            logger.info(f"        Canopy assembly {matching_manifest_id} matches.")
+            raw_assembly_manifests.append(raw_assembly_manifest)
+        else:
+            logger.info(
+                f"        Canopy assembly {matching_manifest_id} has different Hi-C samples."
+            )
+
+    if len(raw_assembly_manifests) == 1:
+        final_manifest = raw_assembly_manifests[0]
+        logger.info(
+            f"    Using Canopy assembly {final_manifest.get("assembly_id", "")}"
+        )
+        return final_manifest
+
+    assembly_versions = [x.get("assembly_version") for x in raw_assembly_manifests]
+    max_version = assembly_versions.index(max(assembly_versions))
+    logger.info(
+        f"    Choosing Canopy assembly {final_manifest.get("assembly_id", "")} because it has the highest version ({assembly_versions[max_version]})"
+    )
+    return raw_assembly_manifests[max_version]
 
 
 def get_inner_specimen_samples(specimen_samples: requests.Response):
@@ -184,39 +206,11 @@ def raw_to_manifest(raw_manifest: dict[str, str]) -> Manifest:
     return Manifest.from_dict(raw_manifest)
 
 
-def request_new_manifest(
-    assembly: dict[str, str],
-    taxon_id_str: str,
-    auth_header: dict[str, str],
-    force: bool = False,
-) -> dict[str, str]:
-
-    new_manifest_url = urllib.parse.urljoin(
-        _api_url, _endpoints.get("new_manifest", "") + taxon_id_str
-    )
-
-    if force is False:
-        raise NotImplementedError(
-            (
-                "\n\nReached the request_new_manifest function.\n"
-                "We need a new manifest for the following assembly:\n"
-                f"    {json.dumps(assembly)}\n"
-                "To have Canopy generate the manifest, pass `--force`.\n"
-            )
-        )
-
-    raw_manifest = requests.post(
-        new_manifest_url, headers=auth_header, data=json.dumps(assembly)
-    )
-    raw_manifest.raise_for_status()
-
-    return raw_manifest.json().get("manifest", {})
-
-
 def write_manifest(manifest: Manifest, outdir: Path) -> None:
     dataset_id = manifest.dataset_id
+    assembly_version = manifest.assembly_version
 
-    json_file = Path(outdir, f"{dataset_id}.json")
+    json_file = Path(outdir, f"{dataset_id}.{assembly_version}.json")
 
     dump = manifest.model_dump_json(
         exclude=manifest._exclude_from_dumps,
@@ -226,18 +220,18 @@ def write_manifest(manifest: Manifest, outdir: Path) -> None:
         exclude_unset=True,
     ).encode()
 
-    logger.warning(f"Writing manifest for {dataset_id} files to {json_file}")
+    logger.info(f"Writing manifest to {json_file}")
     with open(json_file, "wb") as f:
         f.write(dump)
 
     # Sanity check
     with open(json_file, "rb") as f:
+        logger.info(f"Checking output.")
         try:
-            written_manifest = Manifest.model_validate_json(f.read())
-            logger.warning(f"{json_file} parses OK")
-
+            _ = Manifest.model_validate_json(f.read())
+            logger.info(f"{json_file} parses OK.")
         except:
-            print(f"Manifest {written_manifest} failed parsing")
+            print(f"Manifest {json_file} failed parsing")
             raise
 
 
@@ -261,7 +255,6 @@ def main():
 
     # log in to API
     canopy_session = canopy_client.CanopySession()
-    hold_date = canopy_client.hold_until()
 
     taxon_id = args.taxon_id
 
@@ -274,16 +267,20 @@ def main():
 
     logger.info(
         (
-            f"specimen_samples for taxon_id {taxon_id}:\n"
-            f"             long_read_samples: {long_read_samples}\n"
-            f"                  hi_c_samples: {hi_c_samples}"
+            "\n"
+            f"    specimen_samples for taxon_id {taxon_id}\n"
+            f"        long_read_samples: {long_read_samples}.\n"
+            f"             hi_c_samples: {hi_c_samples}."
         )
     )
 
     viable_assemblies = []
 
     # Logic for Hi-C: If we have hi_c and long read from the same sample, we
-    # don't consider using Hi-C data from other samples.
+    # don't consider using Hi-C data from other samples. FIXME: this might fail
+    # if we have multiple long_read_samples, and they all have Hi-C. But how do
+    # we *want* to handle this? See
+    # https://github.com/AToL-Bioinformatics/assembly-datasets/issues/143
     for sample in long_read_samples:
         sample_id = sample[0]
         sample_dict = {"long_read_specimen_sample_id": sample_id}
@@ -310,7 +307,8 @@ def main():
             logger.info(
                 (
                     f"Canopy has no ToLID registered, but sample_id {sample_id} "
-                    f"is accessioned as {accession}."
+                    f"is accessioned as {accession}. "
+                    "Calling the Broker to request a ToLID."
                 )
             )
 
@@ -324,17 +322,22 @@ def main():
             )
 
             if accession_type == "tolid":
+                logger.info(
+                    f"sample_id {sample_id} has been assigned ToLID {accession}."
+                )
                 sample_tolid = accession
             else:
                 raise NotImplementedError(
                     (
-                        f"We asked Canopy for a new tolid for {accession}, "
+                        f"We asked Canopy to request a ToLID for {accession}, "
                         "but there is still no ToLID in the database. "
-                        "TODO: What should we do here?"
+                        "The ToLID DB curator might be manually assessing "
+                        "the request. TODO: How should we handle this?"
                     )
                 )
 
         elif accession_type == "tolid":
+            logger.info(f"sample_id {sample_id} is has ToLID {accession}.")
             sample_tolid = accession
         else:
             raise ValueError(
@@ -347,6 +350,9 @@ def main():
 
         # If we see a hi-c sample with the same sample id, we are done.
         if sample_id in hi_c_samples:
+            logger.info(
+                f"sample_id {sample_id} also has Hi-C data. Not looking for other Hi-C samples."
+            )
             sample_dict["hic_specimen_sample_ids"] = [sample_id]
             viable_assemblies.append(sample_dict)
             continue
@@ -356,30 +362,44 @@ def main():
         elif hi_c_samples:
             # If we don't have a HiC library from this sample, we'll use
             # everything we have from the organism.
+            logger.info(
+                f"No Hi-C data found for sample_id {sample_id}. Using Hi-C from {hi_c_samples}"
+            )
             sample_dict["hic_specimen_sample_ids"] = hi_c_samples
+
+        else:
+            logger.info(f"No Hi-C data found for sample_id {sample_id}.")
 
         viable_assemblies.append(sample_dict)
 
     if len(viable_assemblies) == 0:
         raise ValueError("No viable assembly candidates found")
 
+    logger.info(
+        f"Found {len(viable_assemblies)} possible assembly/assemblies for taxon_id {taxon_id}"
+    )
+
     # TODO: handle the case where we already have a manifest for the long read
     # sample and hi-c is added later. For now we just look up the latest
     # assembly in the DB.
     taxid_manifests = canopy_session.get_all_assembly_manifests(taxon_id=taxon_id)
+    logger.info(
+        f"There are {len(taxid_manifests.json())} assembly/assemblies registered on Canopy."
+    )
 
-    # Output manifests
-    logger.warning(f"Outputting manifest files to {args.outdir}")
-
+    new_assemblies = []
     for assembly in viable_assemblies:
+        logger.info(f"Comparing assembly {assembly} to Canopy assemblies.")
         manifest = check_if_assembly_exists(assembly, taxid_manifests)
-        raise NotImplementedError("TODO: continue from here")
+
         if manifest is None:
-            manifest = request_new_manifest(
-                assembly=assembly,
-                taxon_id_str=taxon_id_str,
-                auth_header=auth_header,
-                force=args.force,
+            logger.info(f"Requesting new assembly: {assembly}")
+            canopy_assembly = canopy_session.create_assembly_intent(
+                taxon_id=taxon_id, body=assembly
+            )
+            manifest = canopy_assembly.json().get("manifest", {})
+            logger.info(
+                f"Assembly registered on Canopy with assembly_id {manifest.get("assembly_id", "")} "
             )
 
         # Make sure the manifest has a dataset_id (ToLID). Note: the API
@@ -388,14 +408,18 @@ def main():
         if not manifest.get("dataset_id"):
             manifest["dataset_id"] = assembly.get("dataset_id", "fixme_no_tolid")
 
+        new_assemblies.append(manifest)
+
         # FIXME. These kludges need to be addressed in canopy. Tracked in
         # https://github.com/AustralianBioCommons/atol-canopy/issues/43
         # manifest["assembly_version"] = manifest.pop("version", 0)
         # manifest["dataset_id"] = "fixme_no_tolid"
         # manifest["hic_motif"] = "GATC,GANTC,CTNAG,TTAA"
 
+    # Output manifests
+    logger.info(f"Writing {len(new_assemblies)} manifest file/s to {args.outdir}.")
+    for manifest in new_assemblies:
         validated_manifest = raw_to_manifest(manifest)
-
         write_manifest(validated_manifest, args.outdir)
 
 

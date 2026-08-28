@@ -117,6 +117,18 @@ class CanopySession(requests.Session):
 
         return (None, "")
 
+    def create_assembly_intent(
+        self,
+        taxon_id: int,
+        body: dict[str, str],
+        endpoint: str = "create_assembly_intent",
+    ) -> requests.Response:
+
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(taxon_id=taxon_id)
+
+        return self._post(url=url_suffix, data=json.dumps(body))
+
     def create_assembly_run(
         self,
         assembly_id: str,
@@ -550,6 +562,7 @@ def write_response_content(response: requests.Response, path: Path) -> None:
 # Does it have something to do with the params?
 _endpoints = {
     "auth_login": "auth/login",
+    "create_assembly_intent": "/api/v1/assemblies/intent/{taxon_id}",
     "create_assembly_run": "/api/v1/assemblies/{assembly_id}/runs",
     "create_project": "/api/v1/projects/",
     "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
