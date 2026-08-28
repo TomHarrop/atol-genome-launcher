@@ -1,11 +1,50 @@
 Changelog
 =========
 
-0.17.0 (2026-08-26)
+0.18.0 (2026-08-28)
 -------------------
 
 New
 
+~~~
+- Request an assembly Manifest from Canopy by Taxon ID (fixes #35) [Tom
+  Harrop]
+- Look up ToLID when requesting a manifest. [Tom Harrop]
+- Look up ToLID when requesting a manifest. [Tom Harrop]
+- Draft script for requesting a manifest from Canopy. [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Exit early if there are no specimen_samples. [Tom Harrop]
+
+Other
+
+~~~~~
+- Merge pull request #32 from TomHarrop/request-manifest. [Tom Harrop]
+- Merge branch 'main' into request-manifest. [Tom Harrop]
+- Merge branch 'main' into request-manifest-rebase. [Tom Harrop]
+- Merge branch 'main' into request-manifest. [Tom Harrop]
+- Merge branch 'main' into request-manifest. [Tom Harrop]
+- Notes. [Tom Harrop]
+- Comments for the request code. [Tom Harrop]
+- Working up to the point of requesting a new manifest. [Tom Harrop]
+- Framework for checking existing manifests. [Tom Harrop]
+- Demo request manifest. [Tom Harrop]
+
+
+0.17.1 (2026-08-26)
+-------------------
+
+Fix
+~~~
+- Include templates on install. [Tom Harrop]
+
+
+0.17.0 (2026-08-26)
+-------------------
+
+New
 ~~~
 - Scripts to generate ENA Manifest file and report pipeline results to
   Canopy. [Tom Harrop]
