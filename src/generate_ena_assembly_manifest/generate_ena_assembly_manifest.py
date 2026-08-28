@@ -234,19 +234,26 @@ def main():
     taxon_id = manifest.taxon_id
     assembly_type = canopy_client.ProjectType.ASSEMBLY  # FIXME hard-coded
 
-    projects = canopy_session.read_projects(
-        taxon_id=taxon_id, project_type=assembly_type
-    ).json()
-    if len(projects) > 1:
-        raise NotImplementedError(
-            (
-                f"Multiple projects for {taxon_id} of type {assembly_type}. "
-                "This is not handled yet. See "
-                "https://github.com/AustralianBioCommons/atol-canopy/issues/46"
+    try:
+        projects = canopy_session.read_projects(
+            taxon_id=taxon_id, project_type=assembly_type
+        ).json()
+        if len(projects) > 1:
+            raise NotImplementedError(
+                (
+                    f"Multiple projects for {taxon_id} of type {assembly_type}. "
+                    "This is not handled yet. See "
+                    "https://github.com/AustralianBioCommons/atol-canopy/issues/46"
+                )
             )
-        )
 
-    assembly_project_id = projects[0].get("id", None)
+        assembly_project_id = projects[0].get("id", None)
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            logger.info("No matching assemby project")
+            assembly_project_id = None
+        else:
+            raise e
 
     # if the project doesn't exist we can try to submit it
     if assembly_project_id is None:
@@ -269,7 +276,7 @@ def main():
 
         try:
             project_response = canopy_session.create_project(body=project_body)
-            assembly_project_id = project_response.get("id", None)
+            assembly_project_id = project_response.json().get("id", None)
         except HTTPError as e:
             if e.response.status_code == 500:
                 raise RuntimeError(

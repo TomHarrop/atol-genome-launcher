@@ -302,6 +302,9 @@ def main():
                 sample_accession=accession, update_ena=args.prod, prod=args.prod
             )
 
+            if args.prod is not True:
+                raise ValueError("Called the Broker in dev mode. Run with `--prod` to request a ToLID.")
+
             # if it worked, the new tolid should be in the DB.
             accession, accession_type = canopy_session.check_for_tolid(
                 sample_id=sample_id

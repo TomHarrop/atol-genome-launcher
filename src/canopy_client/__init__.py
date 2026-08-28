@@ -290,7 +290,11 @@ class CanopySession(requests.Session):
         file list
         """
         stage_runs = self.list_stage_runs(assembly_id=assembly_id, run_id=run_id)
-        for stage_run in stage_runs.json():
+        stage_runs_json = stage_runs.json()
+        if len(stage_runs_json) == 0:
+            return None
+
+        for stage_run in stage_runs_json:
             if stage_run.get("stage_name", None) == stage_name:
                 return stage_run
 

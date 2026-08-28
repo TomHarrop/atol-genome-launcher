@@ -151,16 +151,22 @@ def main():
             run_id=assembly_run_id,
             stage_name=args.stage_name,
         )
-        stage_run_id = stage_run_json.get("id", None)
-        stage_run_files = get_hashes_from_stage_run_files(
-            stage_run_json.get("files", {})
-        )
 
-        if not stage_run_files == receipt_files:
+        if stage_run_json is None:
             stage_run_id = None
-            raise NotImplementedError("TODO: the files are different, we need to PATCH")
+            stage_run_files = None
+        else:
+            stage_run_id = stage_run_json.get("id", None)
+            stage_run_files = get_hashes_from_stage_run_files(
+                stage_run_json.get("files", {})
+            )
 
-        if stage_run_id is None:
+            if not stage_run_files == receipt_files:
+                raise NotImplementedError(
+                    "TODO: the files are different, we need to PATCH"
+                )
+
+        if stage_run_files is None:
             stage_run = canopy_session.create_stage_run(
                 assembly_id=assembly_id, run_id=assembly_run_id, body=stage_run_body
             )
