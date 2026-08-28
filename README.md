@@ -286,6 +286,42 @@ options:
   --bucket BUCKET  Name of the S3 bucket.
 ```
 
+### request-manifest-from-canopy
+
+Uses the `taxon_id` to query the `get_specimen_samples_for_assembly` for
+specimen_samples, then use the specimen_samples to query the
+`get_all_assembly_manifests` for Manifests.
+
+If there is no matching Manifest for the specimen_samples, a new one will be
+requested from the `create_assembly_intent` endpoint.
+
+The Manifests written to `outdir` can be used to [request an assembly
+repo](#request-assembly-repo) on GitHub.
+
+#### Usage 
+
+```
+request-manifest-from-canopy [-h] [-n] [--outdir OUTDIR] [--canopy_username_env_var CANOPY_USERNAME] [--canopy_password_env_var CANOPY_PASSWORD] [--prod] taxon_id
+
+positional arguments:
+  taxon_id
+
+options:
+  -h, --help            show this help message and exit
+
+Outputs:
+  --outdir OUTDIR       Path to output manifest json files
+
+Settings:
+  -n                    Dry run
+  --canopy_username_env_var CANOPY_USERNAME
+                        The name of the environment variable containing the Canopy username.
+  --canopy_password_env_var CANOPY_PASSWORD
+                        The name of the environment variable containing the Canopy password.
+  --prod                Request ToLIDs in production mode.
+```
+
+
 ### report-pipeline-result-to-canopy
 
 Use the `create_assembly_run` and `create_stage_run` endpoints on Canopy's

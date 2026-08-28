@@ -171,14 +171,6 @@ def parse_arguments():
     )
 
     _ = settings_parser.add_argument(
-        "--force",
-        help=("""
-            Actually POST the new manifest request
-            """),
-        action="store_true",
-    )
-
-    _ = settings_parser.add_argument(
         "--prod",
         help=("""
             Request ToLIDs in production mode.
@@ -193,12 +185,6 @@ def raw_to_manifest(raw_manifest: dict[str, str]) -> Manifest:
 
     # FIXME. These kludges need to be addressed in canopy. Tracked in
     # https://github.com/AustralianBioCommons/atol-canopy/issues/43
-
-    if not raw_manifest.get("dataset_id"):
-        raw_manifest["dataset_id"] = "fixme_no_tolid"
-
-    if not raw_manifest.get("assembly_version"):
-        raw_manifest["assembly_version"] = raw_manifest.pop("version", 0)
 
     if not raw_manifest.get("hic_motif"):
         raw_manifest["hic_motif"] = "GATC,GANTC,CTNAG,TTAA"
