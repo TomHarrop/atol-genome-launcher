@@ -44,6 +44,7 @@ pipeline-config-generator = "pipeline_config_generator.pipeline_config_generator
 pipeline-result-uploader = "pipeline_result_uploader.pipeline_result_uploader:main"
 report-pipeline-result-to-canopy = "report_pipeline_result_to_canopy.report_pipeline_result_to_canopy:main"
 request-assembly-repo = "request_assembly_repo.request_assembly_repo:main"
+request-manifest-from-canopy = "request_manifest_from_canopy.request_manifest_from_canopy:main"
 result-file-uploader = "result_file_uploader.result_file_uploader:main"
 rnaseq-manifest-generator = "rnaseq_manifest_generator.rnaseq_manifest_generator:main"
 rnaseq-reads-downloader = "rnaseq_reads_downloader.rnaseq_reads_downloader:main"
