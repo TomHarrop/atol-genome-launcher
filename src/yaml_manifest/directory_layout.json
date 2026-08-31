@@ -131,6 +131,21 @@
                     ".bed"
                 ]
             }
+        },
+        "submission": {
+            "dir": "submission",
+            "logs": "logs/submission",
+            "pipeline_input": {
+                "chromosome_list": "submission/chromosome_list.txt"
+            },
+            "upload": {
+                "exclude_patterns": [],
+                "compress_extensions": [
+                    ".json",
+                    ".report",
+                    ".xml"
+                ]
+            }
         }
     }
 }
