@@ -21,8 +21,18 @@ _LAYOUT = _load_layout()
 
 
 def get_dir(name: str, **kwargs) -> Path:
-    template = _LAYOUT[name]
+
+    if name in _LAYOUT["stages"]:
+        stage_dir = _LAYOUT["stages"][name]["dir"]
+        if stage_dir == "pipeline_output":
+            template = _LAYOUT[name]
+        else:
+            template = stage_dir
+    else:
+        template = _LAYOUT[name]
+
     resolved = template.format_map(_EmptyMissing(kwargs))
+
     # collapse repeated slashes and strip leading/trailing
     import re
 

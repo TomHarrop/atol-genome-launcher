@@ -132,12 +132,25 @@
                 ]
             }
         },
-        "submission": {
-            "dir": "submission",
+        "submission_assemblies": {
+            "dir": "submission/assemblies",
             "logs": "logs/submission",
             "pipeline_input": {
                 "chromosome_list": "submission/chromosome_list.txt"
             },
+            "upload": {
+                "exclude_patterns": [],
+                "compress_extensions": [
+                    ".json",
+                    ".report",
+                    ".xml"
+                ]
+            }
+        },
+        "submission_reads": {
+            "dir": "submission/reads",
+            "logs": "logs/submission",
+            "pipeline_input": {},
             "upload": {
                 "exclude_patterns": [],
                 "compress_extensions": [

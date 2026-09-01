@@ -75,6 +75,8 @@ qc_reads_dir = manifest.get_dir("qc")
 # pipeline output is a bit different...
 ascc_dir = manifest.get_dir("pipeline_output", pipeline="ascc")
 
+manifest.get_dir("submission_reads")
+
 # inputs are defined too
 curation_input = manifest.pipeline_input("curation")
 print(f"curation_input: {curation_input}")
