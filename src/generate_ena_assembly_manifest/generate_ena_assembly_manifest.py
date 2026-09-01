@@ -5,7 +5,7 @@ import importlib.resources as pkg_resources
 from pathlib import Path
 
 from broker.cli import submit_entity
-from typer._click.exceptions import Exit as TyperExit
+from typer import Exit as TyperExit
 import canopy_client
 from common import generate_parser, logger, existing_file
 from requests import Response
