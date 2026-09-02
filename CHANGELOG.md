@@ -1,11 +1,55 @@
 Changelog
 =========
 
-0.18.0 (2026-08-28)
+0.19.2 (2026-09-02)
+-------------------
+
+Fix
+
+~~~
+- Temporarily accept lane_number = None (see #45) [Tom Harrop]
+
+
+0.19.1 (2026-09-01)
+-------------------
+
+Fix
+~~~
+
+- Typer Exit. [Tom Harrop]
+
+0.19.0 (2026-09-01)
 -------------------
 
 New
 
+~~~
+- Output directories for Submission. [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Add submission directories and make them accessible by get_dir. [Tom
+  Harrop]
+
+Other
+
+~~~~~
+- Merge pull request #44 from TomHarrop/chromosome_file. [Tom Harrop]
+
+
+0.18.1 (2026-08-28)
+-------------------
+
+Fix
+~~~
+- Brokering errors. [Tom Harrop]
+
+
+0.18.0 (2026-08-28)
+-------------------
+
+New
 ~~~
 - Request an assembly Manifest from Canopy by Taxon ID (fixes #35) [Tom
   Harrop]
