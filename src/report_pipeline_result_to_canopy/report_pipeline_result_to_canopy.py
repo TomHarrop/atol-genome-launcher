@@ -7,9 +7,10 @@ from urllib.parse import urljoin
 
 import canopy_client
 from common import (
-    generate_parser,
-    read_json_from_path,
     existing_file,
+    generate_parser,
+    logger,
+    read_json_from_path,
     read_receipts_from_path,
 )
 from yaml_manifest import Manifest
@@ -74,6 +75,7 @@ def get_hashes_from_stage_run_files(stage_run_files: dict[str, str]) -> list[str
 
 
 def main():
+    logger.name = "report-pipeline-result-to-canopy"
 
     args = parse_arguments()
 
@@ -93,7 +95,7 @@ def main():
     if assembly_id is None:
         raise ValueError("assembly_id is required to broker the Run via Canopy.")
 
-    print(
+    logger.info(
         (
             f"Assembly {manifest.dataset_id}.{manifest.assembly_version} "
             f"is registered in Canopy as assembly_id {assembly_id}."
@@ -114,7 +116,7 @@ def main():
     if assembly_run_id is None:
         raise ValueError(f"Failed to generate a run_id for assembly_id {assembly_id}")
 
-    print(
+    logger.info(
         (
             f"Hash {git_log.get("git_commit_hash")} from repo {git_log.get("git_repo")} "
             f"is registered in Canopy as assembly_run_id {assembly_run_id}."
@@ -177,12 +179,12 @@ def main():
                 f"Failed to generate a stage_run_id for assembly_id {assembly_id}"
             )
 
-        print(
+        logger.info(
             f"Files from stage {args.stage_name} are registered in Canopy as stage_run_id {stage_run_id}."
         )
 
     if args.stage_name == "qc":
-        print("QC files are not reported to Canopy.")
+        logger.info("QC files are not reported to Canopy.")
 
     # output the current stage runs
     if args.stage_run_list:
