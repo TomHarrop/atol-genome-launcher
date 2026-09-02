@@ -8,6 +8,7 @@ import urllib.parse
 from broker.cli import tolid_request
 import canopy_client
 from common import check_env_var, generate_parser
+from requests.exceptions import HTTPError
 from snakemake.logging import logger
 from yaml_manifest import Manifest
 
@@ -303,7 +304,9 @@ def main():
             )
 
             if args.prod is not True:
-                raise ValueError("Called the Broker in dev mode. Run with `--prod` to request a ToLID.")
+                raise ValueError(
+                    "Called the Broker in dev mode. Run with `--prod` to request a ToLID."
+                )
 
             # if it worked, the new tolid should be in the DB.
             accession, accession_type = canopy_session.check_for_tolid(
@@ -371,15 +374,26 @@ def main():
     # TODO: handle the case where we already have a manifest for the long read
     # sample and hi-c is added later. For now we just look up the latest
     # assembly in the DB.
-    taxid_manifests = canopy_session.get_all_assembly_manifests(taxon_id=taxon_id)
-    logger.info(
-        f"There are {len(taxid_manifests.json())} assembly/assemblies registered on Canopy."
-    )
+    try:
+        taxid_manifests = canopy_session.get_all_assembly_manifests(taxon_id=taxon_id)
+        logger.info(
+            f"There are {len(taxid_manifests.json())} assembly/assemblies registered on Canopy."
+        )
+
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            logger.info("No existing assemblies registered on Canopy.")
+            taxid_manifests = None
+        else:
+            raise e
 
     new_assemblies = []
     for assembly in viable_assemblies:
-        logger.info(f"Comparing assembly {assembly} to Canopy assemblies.")
-        manifest = check_if_assembly_exists(assembly, taxid_manifests)
+        if taxid_manifests is not None:
+            logger.info(f"Comparing assembly {assembly} to Canopy assemblies.")
+            manifest = check_if_assembly_exists(assembly, taxid_manifests)
+        else:
+            manifest = None
 
         if manifest is None:
             logger.info(f"Requesting new assembly: {assembly}")

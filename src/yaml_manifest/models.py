@@ -260,7 +260,7 @@ class BpaFile(BaseModel):
 
     url: str
     md5sum: str
-    lane_number: str = "single_lane"
+    lane_number: None | str = "single_lane"
     raw_path: Path | None = None
 
     model_config = ConfigDict(
@@ -272,6 +272,8 @@ class BpaFile(BaseModel):
     def _validate_lane_number(cls, v):
         if v == "single_lane":
             return v
+        if v == None:
+            return "single_lane"
         if not re.match(r"^L\d+$", v):
             raise ValueError(f"Invalid lane number: {v}")
         return v
