@@ -19,15 +19,24 @@ def _load_layout() -> dict[str, str]:
 
 _LAYOUT = _load_layout()
 
+# sanity check
+_intersection = set(_LAYOUT.get("stages").keys()).intersection(set(_LAYOUT.keys()))
+if _intersection:
+    raise ValueError(_intersection)
 
 def get_dir(name: str, **kwargs) -> Path:
 
-    if name in _LAYOUT["stages"]:
-        stage_dir = _LAYOUT["stages"][name]["dir"]
-        if stage_dir == "pipeline_output":
-            template = _LAYOUT[name]
+    if name == "pipeline_output":
+        raise ValueError("FIXME pipeline_output is deprecated")
+
+    pipeline_stages = list(_LAYOUT.get("stages", {}).keys())
+    if name in pipeline_stages:
+        pipeline_dir = _LAYOUT["stages"][name]["dir"]
+        if pipeline_dir == "pipeline_output":
+            template = _LAYOUT["pipeline_output"]
+            kwargs.setdefault("pipeline", name)
         else:
-            template = stage_dir
+            template = Path(_LAYOUT["results"], pipeline_dir).as_posix()
     else:
         template = _LAYOUT[name]
 

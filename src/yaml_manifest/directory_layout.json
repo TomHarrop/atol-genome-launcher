@@ -8,7 +8,6 @@
     "profiles": "profiles",
     "qc_reads": "results/qc/reads/{data_type}",
     "qc_stats": "results/qc/stats/{data_type}",
-    "qc": "results/qc",
     "receipts": "results/upload_receipts",
     "resources": "resources",
     "results": "results",

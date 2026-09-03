@@ -72,10 +72,18 @@ print(
 # or more generic stuff, like
 qc_reads_dir = manifest.get_dir("qc")
 
-# pipeline output is a bit different...
-ascc_dir = manifest.get_dir("pipeline_output", pipeline="ascc")
+# pipeline output works too...
+ascc_dir = manifest.get_dir("ascc")
 
 manifest.get_dir("submission_reads")
+manifest.get_dir("submission_assemblies")
+
+print(
+    (
+        "submission_assemblies files to upload:\n"
+        f"    { manifest.collect_upload_files("submission_assemblies")}"
+    )
+)
 
 # inputs are defined too
 curation_input = manifest.pipeline_input("curation")
@@ -178,7 +186,7 @@ except KeyError as e:
 
 
 # We can get output folders for pipelines
-print(manifest.get_dir("pipeline_output", pipeline="genomeassembly"))
+print(manifest.get_dir("genomeassembly"))
 
 files = manifest.collect_upload_files("genomeassembly")
 print(f"upload:   {files['upload']}")

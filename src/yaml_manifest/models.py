@@ -693,7 +693,7 @@ have the same ToLID), they should have different assembly_versions.
         has_hic = bool(self.hic_reads)
         # FIXME. Why is this hard coded?
         pipeline_base_dirs = {
-            x: self.get_dir("pipeline_output", pipeline=x)
+            x: self.get_dir(name=x)
             for x in ["genomeassembly", "ascc", "treeval", "curation"]
         }
         return _resolve_assembly_types(
@@ -881,7 +881,7 @@ have the same ToLID), they should have different assembly_versions.
         return get_stage_logs(stage)
 
     def collect_upload_files(self, stage: str) -> dict[str, list[Path]]:
-        output_dir = self.get_dir("pipeline_output", pipeline=stage)
+        output_dir = self.get_dir(stage)
         return _collect_upload_files(stage, output_dir)
 
     def pipeline_input(self, stage: str) -> Path | dict[str, Path]:
