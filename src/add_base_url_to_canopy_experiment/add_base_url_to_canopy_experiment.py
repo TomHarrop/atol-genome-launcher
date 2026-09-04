@@ -119,7 +119,7 @@ def main():
                 experiment_id, experiment.get("bpa_package_id")
             )
         else:
-            logger.info(
+            logger.debug(
                 f"experiment_id {experiment_id} has bioplatforms_base_url {bioplatforms_base_url}."
             )
 
@@ -141,14 +141,18 @@ def main():
     updated = []
     for experiment_id, bioplatforms_base_url in matched_base_urls.items():
         body = {"bioplatforms_base_url": bioplatforms_base_url}
-        logger.info(f"Updating experiment_id {experiment_id}")
-        response = canopy_session.update_experiment(
-            experiment_id=experiment_id, body=body
-        )
-        logger.info(f"Canopy responded {response.status_code}")
-        updated.append(experiment_id)
+        if args.dry_run == False:
+            logger.info(f"Updating experiment_id {experiment_id}")
+            response = canopy_session.update_experiment(
+                experiment_id=experiment_id, body=body
+            )
+            logger.info(f"Canopy responded {response.status_code}")
+            updated.append(experiment_id)
+        else:
+            logger.info(f"Dry run. Not updating experiment_id {experiment_id}")
 
-    logger.info(f"Updated {len(updated)} experiments:\n    {updated}")
+    if len(updated) > 0:
+        logger.info(f"Updated {len(updated)} experiments:\n    {updated}")
 
 
 if __name__ == "__main__":
