@@ -437,6 +437,17 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix)
 
+    def read_reads(
+        self,
+        experiment_id: str = None,
+        endpoint: str = "read_reads",
+    ) -> requests.Response:
+        url_suffix = _endpoints.get(endpoint, "")
+
+        params = {"experiment_id": experiment_id}
+
+        return self._get(url=url_suffix, params=params)
+
     def read_projects(
         self,
         taxon_id: int = None,
@@ -496,7 +507,6 @@ class CanopySession(requests.Session):
         url_suffix = url_template.format(assembly_id=assembly_id)
 
         return self._put(url=url_suffix, data=json.dumps(body))
-
 
     def update_experiment(
         self,
@@ -608,6 +618,7 @@ _endpoints = {
     "read_experiment": "/api/v1/experiments/{experiment_id}",
     "read_project": "/api/v1/projects/{project_id}",
     "read_projects": "/api/v1/projects/",
+    "read_reads": "/api/v1/reads/",
     "read_sample_submissions": "/api/v1/sample-submissions/",
     "read_sample": "/api/v1/samples/{sample_id}",
     "report_assembly_qc_read": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
