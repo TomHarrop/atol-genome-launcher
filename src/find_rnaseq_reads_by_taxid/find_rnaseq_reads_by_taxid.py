@@ -92,7 +92,7 @@ def main():
         bpa_package_id = rnaseq_experiment.get("bpa_package_id")
         experiment_id = rnaseq_experiment.get("id")
         sample_id = rnaseq_experiment.get("sample_id")
-        logger.info(f"Finding read information for {experiment_id}")
+        logger.debug(f"Finding read information for {experiment_id}")
         bioplatforms_base_url = rnaseq_experiment.get("bioplatforms_base_url")
         if bioplatforms_base_url is None:
             logger.warning(
@@ -115,8 +115,6 @@ def main():
 
             experiment_dict["sample_id"] = sample_id
             experiment_dict["reads"] = reads
-
-            # raise ValueError(json.dumps(experiment_dict, indent=2))
 
             if bpa_package_id not in output_json[taxon_id]:
                 output_json[taxon_id][bpa_package_id] = experiment_dict
