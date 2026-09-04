@@ -127,8 +127,8 @@ def main():
 
         else:
             logger.warning(f"No reads found for experiment_id {experiment_id}")
-    
-    logger.info(f"Writing to {args.rnaseq_reads_file.name}")
+
+    logger.info(f"Writing to {args.rnaseq_reads_file}")
     with open(args.rnaseq_reads_file, "w") as handle:
         json.dump(output_json, handle)
 
