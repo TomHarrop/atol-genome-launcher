@@ -249,7 +249,6 @@ class CanopySession(requests.Session):
 
         return None
 
-    @cache
     def get_experiment_submission_by_experiment_attr(
         self,
         bpa_package_id: str,
@@ -258,6 +257,17 @@ class CanopySession(requests.Session):
 
         url_suffix = _endpoints.get(endpoint, "")
         return self._get(url=url_suffix, params={"bpa_package_id": bpa_package_id})
+
+    def get_experiments_for_organism(
+        self,
+        taxon_id: int,
+        endpoint: str = "get_experiments_for_organism",
+    ) -> requests.Response:
+
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(taxon_id=taxon_id)
+
+        return self._get(url=url_suffix)
 
     def get_sample_id(
         self,
@@ -488,6 +498,18 @@ class CanopySession(requests.Session):
         return self._put(url=url_suffix, data=json.dumps(body))
 
 
+    def update_experiment(
+        self,
+        experiment_id: str,
+        body: dict[str, str | int | list[str]],
+        endpoint: str = "update_experiment",
+    ) -> requests.Response:
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(experiment_id=experiment_id)
+
+        return self._put(url=url_suffix, data=json.dumps(body))
+
+
 class AssemblyType(StrEnum):
     PRIMARY = auto()
     SECONDARY = auto()
@@ -572,6 +594,7 @@ _endpoints = {
     "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "get_all_assembly_manifests": "/api/v1/assemblies/all-manifests/{taxon_id}",
     "get_experiment_submission_by_experiment_attr": "/api/v1/experiment-submissions/by-experiment-attr",
+    "get_experiments_for_organism": "/api/v1/organisms/{taxon_id}/experiments",
     "get_sample_submission_by_experiment_package_id": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
     "get_specimen_samples_for_assembly": "/api/v1/assemblies/specimen-samples/{taxon_id}",
     "get_taxonomy_info": "/api/v1/taxonomy-info/{taxon_id}",
@@ -589,4 +612,5 @@ _endpoints = {
     "read_sample": "/api/v1/samples/{sample_id}",
     "report_assembly_qc_read": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
     "update_assembly": "/api/v1/assemblies/{assembly_id}",
+    "update_experiment": "/api/v1/experiments/{experiment_id}",
 }
