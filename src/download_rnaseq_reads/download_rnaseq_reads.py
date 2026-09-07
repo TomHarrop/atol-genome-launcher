@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from download_rnaseq_reads.models import TaxonRnaSeqReads
+from download_rnaseq_reads.models import RnaSeqReads
 
 from common import existing_file, generate_parser, logger
 
@@ -27,9 +27,14 @@ def main():
 
     logger.info(f"RNASeq reads file: {rnaseq_reads_file}")
     with open(rnaseq_reads_file, "rb") as f:
-        taxon_rnaseq_reads = TaxonRnaSeqReads.model_validate_json(f.read(), strict=False)
+        rnaseq_reads = RnaSeqReads.model_validate_json(f.read(), strict=False)
 
-    raise ValueError(taxon_rnaseq_reads)
+    logger.info(f"Processing RNAseq reads for taxon_id {rnaseq_reads.taxon_id}")
+
+    for bpa_package in rnaseq_reads.bpa_packages:
+        logger.info(
+            f"File paths for {bpa_package.bpa_package_id}:\n{bpa_package.file_paths}"
+        )
 
 
 if __name__ == "__main__":

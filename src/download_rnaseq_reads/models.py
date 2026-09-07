@@ -1,9 +1,24 @@
 #!/usr/bin/env python3
 
+from pathlib import Path
 import re
 
 from download_rnaseq_reads.enums import ReadNumber
-from pydantic import BaseModel, HttpUrl, RootModel, field_validator
+from pydantic import BaseModel, HttpUrl, RootModel, computed_field, field_validator
+
+
+def _lane_sort_value(lane_number: str) -> int:
+    if lane_number == "single_read":
+        return 0
+
+    return int(lane_number.replace("L", ""))
+
+
+def _sort_file_path(file_path: Path) -> int:
+    """
+    Sort the file paths on the lane (second component)
+    """
+    return _lane_sort_value(file_path.parent.name)
 
 
 class RnaSeqReadFile(BaseModel):
@@ -20,7 +35,7 @@ class RnaSeqReadFile(BaseModel):
     file_format: str
     bioplatforms_url: HttpUrl
     read_number: ReadNumber
-    lane_number: str
+    lane_number: str | None
     id: str
 
     @field_validator("lane_number")
@@ -42,15 +57,30 @@ class BpaPackage(BaseModel):
     """
 
     bioplatforms_base_url: HttpUrl | None
+    bpa_package_id: str
     experiment_id: str
     reads: list[RnaSeqReadFile]
     sample_accession: str | None
     sample_id: str
 
+    @computed_field
+    @property
+    def file_paths(self) -> dict[ReadNumber, list[Path]]:
+        file_paths = {
+            ReadNumber.R1: [],
+            ReadNumber.R2: [],
+        }
+        for read in self.reads:
+            my_path = Path(read.read_number, read.lane_number, read.file_name)
+            file_paths[read.read_number].append(my_path)
 
-class TaxonRnaSeqReads(RootModel[dict[str, dict[str, BpaPackage]]]):
+        return {k: sorted(v, key=_sort_file_path) for k, v in file_paths.items()}
+
+
+class RnaSeqReads(BaseModel):
     """
-    Highest-level object with the array of BpaPackage objects.
+    Highest-level object with the dict of BpaPackage objects.
     """
 
-    pass
+    taxon_id: int
+    bpa_packages: list[BpaPackage]

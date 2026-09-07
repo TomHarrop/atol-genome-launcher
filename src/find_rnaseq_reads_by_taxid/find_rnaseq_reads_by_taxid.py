@@ -56,7 +56,8 @@ def main():
     taxon_id = args.taxon_id
 
     # populate the output dict with the information we need to group the reads
-    output_json = {taxon_id: {}}
+    output_json = {}
+    output_json["taxon_id"] = taxon_id
 
     # Get all the experiments for this organism
     experiments_response = canopy_session.get_experiments_for_organism(
@@ -88,6 +89,8 @@ def main():
     )
 
     # get the Reads for the RNAseq experiments and group by bpa_package_id
+    bpa_package_array = []
+    used_bpa_package_ids = []
     for rnaseq_experiment in rnaseq_experiments:
         bpa_package_id = rnaseq_experiment.get("bpa_package_id")
         experiment_id = rnaseq_experiment.get("id")
@@ -108,6 +111,7 @@ def main():
             )
             experiment_dict = {}
             experiment_dict["bioplatforms_base_url"] = bioplatforms_base_url
+            experiment_dict["bpa_package_id"] = bpa_package_id
             experiment_dict["experiment_id"] = experiment_id
             experiment_dict["sample_accession"] = canopy_session.get_biosample_id(
                 bpa_package_id
@@ -116,8 +120,9 @@ def main():
             experiment_dict["sample_id"] = sample_id
             experiment_dict["reads"] = reads
 
-            if bpa_package_id not in output_json[taxon_id]:
-                output_json[taxon_id][bpa_package_id] = experiment_dict
+            if bpa_package_id not in used_bpa_package_ids:
+                bpa_package_array.append(experiment_dict)
+                used_bpa_package_ids.append(bpa_package_id)
             else:
                 raise ValueError(
                     f"Duplicate experiment for bpa_package_id {bpa_package_id}"
@@ -125,6 +130,8 @@ def main():
 
         else:
             logger.warning(f"No reads found for experiment_id {experiment_id}")
+
+    output_json["bpa_packages"] = bpa_package_array
 
     logger.info(f"Writing to {args.rnaseq_reads_file}")
     with open(args.rnaseq_reads_file, "w") as handle:
