@@ -4,24 +4,29 @@ from pathlib import Path
 import re
 
 from download_rnaseq_reads.enums import ReadNumber
-from pydantic import BaseModel, HttpUrl, RootModel, computed_field, field_validator
+from pydantic import BaseModel, HttpUrl, computed_field, field_validator
 
 
 def _lane_sort_value(lane_number: str) -> int:
+    """
+    Get an integer sort value for a lane_number string, e.g. int(1) for
+    "L0001".
+    """
     return int(lane_number.replace("L", ""))
 
 
 def _sort_file_path(file_path: Path) -> int:
     """
-    Sort the file paths on the lane (second component)
+    The lane_number is the second component of the Path. Retrieve the
+    lane_number string and get the integer sort value.
     """
     return _lane_sort_value(file_path.parent.name)
 
 
 class RnaSeqReadFile(BaseModel):
     """
-    A file (Resource) on the data portal, which is a component of a larger
-    CombinedFile. Gives the URL for downloading etc.
+    Information from the `read_reads` endpoint for an `experiment_id`. Includes
+    the information for downloading the Resource from the Data Portal.
     """
 
     bioplatforms_url: HttpUrl
@@ -62,8 +67,8 @@ class RnaSeqReadFile(BaseModel):
 
 class BpaPackage(BaseModel):
     """
-    Made up of component RnaSeqReadFile objects. Stores the list of input file
-    paths and the name of the output files.
+    Contains a list of RnaSeqReadFile objects for one `bpa_package_id`. Put
+    convenience properties (e.g. a list of download URLs) in this Class.
     """
 
     bioplatforms_base_url: HttpUrl | None
@@ -105,7 +110,7 @@ class BpaPackage(BaseModel):
 
 class RnaSeqReads(BaseModel):
     """
-    Highest-level object with the dict of BpaPackage objects.
+    Contains a list of BpaPackage objects for a single taxon_id.
     """
 
     taxon_id: int
