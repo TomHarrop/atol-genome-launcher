@@ -8,9 +8,6 @@ from pydantic import BaseModel, HttpUrl, RootModel, computed_field, field_valida
 
 
 def _lane_sort_value(lane_number: str) -> int:
-    if lane_number == "single_read":
-        return 0
-
     return int(lane_number.replace("L", ""))
 
 
@@ -41,10 +38,8 @@ class RnaSeqReadFile(BaseModel):
     @field_validator("lane_number")
     @classmethod
     def _validate_lane_number(cls, v):
-        if v == "single_lane":
-            return v
-        if v == None:
-            return "single_lane"
+        if v is None or v == "single_lane":
+            v = "L0"
         if not re.match(r"^L\d+$", v):
             raise ValueError(f"Invalid lane number: {v}")
         return v
