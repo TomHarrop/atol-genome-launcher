@@ -24,16 +24,16 @@ class RnaSeqReadFile(BaseModel):
     CombinedFile. Gives the URL for downloading etc.
     """
 
-    experiment_id: str
-    bpa_resource_id: str
+    bioplatforms_url: HttpUrl
     bpa_dataset_id: str
-    file_name: str
+    bpa_resource_id: str
+    experiment_id: str
     file_checksum: str
     file_format: str
-    bioplatforms_url: HttpUrl
-    read_number: ReadNumber
-    lane_number: str | None
+    file_name: str
     id: str
+    lane_number: str | None
+    read_number: ReadNumber
 
     @field_validator("lane_number")
     @classmethod
@@ -43,6 +43,21 @@ class RnaSeqReadFile(BaseModel):
         if not re.match(r"^L\d+$", v):
             raise ValueError(f"Invalid lane number: {v}")
         return v
+
+    @computed_field
+    @property
+    def download_params(self) -> dict[str, str]:
+        return {
+            "bioplatforms_base_url": self.bioplatforms_url,
+            "file_name": self.file_path,
+            "file_checksum": self.file_checksum,
+            "base_url": None,
+        }
+
+    @computed_field
+    @property
+    def file_path(self) -> Path:
+        return Path(self.read_number, self.lane_number, self.file_name)
 
 
 class BpaPackage(BaseModel):
@@ -66,10 +81,26 @@ class BpaPackage(BaseModel):
             ReadNumber.R2: [],
         }
         for read in self.reads:
-            my_path = Path(read.read_number, read.lane_number, read.file_name)
-            file_paths[read.read_number].append(my_path)
+            file_paths[read.read_number].append(read.file_path)
 
         return {k: sorted(v, key=_sort_file_path) for k, v in file_paths.items()}
+
+    @computed_field
+    @property
+    def download_params(self) -> dict[str, str]:
+        download_params = {}
+        for read in self.reads:
+            read_download_params = read.download_params
+            if (
+                read_download_params.get("bioplatforms_base_url") is None
+                and self.bioplatforms_base_url is not None
+            ):
+                read_download_params["bioplatforms_base_url"] = (
+                    self.bioplatforms_base_url
+                )
+
+            download_params[read.file_path] = read_download_params
+        return download_params
 
 
 class RnaSeqReads(BaseModel):

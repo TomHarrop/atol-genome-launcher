@@ -35,6 +35,10 @@ def main():
         logger.info(
             f"File paths for {bpa_package.bpa_package_id}:\n{bpa_package.file_paths}"
         )
+        logger.info(
+            f"download_params for {bpa_package.bpa_package_id}:\n{bpa_package.download_params}"
+        )
+
 
 
 if __name__ == "__main__":
