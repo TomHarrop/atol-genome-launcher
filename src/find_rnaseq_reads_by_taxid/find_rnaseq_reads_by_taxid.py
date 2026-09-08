@@ -7,6 +7,8 @@ import canopy_client
 from common import check_env_var, generate_parser
 from snakemake.logging import logger
 
+from rnaseq_reads import RnaSeqReads, BpaPackage, RnaSeqReadFile
+
 
 def parse_arguments():
 
@@ -89,7 +91,7 @@ def main():
     )
 
     # get the Reads for the RNAseq experiments and group by bpa_package_id
-    bpa_package_array = []
+    bpa_packages = []
     used_bpa_package_ids = []
     for rnaseq_experiment in rnaseq_experiments:
         bpa_package_id = rnaseq_experiment.get("bpa_package_id")
@@ -109,19 +111,19 @@ def main():
             logger.info(
                 f"Canopy has {len(reads)} read/s for experiment_id {experiment_id}"
             )
-            experiment_dict = {}
-            experiment_dict["bioplatforms_base_url"] = bioplatforms_base_url
-            experiment_dict["bpa_package_id"] = bpa_package_id
-            experiment_dict["experiment_id"] = experiment_id
-            experiment_dict["sample_accession"] = canopy_session.get_biosample_id(
-                bpa_package_id
-            )
-
-            experiment_dict["sample_id"] = sample_id
-            experiment_dict["reads"] = reads
 
             if bpa_package_id not in used_bpa_package_ids:
-                bpa_package_array.append(experiment_dict)
+                read_list = [RnaSeqReadFile(**x) for x in reads]
+                bpa_package = BpaPackage(
+                    bioplatforms_base_url=bioplatforms_base_url,
+                    bpa_package_id=bpa_package_id,
+                    experiment_id=experiment_id,
+                    sample_accession=canopy_session.get_biosample_id(bpa_package_id),
+                    sample_id=sample_id,
+                    reads=read_list,
+                )
+
+                bpa_packages.append(bpa_package)
                 used_bpa_package_ids.append(bpa_package_id)
             else:
                 raise ValueError(
@@ -131,11 +133,17 @@ def main():
         else:
             logger.warning(f"No reads found for experiment_id {experiment_id}")
 
-    output_json["bpa_packages"] = bpa_package_array
+    rnaseq_reads = RnaSeqReads(taxon_id=taxon_id, bpa_packages=bpa_packages)
 
     logger.info(f"Writing to {args.rnaseq_reads_file}")
-    with open(args.rnaseq_reads_file, "w") as handle:
-        json.dump(output_json, handle)
+    with open(args.rnaseq_reads_file, "wb") as f:
+        dump = rnaseq_reads.model_dump_json(
+            exclude_computed_fields=True,
+            exclude_defaults=True,
+            exclude_none=True,
+            exclude_unset=True,
+        )
+        f.write(dump.encode())
 
 
 if __name__ == "__main__":

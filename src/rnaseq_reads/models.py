@@ -51,7 +51,7 @@ class RnaSeqReadFile(BaseModel):
 
     @computed_field
     @property
-    def download_params(self) -> dict[str, str]:
+    def download_params(self) -> dict[str, str | Path | HttpUrl | None]:
         return {
             "bioplatforms_base_url": self.bioplatforms_url,
             "file_name": self.file_path,
