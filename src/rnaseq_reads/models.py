@@ -17,7 +17,7 @@ def _lane_sort_value(lane_number: str) -> int:
 
 def _sort_file_path(file_path: Path) -> int:
     """
-    The lane_number is the second component of the Path. Retrieve the
+    The lane_number is the second-last component of the Path. Retrieve the
     lane_number string and get the integer sort value.
     """
     return _lane_sort_value(file_path.parent.name)
@@ -53,10 +53,9 @@ class RnaSeqReadFile(BaseModel):
     @property
     def download_params(self) -> dict[str, str | Path | HttpUrl | None]:
         return {
-            "bioplatforms_base_url": self.bioplatforms_url,
+            "bioplatforms_url": self.bioplatforms_url,
             "file_name": self.file_path,
             "file_checksum": self.file_checksum,
-            "base_url": None,
         }
 
     @computed_field
@@ -86,7 +85,9 @@ class BpaPackage(BaseModel):
             ReadNumber.R2: [],
         }
         for read in self.reads:
-            file_paths[read.read_number].append(read.file_path)
+            file_paths[read.read_number].append(
+                Path(self.bpa_package_id, read.file_path)
+            )
 
         return {k: sorted(v, key=_sort_file_path) for k, v in file_paths.items()}
 
@@ -107,6 +108,28 @@ class BpaPackage(BaseModel):
             download_params[read.file_path] = read_download_params
         return download_params
 
+    def get_rnaseq_read_file(
+        self, read_number: ReadNumber, lane_number: str, file_name: str
+    ) -> RnaSeqReadFile:
+        rnaseq_read_files = [
+            x
+            for x in self.reads
+            if (x.read_number == read_number)
+            and (x.lane_number == lane_number)
+            and (x.file_name == file_name)
+        ]
+
+        if not rnaseq_read_files:
+            raise ValueError(
+                f"No BpaPackage records for bpa_package_id {bpa_package_id}"
+            )
+        if len(rnaseq_read_files) > 1:
+            raise ValueError(
+                f"Duplicate BpaPackage records for bpa_package_id {bpa_package_id}"
+            )
+
+        return rnaseq_read_files[0]
+
 
 class RnaSeqReads(BaseModel):
     """
@@ -115,3 +138,35 @@ class RnaSeqReads(BaseModel):
 
     taxon_id: int
     bpa_packages: list[BpaPackage]
+
+    @computed_field
+    @property
+    def file_paths(self) -> list[Path]:
+        """
+        All the file_paths for the bpa_packages.
+        """
+        file_paths = []
+        for bpa_package in self.bpa_packages:
+            for file_path_array in bpa_package.file_paths.values():
+                for file_path in file_path_array:
+                    file_paths.append(file_path)
+
+        return file_paths
+
+    def get_bpa_package(self, bpa_package_id: str) -> BpaPackage:
+        """
+        Lookup BpaPackage in bpa_packages by bpa_package_id
+        """
+        bpa_packages = [
+            x for x in self.bpa_packages if x.bpa_package_id == bpa_package_id
+        ]
+        if not bpa_packages:
+            raise ValueError(
+                f"No BpaPackage records for bpa_package_id {bpa_package_id}"
+            )
+        if len(bpa_packages) > 1:
+            raise ValueError(
+                f"Duplicate BpaPackage records for bpa_package_id {bpa_package_id}"
+            )
+
+        return bpa_packages[0]

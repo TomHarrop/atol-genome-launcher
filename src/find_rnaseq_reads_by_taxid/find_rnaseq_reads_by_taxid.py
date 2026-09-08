@@ -83,11 +83,11 @@ def main():
                 + f"        platform {platform}"
             )
         )
-        if library_strategy == "RNA-Seq" and platform == "ILLUMINA":
+        if library_strategy == "RNA-Seq":
             rnaseq_experiments.append(experiment)
 
     logger.info(
-        f"taxon_id {taxon_id} has {len(rnaseq_experiments)} RNA-Seq experiments."
+        f"taxon_id {taxon_id} has {len(rnaseq_experiments)} RNA-Seq experiments (by library_strategy)."
     )
 
     # get the Reads for the RNAseq experiments and group by bpa_package_id
