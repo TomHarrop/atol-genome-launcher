@@ -3,7 +3,7 @@
 from pathlib import Path
 import re
 
-from download_rnaseq_reads.enums import ReadNumber
+from rnaseq_reads.enums import ReadNumber
 from pydantic import BaseModel, HttpUrl, computed_field, field_validator
 
 

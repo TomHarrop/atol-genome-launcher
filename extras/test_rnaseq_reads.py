@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from download_rnaseq_reads.models import RnaSeqReads
+from rnaseq_reads.models import RnaSeqReads
 
 from common import existing_file, generate_parser, logger
 
@@ -38,7 +38,6 @@ def main():
         logger.info(
             f"download_params for {bpa_package.bpa_package_id}:\n{bpa_package.download_params}"
         )
-
 
 
 if __name__ == "__main__":
