@@ -1,6 +1,7 @@
 import argparse
 from importlib.metadata import metadata
 import json
+import logging
 from os import getenv
 from pathlib import Path
 
@@ -65,3 +66,10 @@ def read_receipts_from_path(receipts_file: Path) -> list[dict[str, str]]:
                 records.append(json.loads(line))
 
     return records
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
