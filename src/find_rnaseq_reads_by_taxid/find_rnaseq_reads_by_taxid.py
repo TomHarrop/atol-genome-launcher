@@ -92,7 +92,6 @@ def main():
 
     # get the Reads for the RNAseq experiments and group by bpa_package_id
     bpa_packages = []
-    used_bpa_package_ids = []
     for rnaseq_experiment in rnaseq_experiments:
         bpa_package_id = rnaseq_experiment.get("bpa_package_id")
         experiment_id = rnaseq_experiment.get("id")
@@ -113,24 +112,18 @@ def main():
                 f"Canopy has {len(reads)} read/s for experiment_id {experiment_id}"
             )
 
-            if bpa_package_id not in used_bpa_package_ids:
-                read_list = [RnaSeqReadFile(**x) for x in reads]
-                bpa_package = BpaPackage(
-                    bioplatforms_base_url=bioplatforms_base_url,
-                    bpa_package_id=bpa_package_id,
-                    experiment_id=experiment_id,
-                    platform=platform,
-                    reads=read_list,
-                    sample_accession=canopy_session.get_biosample_id(bpa_package_id),
-                    sample_id=sample_id,
-                )
+            read_list = [RnaSeqReadFile(**x) for x in reads]
+            bpa_package = BpaPackage(
+                bioplatforms_base_url=bioplatforms_base_url,
+                bpa_package_id=bpa_package_id,
+                experiment_id=experiment_id,
+                platform=platform,
+                reads=read_list,
+                sample_accession=canopy_session.get_biosample_id(bpa_package_id),
+                sample_id=sample_id,
+            )
 
-                bpa_packages.append(bpa_package)
-                used_bpa_package_ids.append(bpa_package_id)
-            else:
-                raise ValueError(
-                    f"Duplicate experiment for bpa_package_id {bpa_package_id}"
-                )
+            bpa_packages.append(bpa_package)
 
         else:
             logger.warning(f"No reads found for experiment_id {experiment_id}")

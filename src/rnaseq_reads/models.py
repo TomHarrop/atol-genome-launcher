@@ -4,7 +4,17 @@ from pathlib import Path
 import re
 
 from rnaseq_reads.enums import ReadNumber, Platform
-from pydantic import BaseModel, HttpUrl, computed_field, field_validator
+from pydantic import (
+    BaseModel,
+    HttpUrl,
+    computed_field,
+    field_validator,
+    model_validator,
+)
+
+
+def _check_unique(x: list[str]) -> bool:
+    return len(x) == len(set(x))
 
 
 def _lane_sort_value(lane_number: str) -> int:
@@ -78,6 +88,13 @@ class BpaPackage(BaseModel):
     sample_accession: str | None
     sample_id: str
 
+    @model_validator(mode="after")
+    def check_read_uuids(self) -> Self:
+        read_uuids = [x.id for x in self.reads]
+        if not _check_unique(read_uuids):
+            raise ValueError(f"Duplicate read_uuid in {read_uuids}")
+        return self
+
     @computed_field
     @property
     def file_paths(self) -> dict[ReadNumber, list[Path]]:
@@ -139,6 +156,13 @@ class RnaSeqReads(BaseModel):
 
     taxon_id: int
     bpa_packages: list[BpaPackage]
+
+    @model_validator(mode="after")
+    def check_bpa_package_ids(self) -> Self:
+        bpa_package_ids = [x.bpa_package_id for x in self.bpa_packages]
+        if not _check_unique(bpa_package_ids):
+            raise ValueError(f"Duplicate bpa_package_id in {bpa_package_ids}")
+        return self
 
     @computed_field
     @property
