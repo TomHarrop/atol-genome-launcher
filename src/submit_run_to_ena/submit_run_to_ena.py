@@ -6,8 +6,9 @@ from pathlib import Path
 
 from broker.cli import submit_entity
 import canopy_client
-from common import generate_parser, read_json_from_path, existing_file
+from common import existing_file, generate_parser, read_json_from_path
 from requests.models import Response
+from snakemake.logging import logger
 from yaml_manifest import Manifest
 
 
@@ -38,6 +39,20 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def get_accession_from_qc_reads_response(qc_reads_response: Response) -> str | None:
+    """
+    If the existing qc_read has been submitted return the accession.
+    """
+    for qc_read_report in qc_reads_response.json():
+        for submission in qc_read_report.get("submission_records", []):
+            accession = canopy_client.get_accession_from_submission(
+                submission=submission
+            )
+            if accession is not None:
+                return accession
+    return None
+
+
 def get_qc_reads_id(
     qc_reads_response: Response, checksum_values: list[str]
 ) -> str | None:
@@ -61,6 +76,7 @@ def get_qc_reads_id(
 
 def main():
 
+    logger.name = "submit-run-to-ena"
     args = parse_arguments()
 
     canopy_session = canopy_client.CanopySession()
@@ -81,6 +97,9 @@ def main():
     # This is used for brokering
     sample_id = canopy_session.get_sample_id(
         bpa_package_id=args.bpa_package_id,
+    )
+    logger.info(
+        f"bpa_package_id {args.bpa_package_id} has sample_id {sample_id} in Canopy."
     )
 
     # add the info required by canopy
@@ -110,6 +129,10 @@ def main():
                 )
             )
 
+        logger.info(
+            f"bpa_package_id {args.bpa_package_id} has biosample_id {biosample_id} in Canopy."
+        )
+
         # Experiment UUID for brokering
         experiment_id = canopy_session.get_experiment_id(
             bpa_package_id=args.bpa_package_id
@@ -122,6 +145,8 @@ def main():
                     f"under BioSample {biosample_id}, but Canopy didn't return an experiment_id."
                 )
             )
+
+        logger.info(f"Trying to Broker experiment_id {experiment_id}.")
 
         # The Broker docs say we also need the BioProject ID to broker the
         # Experiment, but it can't be retrieved from Canopy. If it can't be
@@ -151,9 +176,16 @@ def main():
                 f"We submitted an Experiment for {experiment_id}, but the accession is not in Canopy."
             )
 
+    logger.info(
+        f"bpa_package_id {args.bpa_package_id} has experiment_accession {experiment_accession} in Canopy."
+    )
+
     # Check for existing qc_read
     qc_reads_response = canopy_session.list_qc_reads(
         assembly_id=assembly_id,
+    )
+    logger.info(
+        f"Found {len(qc_reads_response.json())} existing qc_read/s for assembly_id {assembly_id}"
     )
 
     qc_reads_id = get_qc_reads_id(
@@ -161,19 +193,11 @@ def main():
         checksum_values=checksum_values,
     )
 
-    # Make sure the existing qc_read has not been submitted
-    for qc_read_report in qc_reads_response.json():
-        for submission in qc_read_report.get("submission_records", []):
-            accession = canopy_client.get_accession_from_submission(
-                submission=submission
-            )
-            if accession is not None:
-                raise ValueError(
-                    f"qc_read_id {qc_reads_id} is accessioned as {accession}"
-                )
-
     # Submit the qc_read if we need to
     if qc_reads_id is None:
+        logger.info(
+            "Reporting assembly_qc_read for assembly_id {assembly_id}:\n    {qc_report_dict}"
+        )
         qc_reads_report = canopy_session.report_assembly_qc_read(
             assembly_id=assembly_id, body=qc_report_dict
         )
@@ -182,14 +206,35 @@ def main():
     if qc_reads_id is None:
         raise TypeError("Could not generate qc_reads_id")
 
-    # this returns None
-    _ = submit_entity(
-        type_="run",
-        id_=qc_reads_id,
-        experiment_accession=experiment_accession,
-        dry_run=args.dry_run,
-        prod=True,
-        hold_until=hold_date,
+    logger.info(
+        f"qc_report with checksums {checksum_values} is registered with qc_reads_id {qc_reads_id}."
+    )
+
+    # Make sure the existing qc_read has not been submitted
+    run_accession = canopy_session.get_run_accession_from_qc_read_id(
+        qc_read_id=qc_reads_id
+    )
+
+    if run_accession is None:
+        # this returns None
+        _ = submit_entity(
+            type_="run",
+            id_=qc_reads_id,
+            experiment_accession=experiment_accession,
+            dry_run=args.dry_run,
+            prod=True,
+            hold_until=hold_date,
+        )
+        run_accession = canopy_session.get_run_accession_from_qc_read_id(
+            qc_read_id=qc_reads_id
+        )
+
+    logger.info(
+        (
+            f"qc_read_id {qc_reads_id} for "
+            f"bpa_package_id {args.bpa_package_id} "
+            f"is accessioned as {run_accession}"
+        )
     )
 
 
