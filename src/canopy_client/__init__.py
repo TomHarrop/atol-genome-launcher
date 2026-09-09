@@ -2,7 +2,6 @@
 
 from datetime import date, timedelta
 from enum import StrEnum, auto
-from functools import cache
 import json
 from pathlib import Path
 from urllib.parse import urljoin
@@ -249,7 +248,6 @@ class CanopySession(requests.Session):
 
         return None
 
-    @cache
     def get_experiment_submission_by_experiment_attr(
         self,
         bpa_package_id: str,
@@ -258,6 +256,31 @@ class CanopySession(requests.Session):
 
         url_suffix = _endpoints.get(endpoint, "")
         return self._get(url=url_suffix, params={"bpa_package_id": bpa_package_id})
+
+    def get_qc_read(
+        self,
+        qc_read_id: str,
+        endpoint: str = "get_qc_read",
+    ) -> requests.Response:
+
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(qc_read_id=qc_read_id)
+
+        return self._get(url=url_suffix)
+
+    def get_run_accession_from_qc_read_id(
+        self,
+        qc_read_id: str,
+    ) -> str | None:
+        response = self.get_qc_read(qc_read_id=qc_read_id)
+
+        for submission in response.json().get("submission_records", []):
+            if submission.get("qc_read_id") == qc_read_id:
+                accession = get_accession_from_submission(submission=submission)
+                if accession is not None:
+                    return accession
+
+        return None
 
     def get_sample_id(
         self,
@@ -300,7 +323,6 @@ class CanopySession(requests.Session):
 
         return None
 
-    @cache
     def get_sample_submission_by_experiment_package_id(
         self,
         bpa_package_id: str,
@@ -374,7 +396,6 @@ class CanopySession(requests.Session):
         url_suffix = _endpoints.get(endpoint)
         return self._get(url=url_suffix, params={"assembly_id": assembly_id})
 
-    @cache
     def list_stage_runs(
         self,
         assembly_id: str,
@@ -406,7 +427,6 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix)
 
-    @cache
     def read_experiment(
         self,
         experiment_id: str,
@@ -572,6 +592,7 @@ _endpoints = {
     "create_stage_run": "/api/v1/assemblies/{assembly_id}/runs/{run_id}/stage-runs",
     "get_all_assembly_manifests": "/api/v1/assemblies/all-manifests/{taxon_id}",
     "get_experiment_submission_by_experiment_attr": "/api/v1/experiment-submissions/by-experiment-attr",
+    "get_qc_read": "/api/v1/qc-reads/{qc_read_id}",
     "get_sample_submission_by_experiment_package_id": "/api/v1/samples/submission/by-experiment/{bpa_package_id}",
     "get_specimen_samples_for_assembly": "/api/v1/assemblies/specimen-samples/{taxon_id}",
     "get_taxonomy_info": "/api/v1/taxonomy-info/{taxon_id}",
