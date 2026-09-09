@@ -7,6 +7,8 @@ from pathlib import Path
 
 from snakemake.logging import logger
 
+_ALLOWED_SUFFIXES = [".fa", ".fasta", ".fastq", ".fq", ".gz"]
+
 
 def check_env_var(env_var_name: str) -> str:
     env_var_value = getenv(env_var_name)
@@ -66,6 +68,27 @@ def read_receipts_from_path(receipts_file: Path) -> list[dict[str, str]]:
                 records.append(json.loads(line))
 
     return records
+
+
+def get_ext(path: Path | str, allowed_suffixes: list = _ALLOWED_SUFFIXES) -> str:
+    suffixes = [s for s in Path(path).suffixes if s in allowed_suffixes]
+
+    if len(suffixes) > 2:
+        raise ValueError(
+            (
+                f"Found more than 2 suffixes when trying to get_ext in {path}. "
+                f"This is not safe. Allowed suffixes are {allowed_suffixes}"
+            )
+        )
+    extensions = "".join(suffixes)
+    return extensions
+
+
+def replace_ext(
+    path: Path, new_ext: str = "", allowed_suffixes: list = _ALLOWED_SUFFIXES
+) -> Path:
+    extensions = get_ext(path=path, allowed_suffixes=allowed_suffixes)
+    return Path(str(path).replace(extensions, new_ext))
 
 
 logging.basicConfig(

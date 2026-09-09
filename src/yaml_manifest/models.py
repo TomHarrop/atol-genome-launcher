@@ -1,30 +1,30 @@
 #!/usr/bin/env python3
 
-import json
-import re
-import yaml
 from importlib import resources as importlib_resources
+import json
 from pathlib import Path
+import re
 from typing import Any, Optional
-from typing_extensions import deprecated
 
+from common import replace_ext
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    field_validator,
     computed_field,
+    field_validator,
     model_validator,
 )
-
+from typing_extensions import deprecated
+import yaml
 from yaml_manifest.layout import (
+    _collect_upload_files,
     get_dir,
+    get_pipeline_input,
+    get_pipeline_runscript,
     get_stage,
     get_stage_ext,
     get_stage_logs,
-    get_pipeline_input,
-    get_pipeline_runscript,
-    _collect_upload_files,
 )
 
 _ASSEMBLY_TYPES_FILE = "assembly_types.json"
@@ -33,26 +33,12 @@ _OATK_HMM_BASE_URL = (
     "https://github.com/c-zhou/OatkDB/raw/main/v20230921/{hmm_name}_{organelle}.fam"
 )
 
-_ALLOWED_SUFFIXES = [".fa", ".fasta", ".fastq", ".fq", ".gz"]
 
 
 def natural_sort_key(s: str) -> list:
     """Convert string to list for natural sorting (handles embedded numbers)."""
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", str(s))]
 
-
-def replace_ext(
-    path: Path, new_ext: str = "", allowed_suffixes: list = _ALLOWED_SUFFIXES
-) -> Path:
-
-    suffixes = [s for s in Path(path).suffixes if s in allowed_suffixes]
-
-    if len(suffixes) > 2:
-        raise ValueError(
-            f"Got more than 2 suffixes when trying to replace_ext in {path}. This is not safe."
-        )
-    extensions = "".join(suffixes)
-    return Path(str(path).replace(extensions, new_ext))
 
 
 def _load_assembly_types() -> dict[str, dict]:
