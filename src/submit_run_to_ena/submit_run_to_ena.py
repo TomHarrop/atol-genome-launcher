@@ -204,7 +204,7 @@ def main():
         qc_reads_id = qc_reads_report.json().get("id", None)
 
     if qc_reads_id is None:
-        raise TypeError("Could not generate qc_reads_id")
+        raise ValueError("Could not generate qc_reads_id")
 
     logger.info(
         f"qc_report with checksums {checksum_values} is registered with qc_reads_id {qc_reads_id}."
@@ -225,9 +225,20 @@ def main():
             prod=True,
             hold_until=hold_date,
         )
+
+        if args.dry_run == True:
+            # We have to stop here, because the rest of the submission depends
+            # on the experiment being brokered
+            raise AssertionError(
+                f"Dry run is {args.dry_run}, so the Run hasn't been brokered."
+            )
+
         run_accession = canopy_session.get_run_accession_from_qc_read_id(
             qc_read_id=qc_reads_id
         )
+
+    if run_accession is None:
+        raise ValueError("Could not register the Run")
 
     logger.info(
         (
