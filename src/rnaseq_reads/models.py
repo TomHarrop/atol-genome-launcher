@@ -50,6 +50,16 @@ class RnaSeqReadFile(BaseModel):
     lane_number: str | None
     read_number: ReadNumber
 
+    @field_validator("read_number")
+    @classmethod
+    def _validate_read_number(cls, v):
+        if v == "R0":
+            raise NotImplementedError(
+                ("TODO: Implement read_number = R0 for single-end libraries. "
+                "This is intended for OXFORD_NANOPORE data.")
+            )
+        return v
+
     @field_validator("lane_number")
     @classmethod
     def _validate_lane_number(cls, v):
