@@ -6,3 +6,8 @@ from enum import StrEnum
 class ReadNumber(StrEnum):
     R1 = "R1"
     R2 = "R2"
+
+
+class Platform(StrEnum):
+    ILLUMINA = "ILLUMINA"
+    OXFORD_NANOPORE = "OXFORD_NANOPORE"

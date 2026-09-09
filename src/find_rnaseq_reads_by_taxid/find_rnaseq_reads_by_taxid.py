@@ -97,6 +97,7 @@ def main():
         bpa_package_id = rnaseq_experiment.get("bpa_package_id")
         experiment_id = rnaseq_experiment.get("id")
         sample_id = rnaseq_experiment.get("sample_id")
+        platform = rnaseq_experiment.get("platform")
         logger.debug(f"Finding read information for {experiment_id}")
         bioplatforms_base_url = rnaseq_experiment.get("bioplatforms_base_url")
         if bioplatforms_base_url is None:
@@ -118,9 +119,10 @@ def main():
                     bioplatforms_base_url=bioplatforms_base_url,
                     bpa_package_id=bpa_package_id,
                     experiment_id=experiment_id,
+                    platform=platform,
+                    reads=read_list,
                     sample_accession=canopy_session.get_biosample_id(bpa_package_id),
                     sample_id=sample_id,
-                    reads=read_list,
                 )
 
                 bpa_packages.append(bpa_package)

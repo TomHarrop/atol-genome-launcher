@@ -3,7 +3,7 @@
 from pathlib import Path
 import re
 
-from rnaseq_reads.enums import ReadNumber
+from rnaseq_reads.enums import ReadNumber, Platform
 from pydantic import BaseModel, HttpUrl, computed_field, field_validator
 
 
@@ -73,6 +73,7 @@ class BpaPackage(BaseModel):
     bioplatforms_base_url: HttpUrl | None
     bpa_package_id: str
     experiment_id: str
+    platform: Platform
     reads: list[RnaSeqReadFile]
     sample_accession: str | None
     sample_id: str
