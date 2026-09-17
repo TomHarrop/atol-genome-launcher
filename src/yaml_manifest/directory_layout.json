@@ -77,7 +77,11 @@
             "upload": {
                 "exclude_patterns": [],
                 "compress_extensions": [
-                    ".gtf"
+                    ".faa",
+                    ".gff",
+                    ".gtf",
+                    ".json",
+                    ".txt"
                 ]
             }
         },
