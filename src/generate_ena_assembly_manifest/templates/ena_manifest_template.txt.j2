@@ -1,0 +1,13 @@
+STUDY           {{ bioproject_accession }}
+SAMPLE          {{ biosample_accession }}
+ASSEMBLYNAME    {{ dataset_id }}.{{ assembly_version }}
+ASSEMBLY_TYPE   clone or isolate
+COVERAGE        {{ coverage }}
+PROGRAM         {{ program }}
+PLATFORM        {{ long_read_platform }}
+MOLECULETYPE    genomic DNA
+DESCRIPTION     {{ description }}
+FASTA           {{ fasta_file }}
+MINGAPLENGTH    100
+RUN_REF         {{ err_accessions }}
+{% if chromosome_list %}CHROMOSOME_LIST {{ chromosome_list }}{% endif %}

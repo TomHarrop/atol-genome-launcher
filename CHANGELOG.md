@@ -1,6 +1,106 @@
 Changelog
 =========
 
+0.19.2 (2026-09-02)
+-------------------
+
+Fix
+
+~~~
+- Temporarily accept lane_number = None (see #45) [Tom Harrop]
+
+
+0.19.1 (2026-09-01)
+-------------------
+
+Fix
+~~~
+
+- Typer Exit. [Tom Harrop]
+
+0.19.0 (2026-09-01)
+-------------------
+
+New
+
+~~~
+- Output directories for Submission. [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Add submission directories and make them accessible by get_dir. [Tom
+  Harrop]
+
+Other
+
+~~~~~
+- Merge pull request #44 from TomHarrop/chromosome_file. [Tom Harrop]
+
+
+0.18.1 (2026-08-28)
+-------------------
+
+Fix
+~~~
+- Brokering errors. [Tom Harrop]
+
+
+0.18.0 (2026-08-28)
+-------------------
+
+New
+~~~
+- Request an assembly Manifest from Canopy by Taxon ID (fixes #35) [Tom
+  Harrop]
+- Look up ToLID when requesting a manifest. [Tom Harrop]
+- Look up ToLID when requesting a manifest. [Tom Harrop]
+- Draft script for requesting a manifest from Canopy. [Tom Harrop]
+
+Changes
+~~~~~~~
+
+- Exit early if there are no specimen_samples. [Tom Harrop]
+
+Other
+
+~~~~~
+- Merge pull request #32 from TomHarrop/request-manifest. [Tom Harrop]
+- Merge branch 'main' into request-manifest. [Tom Harrop]
+- Merge branch 'main' into request-manifest-rebase. [Tom Harrop]
+- Merge branch 'main' into request-manifest. [Tom Harrop]
+- Merge branch 'main' into request-manifest. [Tom Harrop]
+- Notes. [Tom Harrop]
+- Comments for the request code. [Tom Harrop]
+- Working up to the point of requesting a new manifest. [Tom Harrop]
+- Framework for checking existing manifests. [Tom Harrop]
+- Demo request manifest. [Tom Harrop]
+
+
+0.17.1 (2026-08-26)
+-------------------
+
+Fix
+~~~
+- Include templates on install. [Tom Harrop]
+
+
+0.17.0 (2026-08-26)
+-------------------
+
+New
+~~~
+- Scripts to generate ENA Manifest file and report pipeline results to
+  Canopy. [Tom Harrop]
+- Scripts to generate ENA Manifest file and report pipeline results to
+  Canopy. [Tom Harrop]
+- Report pipeline results to Canopy. [Tom Harrop]
+
+Other
+~~~~~
+
+- Initial code for reporting pipeline results. [Tom Harrop]
+
 0.16.0 (2026-08-12)
 -------------------
 

@@ -1,6 +1,8 @@
 import argparse
 from importlib.metadata import metadata
+import json
 from os import getenv
+from pathlib import Path
 
 from snakemake.logging import logger
 
@@ -10,6 +12,14 @@ def check_env_var(env_var_name: str) -> str:
     if env_var_value is None:
         raise EnvironmentError(f"Set the {env_var_name} environment variable")
     return env_var_value
+
+
+def existing_file(path: Path | str) -> Path:
+    if isinstance(path, str):
+        path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(path.as_posix())
+    return path
 
 
 def generate_parser(
@@ -38,3 +48,20 @@ def log_version():
     pkg_name = pkg_metadata.get("Name")
     pkg_version = pkg_metadata.get("Version")
     logger.warning(f"{pkg_name} version {pkg_version}")
+
+
+def read_json_from_path(path_to_json_file: Path) -> dict[str, str | int | list[str]]:
+    with open(path_to_json_file, "rb") as f:
+        return json.load(f)
+
+
+def read_receipts_from_path(receipts_file: Path) -> list[dict[str, str]]:
+    records = []
+
+    with open(receipts_file, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                records.append(json.loads(line))
+
+    return records

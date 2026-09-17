@@ -12,9 +12,16 @@
                     "type": "string"
                 },
                 "lane_number": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
                     "default": "single_lane",
-                    "title": "lane_number",
-                    "type": "string"
+                    "title": "lane_number"
                 },
                 "raw_path": {
                     "anyOf": [

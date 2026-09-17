@@ -22,7 +22,7 @@ import json
 #       "sha256sum": "abc123..."
 #     }
 
-old_jsonl = Path("test-data", "ilOchLuni1.1.ascc.jsonl")
+old_jsonl = Path("test-data/bManMel1.1/upload_receipts/genomeassembly.jsonl")
 
 records = []
 new_records = []
@@ -40,7 +40,7 @@ with open(old_jsonl, "rt") as f:
             }
             new_records.append(new_json)
 
-with open('output.jsonl', 'w', encoding='utf-8') as f:
+with open('test-data/bManMel1.1/upload_receipts/genomeassembly.converted.jsonl', 'w', encoding='utf-8') as f:
     for record in new_records:
         f.write(json.dumps(record, ensure_ascii=False) + ', ')
 
