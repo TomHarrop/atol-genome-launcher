@@ -11,6 +11,9 @@
             "ascc": {
                 "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
                 "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
+            },
+            "annotation": {
+                "gtf": "tiberius.gtf"
             }
         }
     },
@@ -26,6 +29,9 @@
             "ascc": {
                 "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
                 "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
+            },
+            "annotation": {
+                "gtf": "tiberius.gtf"
             }
         }
     },
@@ -45,6 +51,9 @@
             "curation": {
                 "HAP1": "{dataset_id}.hap1.{assembly_version}.primary.curated.fa.gz",
                 "HAP2": "{dataset_id}.hap2.{assembly_version}.primary.curated.fa.gz"
+            },
+            "annotation": {
+                "gtf": "tiberius.gtf"
             }
         }
     },
@@ -64,6 +73,9 @@
             "curation": {
                 "HAP1": "{dataset_id}.hap1.{assembly_version}.primary.curated.fa.gz",
                 "HAP2": "{dataset_id}.hap2.{assembly_version}.primary.curated.fa.gz"
+            },
+            "annotation": {
+                "gtf": "tiberius.gtf"
             }
         }
     },

@@ -721,7 +721,7 @@ have the same ToLID), they should have different assembly_versions.
         # FIXME. Why is this hard coded?
         pipeline_base_dirs = {
             x: self.get_dir(name=x)
-            for x in ["genomeassembly", "ascc", "treeval", "curation"]
+            for x in ["genomeassembly", "ascc", "treeval", "curation", "annotation"]
         }
         return _resolve_assembly_types(
             assembly_version=self.assembly_version,
