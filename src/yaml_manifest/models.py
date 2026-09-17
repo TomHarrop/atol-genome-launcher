@@ -642,6 +642,33 @@ have the same ToLID), they should have different assembly_versions.
 
     @computed_field
     @property
+    def tiberius_model_cfg(self) -> str | None:
+        augustus_dataset_name = self.augustus_dataset_name
+        if augustus_dataset_name is None:
+            return None
+        if augustus_dataset_name.startswith("tiberius_model_cfg:"):
+            tiberius_model_cfg = augustus_dataset_name.removeprefix(
+                "tiberius_model_cfg:"
+            )
+            if tiberius_model_cfg.endswith(".yaml"):
+                return tiberius_model_cfg
+            else:
+                raise ValueError(
+                    (
+                        f"Parsed tiberius_model_cfg {tiberius_model_cfg} does not end with .yaml."
+                    )
+                )
+
+        raise ValueError(
+            (
+                "tiberius_model_cfg is currently parsed from augustus_dataset_name. "
+                "The format is `tiberius_model_cfg:model.yaml`. "
+                f"Could not parse string {augustus_dataset_name}"
+            )
+        )
+
+    @computed_field
+    @property
     def validated_dict(self) -> dict[str, Any]:
         """
         Wrapper to model_dump() for retrieving validated input without computed
@@ -694,7 +721,7 @@ have the same ToLID), they should have different assembly_versions.
         # FIXME. Why is this hard coded?
         pipeline_base_dirs = {
             x: self.get_dir(name=x)
-            for x in ["genomeassembly", "ascc", "treeval", "curation"]
+            for x in ["genomeassembly", "ascc", "treeval", "curation", "annotation"]
         }
         return _resolve_assembly_types(
             assembly_version=self.assembly_version,
