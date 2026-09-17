@@ -13,7 +13,14 @@
                 "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
             },
             "annotation": {
-                "gtf": "tiberius.gtf"
+                "annooddities_gff": "qc/AnnoOddities.gff",
+                "annooddities_stats": "qc/AnnoOddities.combined_statistics.json",
+                "annooddities_summary": "qc/AnnoOddities.oddity_summary.txt",
+                "gtf": "tiberius.gtf",
+                "qc_busco_json": "qc/short_summary.specific.busco.json",
+                "qc_busco_txt": "qc/short_summary.specific.busco.txt",
+                "qc_omark": "qc/omark_summary.json",
+                "qc_proteins": "qc/proteins.faa"
             }
         }
     },
@@ -31,7 +38,14 @@
                 "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
             },
             "annotation": {
-                "gtf": "tiberius.gtf"
+                "annooddities_gff": "qc/AnnoOddities.gff",
+                "annooddities_stats": "qc/AnnoOddities.combined_statistics.json",
+                "annooddities_summary": "qc/AnnoOddities.oddity_summary.txt",
+                "gtf": "tiberius.gtf",
+                "qc_busco_json": "qc/short_summary.specific.busco.json",
+                "qc_busco_txt": "qc/short_summary.specific.busco.txt",
+                "qc_omark": "qc/omark_summary.json",
+                "qc_proteins": "qc/proteins.faa"
             }
         }
     },
@@ -53,7 +67,14 @@
                 "HAP2": "{dataset_id}.hap2.{assembly_version}.primary.curated.fa.gz"
             },
             "annotation": {
-                "gtf": "tiberius.gtf"
+                "annooddities_gff": "qc/AnnoOddities.gff",
+                "annooddities_stats": "qc/AnnoOddities.combined_statistics.json",
+                "annooddities_summary": "qc/AnnoOddities.oddity_summary.txt",
+                "gtf": "tiberius.gtf",
+                "qc_busco_json": "qc/short_summary.specific.busco.json",
+                "qc_busco_txt": "qc/short_summary.specific.busco.txt",
+                "qc_omark": "qc/omark_summary.json",
+                "qc_proteins": "qc/proteins.faa"
             }
         }
     },
@@ -75,7 +96,14 @@
                 "HAP2": "{dataset_id}.hap2.{assembly_version}.primary.curated.fa.gz"
             },
             "annotation": {
-                "gtf": "tiberius.gtf"
+                "annooddities_gff": "qc/AnnoOddities.gff",
+                "annooddities_stats": "qc/AnnoOddities.combined_statistics.json",
+                "annooddities_summary": "qc/AnnoOddities.oddity_summary.txt",
+                "gtf": "tiberius.gtf",
+                "qc_busco_json": "qc/short_summary.specific.busco.json",
+                "qc_busco_txt": "qc/short_summary.specific.busco.txt",
+                "qc_omark": "qc/omark_summary.json",
+                "qc_proteins": "qc/proteins.faa"
             }
         }
     },
