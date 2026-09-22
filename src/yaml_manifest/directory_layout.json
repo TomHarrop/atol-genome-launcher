@@ -70,6 +70,21 @@
                 ]
             }
         },
+        "annotation": {
+            "dir": "pipeline_output",
+            "logs": "logs/annotation",
+            "pipeline_input": {},
+            "upload": {
+                "exclude_patterns": [],
+                "compress_extensions": [
+                    ".faa",
+                    ".gff",
+                    ".gtf",
+                    ".json",
+                    ".txt"
+                ]
+            }
+        },
         "ascc": {
             "dir": "pipeline_output",
             "logs": "logs/ascc",
