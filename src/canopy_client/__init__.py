@@ -10,6 +10,25 @@ from common import check_env_var, logger
 import requests
 
 
+class AssemblyType(StrEnum):
+    PRIMARY = auto()
+    SECONDARY = auto()
+
+
+class ProjectType(StrEnum):
+    ROOT = auto()
+    GENOMIC_DATA = auto()
+    ASSEMBLY = auto()
+
+
+class SubmissionStatus(StrEnum):
+    ACCEPTED = auto()
+    DRAFT = auto()
+    READY = auto()
+    REJECTED = auto()
+    SUBMITTING = auto()
+
+
 class CanopySession(requests.Session):
     """
     **Authenticated** requests.Session on Canopy.
@@ -506,25 +525,6 @@ class CanopySession(requests.Session):
         url_suffix = url_template.format(assembly_id=assembly_id)
 
         return self._put(url=url_suffix, data=json.dumps(body))
-
-
-class AssemblyType(StrEnum):
-    PRIMARY = auto()
-    SECONDARY = auto()
-
-
-class ProjectType(StrEnum):
-    ROOT = auto()
-    GENOMIC_DATA = auto()
-    ASSEMBLY = auto()
-
-
-class SubmissionStatus(StrEnum):
-    ACCEPTED = auto()
-    DRAFT = auto()
-    READY = auto()
-    REJECTED = auto()
-    SUBMITTING = auto()
 
 
 def get_accession_from_response(

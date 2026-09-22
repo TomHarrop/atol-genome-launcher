@@ -8,13 +8,14 @@ import urllib.parse
 from broker.cli import tolid_request
 import canopy_client
 from common import check_env_var, generate_parser
+from requests import Response
 from requests.exceptions import HTTPError
 from snakemake.logging import logger
 from yaml_manifest import Manifest
 
 
 def check_if_assembly_exists(
-    assembly: dict[str, str], canopy_manifests: requests.Response
+    assembly: dict[str, str], canopy_manifests: Response
 ) -> dict[str, str]:
     """
     Check if any of the canopy_manifests match this assembly.
@@ -97,7 +98,7 @@ def check_if_assembly_exists(
     return raw_assembly_manifests[max_version]
 
 
-def get_inner_specimen_samples(specimen_samples: requests.Response):
+def get_inner_specimen_samples(specimen_samples: Response):
     return specimen_samples.json().get("specimen_samples", [])
 
 
@@ -110,7 +111,7 @@ def get_manifest_samples(manifest_json: dict[str, str]) -> list[str]:
     return sorted(set(manifest_samples))
 
 
-def get_sample_data_types(specimen_samples: requests.Response):
+def get_sample_data_types(specimen_samples: Response):
     """
     Parse the specimen_samples and return a list of tuples of sample_id and
     data_type for long read samples, and a list of sample_id for hic samples:
