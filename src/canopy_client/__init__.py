@@ -115,13 +115,22 @@ class CanopySession(requests.Session):
         Return a tuple of (accession, accession_type) so we can action ENA
         accessions
         """
-        tolid_status = self.get_tolid_by_sample(sample_id=sample_id).json()
-        sample_tolid = tolid_status.get("tolid", None)
+        try:
+            tolid_status = self.get_tolid_by_sample(sample_id=sample_id).json()
+            sample_tolid = tolid_status.get("tolid", None)
+            ena_accession = tolid_status.get("specimen_id", None)
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                sample_tolid = None
+                ena_accession = None
+            else:
+                raise e
+
         if sample_tolid is not None:
             return (sample_tolid, "tolid")
 
         # try to search by ENA accession, if there is one
-        ena_accession = tolid_status.get("specimen_id", None)
         if ena_accession is not None:
 
             tolid_by_specimen_accession = self.get_tolid_by_specimen_accession(
