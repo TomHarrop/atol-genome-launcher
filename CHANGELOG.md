@@ -1,6 +1,20 @@
 Changelog
 =========
 
+0.21.4 (2026-10-05)
+-------------------
+
+Fix
+
+~~~
+- Exclude non-genome outputs from ASCC samplesheet. [Tom Harrop]
+- Don't check for files at deploy. [Tom Harrop]
+
+Other
+~~~~~
+
+- Ascc samplesheet bugfixes. [Amy Tims]
+
 0.21.3 (2026-10-04)
 -------------------
 
