@@ -13,7 +13,7 @@ def parse_arguments():
 
     parser.add_argument("manifest", type=Path)
     parser.add_argument("pipeline_config", type=Path)
-    inputs_parser.add_argument(
+    _ = inputs_parser.add_argument(
         "--template",
         default=my_files.joinpath("templates/sanger-tol_genomeassembly_0.50.0.yaml.j2"),
         type=Path,
@@ -26,7 +26,9 @@ def template_dir():
     return pkg_resources.files(__package__).joinpath("templates")
 
 
-def render_template(manifest, template_path, outfile, existing_ascc_inputs):
+def render_template(manifest, template_path, outfile):
+
+    _genomeassembly_outputs_for_ascc = ["PRIMARY", "HAPLO", "MITO"]
 
     # ReadFileCollection properties aren't included in model_dump(),
     # so pass them explicitly for templates that need resolved read paths.
@@ -34,7 +36,12 @@ def render_template(manifest, template_path, outfile, existing_ascc_inputs):
         "pacbio_reads": manifest.pacbio_reads.flat_paths("qc"),
         "ont_reads": manifest.ont_reads.flat_paths("qc"),
         "hic_reads": manifest.hic_reads.flat_paths("qc"),
-        "ascc_inputs": existing_ascc_inputs,
+        "ascc_inputs": {
+            k: manifest.treeval_assembly.outputs.get("genomeassembly", {}).get(
+                k, Path()
+            )
+            for k in _genomeassembly_outputs_for_ascc
+        },
     }
 
     # render template
@@ -54,15 +61,7 @@ def main():
     with open(args.manifest, "rb") as f:
         manifest = Manifest.model_validate_json(f.read())
 
-    ascc_inputs = {
-        k: v
-        for k, v in manifest.treeval_assembly.outputs.get("genomeassembly", {}).items()
-        if k in {"PRIMARY", "HAPLO", "MITO"}
-    }
-
-    existing_ascc_inputs = {k: v for k, v in ascc_inputs.items() if Path(v).is_file()}
-
-    render_template(manifest, template_path, args.pipeline_config, existing_ascc_inputs)
+    render_template(manifest, template_path, args.pipeline_config)
 
 
 if __name__ == "__main__":
