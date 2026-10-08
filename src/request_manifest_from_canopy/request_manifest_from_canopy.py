@@ -422,6 +422,7 @@ def main():
 
     # Output manifests
     logger.info(f"Writing {len(new_assemblies)} manifest file/s to {args.outdir}.")
+    args.outdir.mkdir(parents=True, exist_ok=True)
     for manifest in new_assemblies:
         validated_manifest = raw_to_manifest(manifest)
         write_manifest(validated_manifest, args.outdir)
