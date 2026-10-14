@@ -247,6 +247,34 @@ class CanopySession(requests.Session):
 
         return None
 
+    def get_data_portal_code_from_bioplatforms_project_id(
+        self, bioplatforms_project_id: str
+    ) -> str | None:
+        # This is currently hardcoded, because the data_portal_code is defined in a
+        # Word document. Once that field is added to Canopy this should be a lookup by
+        # the launcher. See
+        # https://github.com/AustralianBioCommons/atol-canopy/issues/74
+        _bioplatforms_project_id_to_data_portal_code = {
+            "ausarg": "AusARG",
+            "animal-disease": "AD",
+            "aus-avian": "AVIAN",
+            "aus-fish": "FISH",
+            "grasslands": "AG",
+            "australian-microbiome": "AM",
+            "aus-venom": "AVID",
+            "forest-resilience": "FOR",
+            "fungi": "FUN",
+            "bpa-plants": "GAP",
+            "bpa-ipm": "IPM",
+            "bpa-omg": "OMG",
+            "plant-pathogen": "PP",
+            "ppa": "PPA",
+            "threatened-species": "TSI",
+        }
+        return _bioplatforms_project_id_to_data_portal_code.get(
+            bioplatforms_project_id, None
+        )
+
     def get_experiment_accession(
         self,
         bpa_package_id: str,
