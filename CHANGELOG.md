@@ -1,43 +1,62 @@
 Changelog
 =========
 
-0.21.4 (2026-10-05)
+0.21.6 (2026-10-15)
+-------------------
+
+- Bump broker to 0.1.7. [Tom Harrop]
+- Merge pull request #58 from TomHarrop/update-description. [Tom Harrop]
+
+  adding 'Bioplatforms Australia' to assembly description
+- Adding 'Bioplatforms Australia' to assembly description. [Keeva]
+
+0.21.5 (2026-10-08)
 -------------------
 
 Fix
 
 ~~~
+- Make parent directories before writing manifest. [Tom Harrop]
+
+
+0.21.4 (2026-10-05)
+-------------------
+
+Fix
+~~~
+
 - Exclude non-genome outputs from ASCC samplesheet. [Tom Harrop]
 - Don't check for files at deploy. [Tom Harrop]
 
 Other
-~~~~~
 
+~~~~~
 - Ascc samplesheet bugfixes. [Amy Tims]
+
 
 0.21.3 (2026-10-04)
 -------------------
 
 Changes
-
 ~~~~~~~
-- Update broker dependency. [Tom Harrop]
 
+- Update broker dependency. [Tom Harrop]
 
 0.21.2 (2026-10-01)
 -------------------
-- Bump broker. [Tom Harrop]
 
+- Bump broker. [Tom Harrop]
 
 0.21.1 (2026-09-30)
 -------------------
-- Bump broker. [Tom Harrop]
 
+- Bump broker. [Tom Harrop]
 
 0.21.0 (2026-09-24)
 -------------------
 
 New
+
 ~~~
 - Register curation files in manifest. [Tom Harrop]
 
@@ -45,6 +64,7 @@ New
 
 Other
 ~~~~~
+
 - Merge branch 'main' into curation_files_merge. [Amy Tims]
 - Adding files for assembly type oxford_nanopore.phased. [Amy Tims]
 - Merge branch 'main' into curation_files_merge. [Amy Tims]
@@ -52,11 +72,11 @@ Other
 - Starting to update file lists for generating curation package. [Amy
   Tims]
 
-
 0.20.2 (2026-09-23)
 -------------------
 
 Fix
+
 ~~~
 - Handle 404 in check_for_tolid. [Tom Harrop]
 
@@ -66,29 +86,31 @@ Fix
 
 Fix
 ~~~
-- Import order for request-manifest. [Tom Harrop]
 
+- Import order for request-manifest. [Tom Harrop]
 
 0.20.0 (2026-09-22)
 -------------------
 
 New
+
 ~~~
 - Register annotation in the Manifest. [Tom Harrop]
 
 Other
 ~~~~~
+
 - Parse tiberius_model_cfg from augustus_dataset_name For
-  https://github.com/AToL-Bioinformatics/genome-launcher-
+  <https://github.com/AToL-Bioinformatics/genome-launcher->
   workflow/issues/46. [Tom Harrop]
 - Merge pull request #51 from TomHarrop/50-submit-run-to-ena-is-not-
   correctly-identifying-existing-qc_reads. [Tom Harrop]
-
 
 0.19.3 (2026-09-03)
 -------------------
 
 Fix
+
 ~~~
 - Handle pipeline_output in layout transparently. [Tom Harrop]
 
@@ -98,13 +120,14 @@ Fix
 
 Fix
 ~~~
-- Temporarily accept lane_number = None (see #45) [Tom Harrop]
 
+- Temporarily accept lane_number = None (see #45) [Tom Harrop]
 
 0.19.1 (2026-09-01)
 -------------------
 
 Fix
+
 ~~~
 - Typer Exit. [Tom Harrop]
 
@@ -114,16 +137,16 @@ Fix
 
 New
 ~~~
+
 - Output directories for Submission. [Tom Harrop]
 
 Changes
-~~~~~~~
 
+~~~~~~~
 - Add submission directories and make them accessible by get_dir. [Tom
   Harrop]
 
 Other
-
 ~~~~~
 - Merge pull request #44 from TomHarrop/chromosome_file. [Tom Harrop]
 
