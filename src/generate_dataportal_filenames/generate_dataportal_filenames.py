@@ -7,7 +7,7 @@ from pathlib import Path
 
 import canopy_client
 from common import existing_file, generate_parser, logger
-from yaml_manifest import Manifest, AssemblyType
+from yaml_manifest import Manifest
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -111,10 +111,14 @@ def main():
     # validate json
     try:
         filepaths_json = json.loads(rendered_template)
-        with open(args.dp_files, "wt") as f:
-            json.dump(filepaths_json, f, indent=4)
     except json.decoder.JSONDecodeError:
-        raise ValueError(rendered_template)
+        raise ValueError(f"Could not convert rendered_template to JSON.\n{rendered_template}")
+
+    # write json
+    args.dp_files.parent.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Writing filenames to {args.dp_files}")
+    with open(args.dp_files, "wt") as f:
+        json.dump(filepaths_json, f)
 
 if __name__ == "__main__":
     main()
