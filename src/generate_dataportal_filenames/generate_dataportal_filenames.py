@@ -7,7 +7,7 @@ from pathlib import Path
 
 import canopy_client
 from common import existing_file, generate_parser, logger
-from yaml_manifest import Manifest
+from yaml_manifest import Manifest, AssemblyType
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -78,6 +78,8 @@ def main():
     with open(args.manifest, "rb") as f:
         manifest = Manifest.model_validate_json(f.read())
 
+    # raise ValueError(manifest.treeval_assembly.is_phased)
+
     # get the bioplatforms_project_id
     logger.info(f"Looking up Initiatives for assembly_id {manifest.assembly_id}.")
     bioplatforms_project_id, data_portal_code = lookup_data_portal_code(
@@ -94,15 +96,25 @@ def main():
     )
 
     assembly_id_serial = "FIXME"
-    x = manifest.render_template_file(
+
+    rendered_template = manifest.render_template_file(
         args.template,
         data_portal_code=data_portal_code,
         assembly_id_serial=assembly_id_serial,
+        curation_package=Path(
+            manifest.get_dir("treeval"), "curation.tar.gz"
+        ).as_posix(),
+        read_qc_results=[x.stats_path("qc").as_posix() for x in manifest.read_files],
         **manifest.treeval_assembly.outputs,
     )
 
-    raise ValueError(x)
-
+    # validate json
+    try:
+        filepaths_json = json.loads(rendered_template)
+        with open(args.dp_files, "wt") as f:
+            json.dump(filepaths_json, f, indent=4)
+    except json.decoder.JSONDecodeError:
+        raise ValueError(rendered_template)
 
 if __name__ == "__main__":
     main()

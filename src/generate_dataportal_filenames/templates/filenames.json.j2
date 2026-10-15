@@ -1,3 +1,43 @@
 {
-    "{{ genomeassembly.PRIMARY }}": "{{ assembly_id_serial }}_{{ data_portal_code }}_AToL_PRIMARY_autofiltered.fasta.gz"
+    "primary_assembly": {
+        "path": "{{ genomeassembly.PRIMARY }}",
+        "filename": "{{ assembly_id_serial }}_{{ data_portal_code }}_AToL_PRIMARY_autofiltered.fasta.gz"
+    },
+    "alternate_assembly": {
+        "path": "{{ genomeassembly.HAPLO }}",
+        "filename": "{{ assembly_id_serial }}_{{ data_portal_code }}_AToL_SECONDARY_autofiltered.fasta.gz"
+    },
+    "curation_package": {
+        "path": "{{ curation_package }}",
+        "filename": "{{ assembly_id_serial }}_{{ data_portal_code }}_AToL_curation.tar.gz"
+    },
+    "blobtoolkit_package": {
+        "path": "{{ ascc.BTK_PRIMARY }}",
+        "filename": "{{ assembly_id_serial }}_{{ data_portal_code }}_AToL_btk.tar.gz"
+    },
+    "busco_result": {
+        "path": "{{ genomeassembly.BUSCO_BATCH_SUMMARY }}",
+        "filename": "{{ assembly_id_serial }}_{{ data_portal_code }}_AToL_busco.batch_summary.txt"
+    },
+    "read_qc_results": {
+        "path": [ {% for read_qc_result in read_qc_results %}"{{ read_qc_result }}"{{ "," if not loop.last }}  {% endfor %} ],
+        "filename": "{{ assembly_id_serial }}_{{ data_portal_code }}_AToL_qc_stats.tar.gz"
+    },
+    "gfa_file": {
+        "path": "{{ genomeassembly.GFA_PRIMARY }}",
+        "filename": "{{ assembly_id_serial }}_{{ data_portal_code }}_AToL_{% if is_phased %}hic{% else %}bp{%endif%}.hap1.p_ctg.gfa.gz"
+    },
+    "annotation": {
+        "path": "{{ annotation.gtf }}",
+        "filename": "{{ assembly_id_serial }}_{{ data_portal_code }}_AToL_annotation.gtf.gz"
+    },
+    "manifest": {
+        "filename": "{{ data_portal_code }}_ATOL_{{ assembly_id_serial }}_manifest.json"
+    },
+    "checksums": {
+        "filename": "{{ data_portal_code }}_ATOL_{{ assembly_id_serial }}_checksums.md5"
+    },
+    "metadata": {
+        "filename": "{{ data_portal_code }}_ATOL_{{ assembly_id_serial }}_metadata.xlsx"
+    }
 }
