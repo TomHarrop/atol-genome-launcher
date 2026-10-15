@@ -202,7 +202,6 @@ class CanopySession(requests.Session):
 
     def get_assembly_run_id_by_hash(
         self,
-        assembly_id: str,
         github_repo: str,
         git_commit: str,
     ) -> str | None:
@@ -215,6 +214,34 @@ class CanopySession(requests.Session):
                 return assembly_run.get("id", None)
 
         return None
+
+    def get_git_info_by_stage_name(
+        self, assembly_id: str, stage_name: str
+    ) -> dict[str, str] | None:
+        assembly_runs = self.list_assembly_runs(assembly_id=assembly_id)
+        matching_runs = []
+
+        for assembly_run in assembly_runs.json():
+            for stage_run in assembly_run.get("stage_runs", []):
+                if (
+                    stage_run.get("stage_name") == stage_name
+                    and len(stage_run.get("files", [])) > 0
+                ):
+                    matching_runs.append(assembly_run)
+
+        if len(matching_runs) > 1:
+            logger.warning(
+                (
+                    f"Multiple assembly_runs with stage_name {stage_name} are registered for "
+                    f"assembly_id {assembly_id}. Using the first."
+                )
+            )
+
+        if len(matching_runs) == 0:
+            return None
+
+        matching_run = matching_runs[0]
+        return {k: matching_run[k] for k in ["github_repo", "git_commit"]}
 
     def get_biosample_id(
         self,

@@ -28,6 +28,7 @@ class DraftAssemblyMetadata(BaseModel):
     taxon_id: int
     bioplatforms_project: str
 
+    # Lookups (don't print these)
     @computed_field
     @property
     def canopy_assembly(self) -> dict[str, str]:
@@ -46,6 +47,19 @@ class DraftAssemblyMetadata(BaseModel):
 
     @computed_field
     @property
+    def git_info(self) -> dict[str, str]:
+        git_info = self.canopy_session.get_git_info_by_stage_name(
+            assembly_id=self.assembly_id, stage_name="genomeassembly"
+        )
+        if git_info is None:
+            raise ValueError(
+                f"No git info for assembly_id {self.assembly_id} on Canopy."
+            )
+        return git_info
+
+    # metadata fields
+    @computed_field
+    @property
     def insdc_root_bioproject(self) -> str:
         # Umbrella-level BioProject accession
         return self.canopy_project.get("project_accession", "")
@@ -62,17 +76,17 @@ class DraftAssemblyMetadata(BaseModel):
         # Umbrella-level BioProject description
         return self.canopy_project.get("description", "")
 
-    # easy, do next
     @computed_field
     @property
     def code_repository(self) -> str:
-        return _not_implemented_lookup()
+        return self.git_info.get("github_repo")
 
     @computed_field
     @property
     def code_repository_hash(self) -> str:
-        return _not_implemented_lookup()
+        return self.git_info.get("git_commit")
 
+    # easy, do next
     @computed_field
     @property
     def insdc_status(self) -> str:

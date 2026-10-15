@@ -25,6 +25,13 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     _ = inputs_parser.add_argument(
+        "--git_log",
+        help="Output from the record_git_info rule.",
+        required=True,
+        type=existing_file,
+    )
+
+    _ = inputs_parser.add_argument(
         "--template",
         help="Template for the ENA assembly manifest",
         default=my_files.joinpath("templates/filenames.json.j2"),
@@ -98,22 +105,29 @@ def main():
 
     assembly_id_serial = "FIXME"
 
-    # prepare the metadata
+    metadata_context = {
+        "assembly_tolid": manifest.dataset_id,
+        "sequence_data_types": manifest.all_data_types,
+        "bpa_package_id": manifest.all_filenames,
+        "bioplatforms_project": bioplatforms_project_id,
+        "bioplatforms_assembly_id": assembly_id_serial,
+    }
+
     draft_assembly_metadata = DraftAssemblyMetadata(
-        canopy_session=canopy_session,
-        assembly_id=manifest.assembly_id,
-        assembly_tolid=manifest.dataset_id,
-        assembly_version=manifest.assembly_version,
-        bioplatforms_assembly_id=assembly_id_serial,
-        bioplatforms_project=bioplatforms_project_id,
-        bpa_package_id=manifest.all_filenames,
-        scientific_name=manifest.scientific_name,
-        sequence_data_types=manifest.all_data_types,
-        taxon_id=manifest.taxon_id,
+        canopy_session=canopy_session, **manifest.model_dump(), **metadata_context
     )
     raise ValueError(
-        draft_assembly_metadata.model_dump(
-            exclude={"assembly_id", "canopy_session", "canopy_assembly", "canopy_project"}
+        json.dumps(
+            draft_assembly_metadata.model_dump(
+                exclude={
+                    "assembly_id",
+                    "canopy_session",
+                    "canopy_assembly",
+                    "canopy_project",
+                    "git_info",
+                }
+            ),
+            indent=4,
         )
     )
 
