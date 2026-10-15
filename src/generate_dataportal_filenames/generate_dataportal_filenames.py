@@ -7,6 +7,7 @@ from pathlib import Path
 
 import canopy_client
 from common import existing_file, generate_parser, logger
+from generate_dataportal_filenames.models import DraftAssemblyMetadata
 from yaml_manifest import Manifest
 
 
@@ -97,6 +98,26 @@ def main():
 
     assembly_id_serial = "FIXME"
 
+    # prepare the metadata
+    draft_assembly_metadata = DraftAssemblyMetadata(
+        canopy_session=canopy_session,
+        assembly_id=manifest.assembly_id,
+        assembly_tolid=manifest.dataset_id,
+        assembly_version=manifest.assembly_version,
+        bioplatforms_assembly_id=assembly_id_serial,
+        bioplatforms_project=bioplatforms_project_id,
+        bpa_package_id=manifest.all_filenames,
+        scientific_name=manifest.scientific_name,
+        sequence_data_types=manifest.all_data_types,
+        taxon_id=manifest.taxon_id,
+    )
+    raise ValueError(
+        draft_assembly_metadata.model_dump(
+            exclude={"assembly_id", "canopy_session", "canopy_assembly", "canopy_project"}
+        )
+    )
+
+    # write the filenames
     rendered_template = manifest.render_template_file(
         args.template,
         data_portal_code=data_portal_code,
@@ -112,13 +133,16 @@ def main():
     try:
         filepaths_json = json.loads(rendered_template)
     except json.decoder.JSONDecodeError:
-        raise ValueError(f"Could not convert rendered_template to JSON.\n{rendered_template}")
+        raise ValueError(
+            f"Could not convert rendered_template to JSON.\n{rendered_template}"
+        )
 
     # write json
     args.dp_files.parent.mkdir(parents=True, exist_ok=True)
     logger.info(f"Writing filenames to {args.dp_files}")
     with open(args.dp_files, "wt") as f:
         json.dump(filepaths_json, f)
+
 
 if __name__ == "__main__":
     main()
