@@ -8,47 +8,12 @@ from pathlib import Path
 import canopy_client
 from common import existing_file, generate_parser, logger
 from generate_dataportal_filenames.models import DraftAssemblyMetadata
+import pandas as pd
 from yaml_manifest import Manifest
 
 
-def parse_arguments() -> argparse.Namespace:
-
-    my_files = pkg_resources.files(__package__)
-
-    parser, inputs_parser, outputs_parser, settings_parser = generate_parser(
-        description=(
-            "Utility script for the genome-launcher-workflow. "
-            "Run this script to generate a JSON file of outputs "
-            "from the assembly and the names for the draft "
-            "assembly package."
-        )
-    )
-
-    _ = inputs_parser.add_argument(
-        "--git_log",
-        help="Output from the record_git_info rule.",
-        required=True,
-        type=existing_file,
-    )
-
-    _ = inputs_parser.add_argument(
-        "--template",
-        help="Template for the ENA assembly manifest",
-        default=my_files.joinpath("templates/filenames.json.j2"),
-        type=existing_file,
-    )
-
-    _ = parser.add_argument(
-        "manifest", type=existing_file, help="AToL assembly manifest."
-    )
-
-    _ = parser.add_argument(
-        "dp_files",
-        type=Path,
-        help="Path to write the JSON file of outputs.",
-    )
-
-    return parser.parse_args()
+def assembly_size(line: pd.core.series.Series) -> int:
+    return line["sum_len"] - (line["sum_n"])
 
 
 def lookup_data_portal_code(
@@ -74,6 +39,60 @@ def lookup_data_portal_code(
     )
 
     return (bioplatforms_project_id, data_portal_code)
+
+
+def parse_arguments() -> argparse.Namespace:
+
+    my_files = pkg_resources.files(__package__)
+
+    parser, inputs_parser, outputs_parser, settings_parser = generate_parser(
+        description=(
+            "Utility script for the genome-launcher-workflow. "
+            "Run this script to generate a JSON file of outputs "
+            "from the assembly and the names for the draft "
+            "assembly package."
+        )
+    )
+
+    _ = inputs_parser.add_argument(
+        "--stats",
+        help="Stats output from the calculate_depth rule.",
+        required=True,
+        type=existing_file,
+    )
+
+    _ = inputs_parser.add_argument(
+        "--template",
+        help="Template for the ENA assembly manifest",
+        default=my_files.joinpath("templates/filenames.json.j2"),
+        type=existing_file,
+    )
+
+    _ = parser.add_argument(
+        "manifest", type=existing_file, help="AToL assembly manifest."
+    )
+
+    _ = parser.add_argument(
+        "dp_files",
+        type=Path,
+        help="Path to write the JSON file of outputs.",
+    )
+
+    return parser.parse_args()
+
+
+def process_stats(stats_file: Path, manifest: Manifest) -> dict[str, str | int]:
+    seq_stats = pd.read_csv(stats_file, sep="\t", header=0, index_col=1)
+    genomeassembly_outputs = manifest.treeval_assembly.outputs_for("genomeassembly")
+    PRIMARY = seq_stats.loc[genomeassembly_outputs.get("PRIMARY").as_posix()]
+    HAPLO = seq_stats.loc[genomeassembly_outputs.get("HAPLO").as_posix()]
+    return {
+        "assembly_size_primary": assembly_size(PRIMARY),
+        "assembly_size_secondary": assembly_size(HAPLO),
+        "n50_length_primary": PRIMARY["N50"],
+        "n50_length_secondary": HAPLO["N50"],
+        "sequencing_depth": PRIMARY["sequencing_depth"],
+    }
 
 
 def main():
@@ -112,6 +131,8 @@ def main():
 
     assembly_id_serial = "FIXME"
 
+    # This renames keys from the manifest so they are named correctly in the
+    # output
     metadata_context = {
         "assembly_tolid": manifest.dataset_id,
         "sequence_data_types": manifest.all_data_types,
@@ -121,7 +142,10 @@ def main():
     }
 
     draft_assembly_metadata = DraftAssemblyMetadata(
-        canopy_session=canopy_session, **manifest.validated_dict, **metadata_context
+        canopy_session=canopy_session,
+        **manifest.validated_dict,
+        **metadata_context,
+        **process_stats(stats_file=args.stats, manifest=manifest),
     )
 
     # raise ValueError(draft_assembly_metadata.canopy_reads)
@@ -133,14 +157,16 @@ def main():
                     "assembly_id",
                     "canopy_assembly_run",
                     "canopy_assembly",
+                    "canopy_experiment_ids",
+                    "canopy_experiments",
                     "canopy_project",
+                    "canopy_read_ids",
+                    "canopy_reads",
+                    "canopy_sample_ids",
+                    "canopy_samples",
                     "canopy_session",
                     "canopy_taxonomy_info",
                     "git_info",
-                    "canopy_experiments",
-                    "canopy_experiment_ids",
-                    "canopy_read_ids",
-                    "canopy_reads",
                 }
             ),
             indent=4,

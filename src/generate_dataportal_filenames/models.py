@@ -15,18 +15,25 @@ def _not_implemented_lookup() -> str:
 class DraftAssemblyMetadata(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
     # require a Canopy session at init for lookups
     canopy_session: CanopySession
     assembly_id: str | None
 
+    # output fields that are passed e.g. from the Manifest
+    assembly_size_primary: int
+    assembly_size_secondary: int
     assembly_tolid: str
     assembly_version: int
     bioplatforms_assembly_id: str
+    bioplatforms_project: str
     bpa_package_id: list[str]
+    n50_length_primary: int
+    n50_length_secondary: int
     scientific_name: str
     sequence_data_types: list[str]
+    sequencing_depth: int
     taxon_id: int
-    bioplatforms_project: str
 
     # Lookups (don't print these)
     @computed_field
@@ -161,19 +168,19 @@ class DraftAssemblyMetadata(BaseModel):
     @computed_field
     @property
     def ncbi_common_name(self) -> str:
-        return self.canopy_taxonomy_info.get("ncbi_common_name")
+        return self.canopy_taxonomy_info.get("ncbi_common_name", "")
 
     @computed_field
     @property
     def ncbi_family(self) -> str:
-        return self.canopy_taxonomy_info.get("ncbi_family")
+        return self.canopy_taxonomy_info.get("ncbi_family", "")
 
     @computed_field
     @property
     def ncbi_genus(self) -> str:
         ncbi_lineage = self.canopy_taxonomy_info.get("ncbi_lineage")
         for rank in ncbi_lineage:
-            if rank.get("rank", "") == "genus":
+            if rank.get("rank") == "genus":
                 return rank.get("name", "")
         return ""
 
@@ -217,27 +224,6 @@ class DraftAssemblyMetadata(BaseModel):
     def bioplatforms_dataset_id(self) -> str:
         return [x.get("bpa_dataset_id", "") for x in self.canopy_reads]
 
-    # Metadata fields - NOT registered in Canopy
-    @computed_field
-    @property
-    def assembly_size_primary(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def n50_length_primary(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def assembly_size_secondary(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def n50_length_secondary(self) -> str:
-        return _not_implemented_lookup()
-
     @computed_field
     @property
     def busco_string_primary(self) -> str:
@@ -246,9 +232,4 @@ class DraftAssemblyMetadata(BaseModel):
     @computed_field
     @property
     def busco_string_secondary(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def sequencing_depth(self) -> str:
         return _not_implemented_lookup()
