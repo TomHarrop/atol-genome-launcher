@@ -16,6 +16,11 @@ def assembly_size(line: pd.core.series.Series) -> int:
     return line["sum_len"] - (line["sum_n"])
 
 
+def busco_string(busco_file: Path) -> str:
+    with open(busco_file, "rb") as f:
+        return json.load(f).get("results", {}).get("one_line_summary", "")
+
+
 def lookup_data_portal_code(
     canopy_session: canopy_client.CanopySession, manifest: Manifest
 ) -> tuple[str, str | None]:
@@ -57,6 +62,19 @@ def parse_arguments() -> argparse.Namespace:
     _ = inputs_parser.add_argument(
         "--stats",
         help="Stats output from the calculate_depth rule.",
+        required=True,
+        type=existing_file,
+    )
+
+    _ = inputs_parser.add_argument(
+        "--busco_primary",
+        help="PRIMARY_BUSCO_JSON output from genomeassembly.",
+        required=True,
+        type=existing_file,
+    )
+    _ = inputs_parser.add_argument(
+        "--busco_secondary",
+        help="HAPLO_BUSCO_JSON output from genomeassembly.",
         required=True,
         type=existing_file,
     )
@@ -139,6 +157,8 @@ def main():
         "bpa_package_id": manifest.all_filenames,
         "bioplatforms_project": bioplatforms_project_id,
         "bioplatforms_assembly_id": assembly_id_serial,
+        "busco_string_primary": busco_string(args.busco_primary),
+        "busco_string_secondary": busco_string(args.busco_secondary),
     }
 
     draft_assembly_metadata = DraftAssemblyMetadata(
@@ -148,7 +168,8 @@ def main():
         **process_stats(stats_file=args.stats, manifest=manifest),
     )
 
-    # raise ValueError(draft_assembly_metadata.canopy_reads)
+    x = pd.DataFrame.from_dict(draft_assembly_metadata.model_dump(), orient="index")
+    x.transpose().to_excel("test-output/metadata.xlsx")
 
     raise ValueError(
         json.dumps(

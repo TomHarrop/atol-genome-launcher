@@ -30,12 +30,15 @@ class DraftAssemblyMetadata(BaseModel):
     bioplatforms_assembly_id: str
     bioplatforms_project: str
     bpa_package_id: list[str]
+    busco_string_primary: str
+    busco_string_secondary: str
     n50_length_primary: int
     n50_length_secondary: int
     scientific_name: str
     sequence_data_types: list[str]
     sequencing_depth: int
     taxon_id: int
+
 
     # Lookups (don't print these)
     @property
@@ -215,13 +218,3 @@ class DraftAssemblyMetadata(BaseModel):
     @property
     def bioplatforms_dataset_id(self) -> str:
         return [x.get("bpa_dataset_id", "") for x in self.canopy_reads]
-
-    @computed_field
-    @property
-    def busco_string_primary(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def busco_string_secondary(self) -> str:
-        return _not_implemented_lookup()
