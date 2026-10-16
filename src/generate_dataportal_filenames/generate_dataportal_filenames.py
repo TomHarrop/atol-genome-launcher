@@ -88,6 +88,13 @@ def main():
 
     # raise ValueError(manifest.treeval_assembly.is_phased)
 
+    # raise ValueError(
+    #     [
+    #         canopy_session.get_experiment_id(bpa_package_id=x)
+    #         for x in manifest.all_filenames
+    #     ]
+    # )
+
     # get the bioplatforms_project_id
     logger.info(f"Looking up Initiatives for assembly_id {manifest.assembly_id}.")
     bioplatforms_project_id, data_portal_code = lookup_data_portal_code(
@@ -117,7 +124,7 @@ def main():
         canopy_session=canopy_session, **manifest.validated_dict, **metadata_context
     )
 
-    # raise ValueError(draft_assembly_metadata.canopy_assembly_run)
+    # raise ValueError(draft_assembly_metadata.canopy_reads)
 
     raise ValueError(
         json.dumps(
@@ -130,6 +137,10 @@ def main():
                     "canopy_session",
                     "canopy_taxonomy_info",
                     "git_info",
+                    "canopy_experiments",
+                    "canopy_experiment_ids",
+                    "canopy_read_ids",
+                    "canopy_reads",
                 }
             ),
             indent=4,

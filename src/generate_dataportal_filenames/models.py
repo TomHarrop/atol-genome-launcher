@@ -56,9 +56,64 @@ class DraftAssemblyMetadata(BaseModel):
 
     @computed_field
     @property
+    def canopy_experiment_ids(self) -> list[str | None]:
+        return [
+            self.canopy_session.get_experiment_id(bpa_package_id=x)
+            for x in self.bpa_package_id
+        ]
+
+    @computed_field
+    @property
+    def canopy_experiments(self) -> list[dict[str, str]]:
+        return [
+            self.canopy_session.read_experiment(experiment_id=x).json()
+            for x in self.canopy_experiment_ids
+            if x is not None
+        ]
+
+    @computed_field
+    @property
     def canopy_project(self) -> dict[str, str]:
         project_id = self.canopy_assembly.get("project_id")
         return self.canopy_session.read_project(project_id=project_id).json()
+
+    @computed_field
+    @property
+    def canopy_read_ids(self) -> list[str]:
+        read_ids = []
+        for experiment_id in self.canopy_experiment_ids:
+            experiment_read_ids = self.canopy_session.get_read_ids(
+                experiment_id=experiment_id
+            )
+            for id in experiment_read_ids:
+                read_ids.append(id)
+        return sorted(set(read_ids))
+
+    @computed_field
+    @property
+    def canopy_reads(self) -> list[dict[str, str]]:
+        return [
+            self.canopy_session.read_read(read_id=x).json()
+            for x in self.canopy_read_ids
+            if x is not None
+        ]
+
+    @computed_field
+    @property
+    def canopy_sample_ids(self) -> list[str]:
+        return [
+            self.canopy_session.get_sample_id(bpa_package_id=x)
+            for x in self.bpa_package_id
+        ]
+
+    @computed_field
+    @property
+    def canopy_samples(self) -> list[dict[str, str]]:
+        return [
+            self.canopy_session.read_sample(sample_id=x).json()
+            for x in self.canopy_sample_ids
+            if x is not None
+        ]
 
     @computed_field
     @property
@@ -105,54 +160,62 @@ class DraftAssemblyMetadata(BaseModel):
 
     @computed_field
     @property
-    def insdc_status(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def insdc_hold_date(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
     def ncbi_common_name(self) -> str:
         return self.canopy_taxonomy_info.get("ncbi_common_name")
 
     @computed_field
     @property
     def ncbi_family(self) -> str:
-        return _not_implemented_lookup()
+        return self.canopy_taxonomy_info.get("ncbi_family")
 
     @computed_field
     @property
     def ncbi_genus(self) -> str:
-        return _not_implemented_lookup()
+        ncbi_lineage = self.canopy_taxonomy_info.get("ncbi_lineage")
+        for rank in ncbi_lineage:
+            if rank.get("rank", "") == "genus":
+                return rank.get("name", "")
+        return ""
 
     @computed_field
     @property
-    def insdc_assembly_accession_primary(self) -> str:
-        return _not_implemented_lookup()
+    def insdc_status(self) -> str:
+        return self.canopy_project.get("status", "")
 
     @computed_field
     @property
-    def insdc_assembly_accession_secondary(self) -> str:
-        return _not_implemented_lookup()
+    def insdc_hold_date(self) -> str | None:
+        # TODO. Currently not possible to retrieve from Canopy. See
+        # https://github.com/AustralianBioCommons/atol-canopy/issues/75
+        return None
+
+    @computed_field
+    @property
+    def insdc_assembly_accession_primary(self) -> str | None:
+        # TODO: Currently not possible to retrieve from ENA
+        return None
+
+    @computed_field
+    @property
+    def insdc_assembly_accession_secondary(self) -> str | None:
+        # TODO: Currently not possible to retrieve from ENA
+        return None
 
     # Metadata fields - might/should be registered in Canopy
     @computed_field
     @property
-    def bioplatforms_library_id(self) -> str:
-        return _not_implemented_lookup()
+    def bioplatforms_library_id(self) -> list[str]:
+        return [x.get("bpa_library_id", "") for x in self.canopy_experiments]
 
     @computed_field
     @property
-    def bioplatforms_sample_id(self) -> str:
-        return _not_implemented_lookup()
+    def bioplatforms_sample_id(self) -> list[str]:
+        return [x.get("bpa_sample_id", "") for x in self.canopy_samples]
 
     @computed_field
     @property
     def bioplatforms_dataset_id(self) -> str:
-        return _not_implemented_lookup()
+        return [x.get("bpa_dataset_id", "") for x in self.canopy_reads]
 
     # Metadata fields - NOT registered in Canopy
     @computed_field

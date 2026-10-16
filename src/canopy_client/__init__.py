@@ -373,6 +373,24 @@ class CanopySession(requests.Session):
 
         return None
 
+    def get_read_ids(
+        self,
+        experiment_id: str,
+        endpoint: str = "read_reads",
+    ) -> list[str | None]:
+        url_suffix = _endpoints.get(endpoint, "")
+
+        params = {"experiment_id": experiment_id}
+
+        read_ids = []
+        reads_json = self._get(url=url_suffix, params=params).json()
+        for read in reads_json:
+            read_id = read.get("id", None)
+            if read_id is not None:
+                read_ids.append(read_id)
+
+        return read_ids
+
     def get_sample_id(
         self,
         bpa_package_id: str,
@@ -550,6 +568,16 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix, params=params)
 
+    def read_read(
+        self,
+        read_id: str,
+        endpoint: str = "read_read",
+    ) -> requests.Response:
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(read_id=read_id)
+
+        return self._get(url=url_suffix)
+
     def read_sample(
         self,
         sample_id: str,
@@ -678,6 +706,8 @@ _endpoints = {
     "read_experiment": "/api/v1/experiments/{experiment_id}",
     "read_project": "/api/v1/projects/{project_id}",
     "read_projects": "/api/v1/projects/",
+    "read_read": "/api/v1/reads/{read_id}",
+    "read_reads": "/api/v1/reads/",
     "read_sample_submissions": "/api/v1/sample-submissions/",
     "read_sample": "/api/v1/samples/{sample_id}",
     "report_assembly_qc_read": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
