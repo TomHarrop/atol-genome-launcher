@@ -4,7 +4,7 @@ import json
 
 from canopy_client import CanopySession
 from common import logger
-from pydantic import BaseModel, ConfigDict, computed_field
+from pydantic import BaseModel, Field, ConfigDict, computed_field
 
 
 def _not_implemented_lookup() -> str:
@@ -14,11 +14,13 @@ def _not_implemented_lookup() -> str:
 
 class DraftAssemblyMetadata(BaseModel):
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     # require a Canopy session at init for lookups
-    canopy_session: CanopySession
-    assembly_id: str | None
+    canopy_session: CanopySession = Field(exclude=True)
+    assembly_id: str | None = Field(exclude=True)
 
     # output fields that are passed e.g. from the Manifest
     assembly_size_primary: int
@@ -36,7 +38,6 @@ class DraftAssemblyMetadata(BaseModel):
     taxon_id: int
 
     # Lookups (don't print these)
-    @computed_field
     @property
     def canopy_assembly(self) -> dict[str, str]:
         assembly_id = self.assembly_id
@@ -46,7 +47,6 @@ class DraftAssemblyMetadata(BaseModel):
             )
         return self.canopy_session.read_assembly(assembly_id=assembly_id).json()
 
-    @computed_field
     @property
     def canopy_assembly_run(self) -> dict[str, str] | None:
         assembly_run = self.canopy_session.get_assembly_run_by_stage_name(
@@ -61,7 +61,6 @@ class DraftAssemblyMetadata(BaseModel):
             )
         return assembly_run
 
-    @computed_field
     @property
     def canopy_experiment_ids(self) -> list[str | None]:
         return [
@@ -69,7 +68,6 @@ class DraftAssemblyMetadata(BaseModel):
             for x in self.bpa_package_id
         ]
 
-    @computed_field
     @property
     def canopy_experiments(self) -> list[dict[str, str]]:
         return [
@@ -78,13 +76,11 @@ class DraftAssemblyMetadata(BaseModel):
             if x is not None
         ]
 
-    @computed_field
     @property
     def canopy_project(self) -> dict[str, str]:
         project_id = self.canopy_assembly.get("project_id")
         return self.canopy_session.read_project(project_id=project_id).json()
 
-    @computed_field
     @property
     def canopy_read_ids(self) -> list[str]:
         read_ids = []
@@ -96,7 +92,6 @@ class DraftAssemblyMetadata(BaseModel):
                 read_ids.append(id)
         return sorted(set(read_ids))
 
-    @computed_field
     @property
     def canopy_reads(self) -> list[dict[str, str]]:
         return [
@@ -105,7 +100,6 @@ class DraftAssemblyMetadata(BaseModel):
             if x is not None
         ]
 
-    @computed_field
     @property
     def canopy_sample_ids(self) -> list[str]:
         return [
@@ -113,7 +107,6 @@ class DraftAssemblyMetadata(BaseModel):
             for x in self.bpa_package_id
         ]
 
-    @computed_field
     @property
     def canopy_samples(self) -> list[dict[str, str]]:
         return [
@@ -122,7 +115,6 @@ class DraftAssemblyMetadata(BaseModel):
             if x is not None
         ]
 
-    @computed_field
     @property
     def canopy_taxonomy_info(self) -> dict[str, str]:
         taxonomy_response = self.canopy_session.get_taxonomy_info(

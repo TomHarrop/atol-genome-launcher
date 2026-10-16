@@ -152,23 +152,7 @@ def main():
 
     raise ValueError(
         json.dumps(
-            draft_assembly_metadata.model_dump(
-                exclude={
-                    "assembly_id",
-                    "canopy_assembly_run",
-                    "canopy_assembly",
-                    "canopy_experiment_ids",
-                    "canopy_experiments",
-                    "canopy_project",
-                    "canopy_read_ids",
-                    "canopy_reads",
-                    "canopy_sample_ids",
-                    "canopy_samples",
-                    "canopy_session",
-                    "canopy_taxonomy_info",
-                    "git_info",
-                }
-            ),
+            draft_assembly_metadata.model_dump(),
             indent=4,
         )
     )
