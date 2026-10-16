@@ -169,7 +169,7 @@ def main():
     )
 
     x = pd.DataFrame.from_dict(draft_assembly_metadata.model_dump(), orient="index")
-    x.transpose().to_excel("test-output/metadata.xlsx")
+    x.transpose().to_excel("test-output/metadata.xlsx", index=False)
 
     raise ValueError(
         json.dumps(

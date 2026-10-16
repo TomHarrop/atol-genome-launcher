@@ -7,11 +7,6 @@ from common import logger
 from pydantic import BaseModel, Field, ConfigDict, computed_field
 
 
-def _not_implemented_lookup() -> str:
-    logger.warning("TODO: look this up on Canopy")
-    return "TODO look this up on Canopy"
-
-
 class DraftAssemblyMetadata(BaseModel):
 
     model_config = ConfigDict(
@@ -38,7 +33,6 @@ class DraftAssemblyMetadata(BaseModel):
     sequence_data_types: list[str]
     sequencing_depth: int
     taxon_id: int
-
 
     # Lookups (don't print these)
     @property
@@ -186,35 +180,35 @@ class DraftAssemblyMetadata(BaseModel):
 
     @computed_field
     @property
-    def insdc_hold_date(self) -> str | None:
+    def insdc_hold_date(self) -> str:
         # TODO. Currently not possible to retrieve from Canopy. See
         # https://github.com/AustralianBioCommons/atol-canopy/issues/75
-        return None
+        return "TODO. Currently not possible to retrieve from Canopy"
 
     @computed_field
     @property
-    def insdc_assembly_accession_primary(self) -> str | None:
+    def insdc_assembly_accession_primary(self) -> str:
         # TODO: Currently not possible to retrieve from ENA
-        return None
+        return "TODO: Currently not possible to retrieve from ENA"
 
     @computed_field
     @property
-    def insdc_assembly_accession_secondary(self) -> str | None:
+    def insdc_assembly_accession_secondary(self) -> str:
         # TODO: Currently not possible to retrieve from ENA
-        return None
+        return "TODO: Currently not possible to retrieve from ENA"
 
     # Metadata fields - might/should be registered in Canopy
     @computed_field
     @property
     def bioplatforms_library_id(self) -> list[str]:
-        return [x.get("bpa_library_id", "") for x in self.canopy_experiments]
+        return sorted(set(x.get("bpa_library_id", "") for x in self.canopy_experiments))
 
     @computed_field
     @property
     def bioplatforms_sample_id(self) -> list[str]:
-        return [x.get("bpa_sample_id", "") for x in self.canopy_samples]
+        return sorted(set(x.get("bpa_sample_id", "") for x in self.canopy_samples))
 
     @computed_field
     @property
     def bioplatforms_dataset_id(self) -> str:
-        return [x.get("bpa_dataset_id", "") for x in self.canopy_reads]
+        return sorted(set(x.get("bpa_dataset_id", "") for x in self.canopy_reads))
