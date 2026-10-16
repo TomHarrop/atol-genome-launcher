@@ -215,7 +215,7 @@ class CanopySession(requests.Session):
 
         return None
 
-    def get_git_info_by_stage_name(
+    def get_assembly_run_by_stage_name(
         self, assembly_id: str, stage_name: str
     ) -> dict[str, str] | None:
         assembly_runs = self.list_assembly_runs(assembly_id=assembly_id)
@@ -240,8 +240,7 @@ class CanopySession(requests.Session):
         if len(matching_runs) == 0:
             return None
 
-        matching_run = matching_runs[0]
-        return {k: matching_run[k] for k in ["github_repo", "git_commit"]}
+        return matching_runs[0]
 
     def get_biosample_id(
         self,
@@ -339,6 +338,15 @@ class CanopySession(requests.Session):
 
         url_suffix = _endpoints.get(endpoint, "")
         return self._get(url=url_suffix, params={"bpa_package_id": bpa_package_id})
+
+    def get_git_info_by_stage_name(
+        self, assembly_id: str, stage_name: str
+    ) -> dict[str, str] | None:
+        assembly_run = self.get_assembly_run_by_stage_name(
+            assembly_id=assembly_id, stage_name=stage_name
+        )
+
+        return {k: assembly_run[k] for k in ["github_repo", "git_commit"]}
 
     def get_qc_read(
         self,

@@ -41,23 +41,35 @@ class DraftAssemblyMetadata(BaseModel):
 
     @computed_field
     @property
+    def canopy_assembly_run(self) -> dict[str, str] | None:
+        assembly_run = self.canopy_session.get_assembly_run_by_stage_name(
+            assembly_id=self.assembly_id, stage_name="genomeassembly"
+        )
+        if assembly_run is None:
+            raise ValueError(
+                (
+                    f"No assembly_run for assembly_id {self.assembly_id} "
+                    "and stage genomeassembly on Canopy."
+                )
+            )
+        return assembly_run
+
+    @computed_field
+    @property
     def canopy_project(self) -> dict[str, str]:
         project_id = self.canopy_assembly.get("project_id")
         return self.canopy_session.read_project(project_id=project_id).json()
 
     @computed_field
     @property
-    def git_info(self) -> dict[str, str]:
-        git_info = self.canopy_session.get_git_info_by_stage_name(
-            assembly_id=self.assembly_id, stage_name="genomeassembly"
+    def canopy_taxonomy_info(self) -> dict[str, str]:
+        taxonomy_response = self.canopy_session.get_taxonomy_info(
+            taxon_id=self.taxon_id
         )
-        if git_info is None:
-            raise ValueError(
-                f"No git info for assembly_id {self.assembly_id} on Canopy."
-            )
-        return git_info
+        taxonomy_response.raise_for_status()
+        return taxonomy_response.json()
 
-    # metadata fields
+    # Metadata fields - registered in Canopy
     @computed_field
     @property
     def insdc_root_bioproject(self) -> str:
@@ -79,14 +91,18 @@ class DraftAssemblyMetadata(BaseModel):
     @computed_field
     @property
     def code_repository(self) -> str:
-        return self.git_info.get("github_repo")
+        return self.canopy_assembly_run.get("github_repo", "")
 
     @computed_field
     @property
     def code_repository_hash(self) -> str:
-        return self.git_info.get("git_commit")
+        return self.canopy_assembly_run.get("git_commit", "")
 
-    # easy, do next
+    @computed_field
+    @property
+    def assembly_timestamp(self) -> str:
+        return self.canopy_assembly_run.get("updated_at", "")
+
     @computed_field
     @property
     def insdc_status(self) -> str:
@@ -99,9 +115,46 @@ class DraftAssemblyMetadata(BaseModel):
 
     @computed_field
     @property
-    def assembly_timestamp(self) -> str:
+    def ncbi_common_name(self) -> str:
+        return self.canopy_taxonomy_info.get("ncbi_common_name")
+
+    @computed_field
+    @property
+    def ncbi_family(self) -> str:
         return _not_implemented_lookup()
 
+    @computed_field
+    @property
+    def ncbi_genus(self) -> str:
+        return _not_implemented_lookup()
+
+    @computed_field
+    @property
+    def insdc_assembly_accession_primary(self) -> str:
+        return _not_implemented_lookup()
+
+    @computed_field
+    @property
+    def insdc_assembly_accession_secondary(self) -> str:
+        return _not_implemented_lookup()
+
+    # Metadata fields - might/should be registered in Canopy
+    @computed_field
+    @property
+    def bioplatforms_library_id(self) -> str:
+        return _not_implemented_lookup()
+
+    @computed_field
+    @property
+    def bioplatforms_sample_id(self) -> str:
+        return _not_implemented_lookup()
+
+    @computed_field
+    @property
+    def bioplatforms_dataset_id(self) -> str:
+        return _not_implemented_lookup()
+
+    # Metadata fields - NOT registered in Canopy
     @computed_field
     @property
     def assembly_size_primary(self) -> str:
@@ -135,45 +188,4 @@ class DraftAssemblyMetadata(BaseModel):
     @computed_field
     @property
     def sequencing_depth(self) -> str:
-        return _not_implemented_lookup()
-
-    # hard, procrastinate
-    @computed_field
-    @property
-    def ncbi_common_name(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def ncbi_family(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def ncbi_genus(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def bioplatforms_library_id(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def bioplatforms_sample_id(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def bioplatforms_dataset_id(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def insdc_assembly_accession_primary(self) -> str:
-        return _not_implemented_lookup()
-
-    @computed_field
-    @property
-    def insdc_assembly_accession_secondary(self) -> str:
         return _not_implemented_lookup()

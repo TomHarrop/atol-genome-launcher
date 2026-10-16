@@ -114,16 +114,21 @@ def main():
     }
 
     draft_assembly_metadata = DraftAssemblyMetadata(
-        canopy_session=canopy_session, **manifest.model_dump(), **metadata_context
+        canopy_session=canopy_session, **manifest.validated_dict, **metadata_context
     )
+
+    # raise ValueError(draft_assembly_metadata.canopy_assembly_run)
+
     raise ValueError(
         json.dumps(
             draft_assembly_metadata.model_dump(
                 exclude={
                     "assembly_id",
-                    "canopy_session",
+                    "canopy_assembly_run",
                     "canopy_assembly",
                     "canopy_project",
+                    "canopy_session",
+                    "canopy_taxonomy_info",
                     "git_info",
                 }
             ),
