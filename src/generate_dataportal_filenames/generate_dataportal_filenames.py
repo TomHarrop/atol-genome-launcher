@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+
+import argparse
+import importlib.resources as pkg_resources
+import json
+from pathlib import Path
+
+import canopy_client
+from common import existing_file, generate_parser, logger
+from generate_dataportal_filenames.models import DraftAssemblyMetadata
+import pandas as pd
+from yaml_manifest import Manifest
+
+
+def assembly_size(line: pd.core.series.Series) -> int:
+    return line["sum_len"] - (line["sum_n"])
+
+
+def busco_string(busco_file: Path) -> str:
+    with open(busco_file, "rb") as f:
+        return json.load(f).get("results", {}).get("one_line_summary", "")
+
+
+def lookup_data_portal_code(
+    canopy_session: canopy_client.CanopySession, manifest: Manifest
+) -> tuple[str, str | None]:
+    bioplatforms_project_ids = set()
+    for bpa_package_id in manifest.long_reads.names:
+        sample_id = canopy_session.get_sample_id(bpa_package_id=bpa_package_id)
+        sample = canopy_session.read_sample(sample_id=sample_id).json()
+        bioplatforms_project_ids.add(sample.get("bioplatforms_project_id", None))
+
+    bioplatforms_project_ids.discard(None)
+
+    if not len(bioplatforms_project_ids) == 1:
+        raise NotImplementedError(
+            f"Don't know how to handle multiple bioplatforms_project_ids {bioplatforms_project_ids}"
+        )
+    else:
+        bioplatforms_project_id = bioplatforms_project_ids.pop()
+
+    data_portal_code = canopy_session.get_data_portal_code_from_bioplatforms_project_id(
+        bioplatforms_project_id=bioplatforms_project_id
+    )
+
+    return (bioplatforms_project_id, data_portal_code)
+
+
+def parse_arguments() -> argparse.Namespace:
+
+    my_files = pkg_resources.files(__package__)
+
+    parser, inputs_parser, outputs_parser, settings_parser = generate_parser(
+        description=(
+            "Utility script for the genome-launcher-workflow. "
+            "Run this script to generate a JSON file of outputs "
+            "from the assembly and the names for the draft "
+            "assembly package."
+        )
+    )
+
+    _ = inputs_parser.add_argument(
+        "--stats",
+        help="Stats output from the calculate_depth rule.",
+        required=True,
+        type=existing_file,
+    )
+
+    _ = inputs_parser.add_argument(
+        "--busco_primary",
+        help="PRIMARY_BUSCO_JSON output from genomeassembly.",
+        required=True,
+        type=existing_file,
+    )
+    _ = inputs_parser.add_argument(
+        "--busco_secondary",
+        help="HAPLO_BUSCO_JSON output from genomeassembly.",
+        required=True,
+        type=existing_file,
+    )
+
+    _ = inputs_parser.add_argument(
+        "--template",
+        help="Template for the ENA assembly manifest",
+        default=my_files.joinpath("templates/filenames.json.j2"),
+        type=existing_file,
+    )
+
+    _ = parser.add_argument(
+        "manifest", type=existing_file, help="AToL assembly manifest."
+    )
+
+    _ = parser.add_argument(
+        "dp_files",
+        type=Path,
+        help="Path to write the JSON file of outputs.",
+    )
+
+    return parser.parse_args()
+
+
+def process_stats(stats_file: Path, manifest: Manifest) -> dict[str, str | int]:
+    seq_stats = pd.read_csv(stats_file, sep="\t", header=0, index_col=1)
+    genomeassembly_outputs = manifest.treeval_assembly.outputs_for("genomeassembly")
+    PRIMARY = seq_stats.loc[genomeassembly_outputs.get("PRIMARY").as_posix()]
+    HAPLO = seq_stats.loc[genomeassembly_outputs.get("HAPLO").as_posix()]
+    return {
+        "assembly_size_primary": assembly_size(PRIMARY),
+        "assembly_size_secondary": assembly_size(HAPLO),
+        "n50_length_primary": PRIMARY["N50"],
+        "n50_length_secondary": HAPLO["N50"],
+        "sequencing_depth": PRIMARY["sequencing_depth"],
+    }
+
+
+def main():
+
+    logger.name = "generate-dataportal-filenames"
+    args = parse_arguments()
+
+    canopy_session = canopy_client.CanopySession()
+
+    with open(args.manifest, "rb") as f:
+        manifest = Manifest.model_validate_json(f.read())
+
+    # raise ValueError(manifest.treeval_assembly.is_phased)
+
+    # raise ValueError(
+    #     [
+    #         canopy_session.get_experiment_id(bpa_package_id=x)
+    #         for x in manifest.all_filenames
+    #     ]
+    # )
+
+    # get the bioplatforms_project_id
+    logger.info(f"Looking up Initiatives for assembly_id {manifest.assembly_id}.")
+    bioplatforms_project_id, data_portal_code = lookup_data_portal_code(
+        canopy_session=canopy_session, manifest=manifest
+    )
+    if data_portal_code is None:
+        raise ValueError("Could not find a data_portal_code for this assembly.")
+
+    logger.info(
+        (
+            f"Found bioplatforms_project_id {bioplatforms_project_id}. "
+            f"Filenames will use data_portal_code {data_portal_code}."
+        )
+    )
+
+    assembly_id_serial = "FIXME"
+
+    # This renames keys from the manifest so they are named correctly in the
+    # output
+    metadata_context = {
+        "assembly_tolid": manifest.dataset_id,
+        "sequence_data_types": manifest.all_data_types,
+        "bpa_package_id": manifest.all_filenames,
+        "bioplatforms_project": bioplatforms_project_id,
+        "bioplatforms_assembly_id": assembly_id_serial,
+        "busco_string_primary": busco_string(args.busco_primary),
+        "busco_string_secondary": busco_string(args.busco_secondary),
+    }
+
+    draft_assembly_metadata = DraftAssemblyMetadata(
+        canopy_session=canopy_session,
+        **manifest.validated_dict,
+        **metadata_context,
+        **process_stats(stats_file=args.stats, manifest=manifest),
+    )
+
+    x = pd.DataFrame.from_dict(draft_assembly_metadata.model_dump(), orient="index")
+    x.transpose().to_excel("test-output/metadata.xlsx")
+
+    raise ValueError(
+        json.dumps(
+            draft_assembly_metadata.model_dump(),
+            indent=4,
+        )
+    )
+
+    # write the filenames
+    rendered_template = manifest.render_template_file(
+        args.template,
+        data_portal_code=data_portal_code,
+        assembly_id_serial=assembly_id_serial,
+        curation_package=Path(
+            manifest.get_dir("treeval"), "curation.tar.gz"
+        ).as_posix(),
+        read_qc_results=[x.stats_path("qc").as_posix() for x in manifest.read_files],
+        **manifest.treeval_assembly.outputs,
+    )
+
+    # validate json
+    try:
+        filepaths_json = json.loads(rendered_template)
+    except json.decoder.JSONDecodeError:
+        raise ValueError(
+            f"Could not convert rendered_template to JSON.\n{rendered_template}"
+        )
+
+    # write json
+    args.dp_files.parent.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Writing filenames to {args.dp_files}")
+    with open(args.dp_files, "wt") as f:
+        json.dump(filepaths_json, f)
+
+
+if __name__ == "__main__":
+    main()
