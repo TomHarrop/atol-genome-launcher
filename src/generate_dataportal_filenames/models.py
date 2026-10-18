@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+from functools import cached_property
 import json
 
 from canopy_client import CanopySession
 from common import logger
-from pydantic import BaseModel, Field, ConfigDict, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 class DraftAssemblyMetadata(BaseModel):
@@ -35,17 +36,19 @@ class DraftAssemblyMetadata(BaseModel):
     taxon_id: int
 
     # Lookups (don't print these)
-    @property
+    @cached_property
     def canopy_assembly(self) -> dict[str, str]:
         assembly_id = self.assembly_id
         if assembly_id is None:
             raise ValueError(
                 "A Canopy assembly_id is required to look up accession information."
             )
+        logger.info(f"Looking up assembly {assembly_id}.")
         return self.canopy_session.read_assembly(assembly_id=assembly_id).json()
 
-    @property
+    @cached_property
     def canopy_assembly_run(self) -> dict[str, str] | None:
+        logger.info(f"Looking up assembly_run for {self.assembly_id}.")
         assembly_run = self.canopy_session.get_assembly_run_by_stage_name(
             assembly_id=self.assembly_id, stage_name="genomeassembly"
         )
@@ -58,30 +61,34 @@ class DraftAssemblyMetadata(BaseModel):
             )
         return assembly_run
 
-    @property
+    @cached_property
     def canopy_experiment_ids(self) -> list[str | None]:
+        logger.info("Looking up experiment_id values.")
         return [
             self.canopy_session.get_experiment_id(bpa_package_id=x)
             for x in self.bpa_package_id
         ]
 
-    @property
+    @cached_property
     def canopy_experiments(self) -> list[dict[str, str]]:
+        logger.info("Looking up experiments.")
         return [
             self.canopy_session.read_experiment(experiment_id=x).json()
             for x in self.canopy_experiment_ids
             if x is not None
         ]
 
-    @property
+    @cached_property
     def canopy_project(self) -> dict[str, str]:
         project_id = self.canopy_assembly.get("project_id")
+        logger.info(f"Looking up project {project_id}.")
         return self.canopy_session.read_project(project_id=project_id).json()
 
-    @property
+    @cached_property
     def canopy_read_ids(self) -> list[str]:
         read_ids = []
         for experiment_id in self.canopy_experiment_ids:
+            logger.info(f"Looking up reads for experiment_id {experiment_id}.")
             experiment_read_ids = self.canopy_session.get_read_ids(
                 experiment_id=experiment_id
             )
@@ -89,31 +96,35 @@ class DraftAssemblyMetadata(BaseModel):
                 read_ids.append(id)
         return sorted(set(read_ids))
 
-    @property
+    @cached_property
     def canopy_reads(self) -> list[dict[str, str]]:
+        logger.info(f"Looking up reads.")
         return [
             self.canopy_session.read_read(read_id=x).json()
             for x in self.canopy_read_ids
             if x is not None
         ]
 
-    @property
+    @cached_property
     def canopy_sample_ids(self) -> list[str]:
+        logger.info(f"Looking up sample_id values.")
         return [
             self.canopy_session.get_sample_id(bpa_package_id=x)
             for x in self.bpa_package_id
         ]
 
-    @property
+    @cached_property
     def canopy_samples(self) -> list[dict[str, str]]:
+        logger.info(f"Looking up samples.")
         return [
             self.canopy_session.read_sample(sample_id=x).json()
             for x in self.canopy_sample_ids
             if x is not None
         ]
 
-    @property
+    @cached_property
     def canopy_taxonomy_info(self) -> dict[str, str]:
+        logger.info(f"Looking up taxonomy for taxon_id {self.taxon_id}.")
         taxonomy_response = self.canopy_session.get_taxonomy_info(
             taxon_id=self.taxon_id
         )

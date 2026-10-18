@@ -78,7 +78,6 @@ def parse_arguments() -> argparse.Namespace:
         required=True,
         type=existing_file,
     )
-
     _ = inputs_parser.add_argument(
         "--template",
         help="Template for the ENA assembly manifest",
@@ -86,14 +85,39 @@ def parse_arguments() -> argparse.Namespace:
         type=existing_file,
     )
 
-    _ = parser.add_argument(
-        "manifest", type=existing_file, help="AToL assembly manifest."
+    _ = outputs_parser.add_argument(
+        "--dp_filelist",
+        type=Path,
+        required=True,
+        help="Path to write the JSON file of outputs.",
+    )
+
+    _ = outputs_parser.add_argument(
+        "--dp_metadata",
+        type=Path,
+        required=True,
+        help="Path to write the XLSX file metadata.",
+    )
+
+    _ = outputs_parser.add_argument(
+        "--dp_transfer_line",
+        type=Path,
+        required=True,
+        help=(
+            "Path to write the txt file containing the line to "
+            "be added to the Data Transfer spreadsheet."
+        ),
+    )
+
+    _ = outputs_parser.add_argument(
+        "--dp_email",
+        type=Path,
+        required=True,
+        help="Path to write the txt file to email to help.",
     )
 
     _ = parser.add_argument(
-        "dp_files",
-        type=Path,
-        help="Path to write the JSON file of outputs.",
+        "manifest", type=existing_file, help="AToL assembly manifest."
     )
 
     return parser.parse_args()
@@ -161,6 +185,7 @@ def main():
         "busco_string_secondary": busco_string(args.busco_secondary),
     }
 
+    logger.info(f"Generating metadata spreadsheet.")
     draft_assembly_metadata = DraftAssemblyMetadata(
         canopy_session=canopy_session,
         **manifest.validated_dict,
@@ -168,17 +193,17 @@ def main():
         **process_stats(stats_file=args.stats, manifest=manifest),
     )
 
-    x = pd.DataFrame.from_dict(draft_assembly_metadata.model_dump(), orient="index")
-    x.transpose().to_excel("test-output/metadata.xlsx", index=False)
+    logger.debug(json.dumps(draft_assembly_metadata.model_dump(), indent=4))
 
-    raise ValueError(
-        json.dumps(
-            draft_assembly_metadata.model_dump(),
-            indent=4,
-        )
+    # write the metadata
+    logger.info(f"Writing metadata spreadsheet to {args.dp_metadata}.")
+    spreadsheet = pd.DataFrame.from_dict(
+        draft_assembly_metadata.model_dump(), orient="index"
     )
+    _ = spreadsheet.transpose().to_excel(args.dp_metadata, index=False)
 
     # write the filenames
+    logger.info("Generating filepaths.")
     rendered_template = manifest.render_template_file(
         args.template,
         data_portal_code=data_portal_code,
@@ -191,17 +216,19 @@ def main():
     )
 
     # validate json
+    logger.info("Validating filepaths.")
     try:
         filepaths_json = json.loads(rendered_template)
+        logger.info("OK.")
     except json.decoder.JSONDecodeError:
         raise ValueError(
             f"Could not convert rendered_template to JSON.\n{rendered_template}"
         )
 
     # write json
-    args.dp_files.parent.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Writing filenames to {args.dp_files}")
-    with open(args.dp_files, "wt") as f:
+    args.dp_filelist.parent.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Writing filename list to {args.dp_filelist}")
+    with open(args.dp_filelist, "wt") as f:
         json.dump(filepaths_json, f)
 
 
