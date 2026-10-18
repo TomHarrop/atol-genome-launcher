@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from datetime import date
 import importlib.resources as pkg_resources
 import json
 from pathlib import Path
@@ -173,34 +174,28 @@ def main():
 
     assembly_id_serial = "FIXME"
 
-    # This renames keys from the manifest so they are named correctly in the
-    # output
-    metadata_context = {
-        "assembly_tolid": manifest.dataset_id,
-        "sequence_data_types": manifest.all_data_types,
-        "bpa_package_id": manifest.all_filenames,
-        "bioplatforms_project": bioplatforms_project_id,
-        "bioplatforms_assembly_id": assembly_id_serial,
-        "busco_string_primary": busco_string(args.busco_primary),
-        "busco_string_secondary": busco_string(args.busco_secondary),
-    }
+    # Generate a line for the Data Transfer Summary spreadsheet at
+    # https://docs.google.com/spreadsheets/d/19mYU8QGtb0g6JZTlSiRkht9USKxSRSVw4I_cEsTUMLI/edit?pli=1&gid=1078712152#gid=1078712152.
+    # Paste, then choose split text into columns from the popup.
+    logger.info(f"Writing data transfer spreadsheet line to {args.dp_transfer_line}")
+    today = date.today()
+    # needs two different formats
+    today1 = today.strftime("%d/%m/%Y")
+    today2 = today.strftime("%Y%m%d")
+    with open(args.dp_transfer_line, "wt") as f:
+        out_line = ",".join(
+            [
+                "AToL",
+                today1,
+                f"{today2}_{data_portal_code}_AToL_{assembly_id_serial}",
+                "",
+                "Draft Genome Assembly",
+                "\n",
+            ]
+        )
+        f.write(out_line)
 
-    logger.info(f"Generating metadata spreadsheet.")
-    draft_assembly_metadata = DraftAssemblyMetadata(
-        canopy_session=canopy_session,
-        **manifest.validated_dict,
-        **metadata_context,
-        **process_stats(stats_file=args.stats, manifest=manifest),
-    )
-
-    logger.debug(json.dumps(draft_assembly_metadata.model_dump(), indent=4))
-
-    # write the metadata
-    logger.info(f"Writing metadata spreadsheet to {args.dp_metadata}.")
-    spreadsheet = pd.DataFrame.from_dict(
-        draft_assembly_metadata.model_dump(), orient="index"
-    )
-    _ = spreadsheet.transpose().to_excel(args.dp_metadata, index=False)
+    raise ValueError(out_line)
 
     # write the filenames
     logger.info("Generating filepaths.")
@@ -230,6 +225,35 @@ def main():
     logger.info(f"Writing filename list to {args.dp_filelist}")
     with open(args.dp_filelist, "wt") as f:
         json.dump(filepaths_json, f)
+
+    # This renames keys from the manifest so they are named correctly in the
+    # output
+    metadata_context = {
+        "assembly_tolid": manifest.dataset_id,
+        "sequence_data_types": manifest.all_data_types,
+        "bpa_package_id": manifest.all_filenames,
+        "bioplatforms_project": bioplatforms_project_id,
+        "bioplatforms_assembly_id": assembly_id_serial,
+        "busco_string_primary": busco_string(args.busco_primary),
+        "busco_string_secondary": busco_string(args.busco_secondary),
+    }
+
+    logger.info(f"Generating metadata spreadsheet.")
+    draft_assembly_metadata = DraftAssemblyMetadata(
+        canopy_session=canopy_session,
+        **manifest.validated_dict,
+        **metadata_context,
+        **process_stats(stats_file=args.stats, manifest=manifest),
+    )
+
+    logger.debug(json.dumps(draft_assembly_metadata.model_dump(), indent=4))
+
+    # write the metadata
+    logger.info(f"Writing metadata spreadsheet to {args.dp_metadata}.")
+    spreadsheet = pd.DataFrame.from_dict(
+        draft_assembly_metadata.model_dump(), orient="index"
+    )
+    _ = spreadsheet.transpose().to_excel(args.dp_metadata, index=False)
 
 
 if __name__ == "__main__":
