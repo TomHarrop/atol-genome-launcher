@@ -6,11 +6,17 @@
         "outputs": {
             "genomeassembly": {
                 "PRIMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/asm.purged.fa.gz",
-                "HAPLO": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/asm.htigs.all.fa.gz"
+                "HAPLO": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/asm.htigs.all.fa.gz",
+                "BUSCO_BATCH_SUMMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/busco.{busco_odb12_dataset_name}_odb12/asm-busco.batch_summary.txt",
+                "GFA_PRIMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/raw/asm.bp.p_ctg.gfa.gz",
+                "PRIMARY_BUSCO_JSON": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/busco.{busco_odb12_dataset_name}_odb12/short_summary.specific.{busco_odb12_dataset_name}_odb12.asm_hap1_scaffolds_final.fa.json",
+                "HAPLO_BUSCO_JSON": "{dataset_id}.{assembly_version}.pacbio_hifi.purged/purging/busco.{busco_odb12_dataset_name}_odb12/short_summary.specific.{busco_odb12_dataset_name}_odb12.asm_hap2_scaffolds_final.fa.json"
             },
             "ascc": {
                 "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
-                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
+                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta",
+                "BTK_PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/create_btk_dataset/btk_datasets_CBD",
+                "BTK_HAPLO": "{dataset_id}.{assembly_version}_HAPLO/create_btk_dataset/btk_datasets_CBD"
             },
             "annotation": {
                 "annooddities_gff": "qc/AnnoOddities.gff",
@@ -31,11 +37,18 @@
         "outputs": {
             "genomeassembly": {
                 "PRIMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/asm.purged.fa.gz",
-                "HAPLO": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/asm.htigs.all.fa.gz"
+                "HAPLO": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/asm.htigs.all.fa.gz",
+                "BUSCO_BATCH_SUMMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/busco.{busco_odb12_dataset_name}_odb12/asm-busco.batch_summary.txt",
+                "GFA_PRIMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/raw/asm.bp.p_ctg.gfa.gz",
+                "PRIMARY_BUSCO_JSON": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/busco.{busco_odb12_dataset_name}_odb12/short_summary.specific.{busco_odb12_dataset_name}_odb12.asm_hap1_scaffolds_final.fa.json",
+                "HAPLO_BUSCO_JSON": "{dataset_id}.{assembly_version}.oxford_nanopore.purged/purging/busco.{busco_odb12_dataset_name}_odb12/short_summary.specific.{busco_odb12_dataset_name}_odb12.asm_hap2_scaffolds_final.fa.json"
             },
             "ascc": {
                 "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
-                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta"
+                "HAPLO": "{dataset_id}.{assembly_version}_HAPLO/autofilter/{dataset_id}.{assembly_version}_HAPLO_autofiltered.fasta",
+                "BTK_PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/create_btk_dataset/btk_datasets_CBD",
+                "BTK_HAPLO": "{dataset_id}.{assembly_version}_HAPLO/create_btk_dataset/btk_datasets_CBD"
+
             },
             "annotation": {
                 "annooddities_gff": "qc/AnnoOddities.gff",
@@ -58,7 +71,11 @@
                 "PRIMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/asm_hap1_scaffolds_final.fa.gz",
                 "HAPLO": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/asm_hap2_scaffolds_final.fa.gz",
                 "PRIMARY_BUSCO_TABLE": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco/asm_hap1_scaffolds_final.fa/run_{busco_odb12_dataset_name}_odb12/full_table.tsv",
-                "HAPLO_BUSCO_TABLE": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco/asm_hap2_scaffolds_final.fa/run_{busco_odb12_dataset_name}_odb12/full_table.tsv"
+                "HAPLO_BUSCO_TABLE": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco/asm_hap2_scaffolds_final.fa/run_{busco_odb12_dataset_name}_odb12/full_table.tsv",
+                "BUSCO_BATCH_SUMMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco.batch_summary.txt",
+                "GFA_PRIMARY": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/raw/asm.hic.hap1.p_ctg.gfa.gz",
+                "PRIMARY_BUSCO_JSON": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/short_summary.specific.{busco_odb12_dataset_name}_odb12.asm_hap1_scaffolds_final.fa.json",
+                "HAPLO_BUSCO_JSON": "{dataset_id}.{assembly_version}.pacbio_hifi.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/short_summary.specific.{busco_odb12_dataset_name}_odb12.asm_hap2_scaffolds_final.fa.json"
             },
             "ascc": {
                 "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
@@ -73,7 +90,9 @@
                 "HAPLO_REMOVED_SEQUENCES": "{dataset_id}.{assembly_version}_HAPLO/autofilter/assembly_filtering_removed_sequences.txt",
                 "HAPLO_MT_CONTIGS": "{dataset_id}.{assembly_version}_HAPLO/organelle_contamination_recommendations/{dataset_id}.{assembly_version}_HAPLO-{dataset_id}.{assembly_version}_MITO.contamination_recommendation",
                 "MITO_ABNORMAL_CHECK": "{dataset_id}.{assembly_version}_MITO/autofilter/{dataset_id}.{assembly_version}_MITO_ABNORMAL_CHECK.csv",
-                "MITO_REMOVED_SEQUENCES": "{dataset_id}.{assembly_version}_MITO/autofilter/assembly_filtering_removed_sequences.txt"
+                "MITO_REMOVED_SEQUENCES": "{dataset_id}.{assembly_version}_MITO/autofilter/assembly_filtering_removed_sequences.txt",
+                "BTK_PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/create_btk_dataset/btk_datasets_CBD",
+                "BTK_HAPLO": "{dataset_id}.{assembly_version}_HAPLO/create_btk_dataset/btk_datasets_CBD"
             },
             "treeval": {
                 "HIRES_PRETEXT": "hic_files/{dataset_id}_{assembly_version}_hr.pretext",
@@ -104,7 +123,11 @@
                 "PRIMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/asm_hap1_scaffolds_final.fa.gz",
                 "HAPLO": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/asm_hap2_scaffolds_final.fa.gz",
                 "PRIMARY_BUSCO_TABLE": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco/asm_hap1_scaffolds_final.fa/run_{busco_odb12_dataset_name}_odb12/full_table.tsv",
-                "HAPLO_BUSCO_TABLE": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco/asm_hap2_scaffolds_final.fa/run_{busco_odb12_dataset_name}_odb12/full_table.tsv"
+                "HAPLO_BUSCO_TABLE": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco/asm_hap2_scaffolds_final.fa/run_{busco_odb12_dataset_name}_odb12/full_table.tsv",
+                "BUSCO_BATCH_SUMMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/asm-busco.batch_summary.txt",
+                "GFA_PRIMARY": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/raw/asm.hic.hap1.p_ctg.gfa.gz",
+                "PRIMARY_BUSCO_JSON": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/short_summary.specific.{busco_odb12_dataset_name}_odb12.asm_hap1_scaffolds_final.fa.json",
+                "HAPLO_BUSCO_JSON": "{dataset_id}.{assembly_version}.oxford_nanopore.phased/scaffolding/busco.{busco_odb12_dataset_name}_odb12/short_summary.specific.{busco_odb12_dataset_name}_odb12.asm_hap2_scaffolds_final.fa.json"
             },
             "ascc": {
                 "PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/autofilter/{dataset_id}.{assembly_version}_PRIMARY_autofiltered.fasta",
@@ -119,7 +142,9 @@
                 "HAPLO_REMOVED_SEQUENCES": "{dataset_id}.{assembly_version}_HAPLO/autofilter/assembly_filtering_removed_sequences.txt",
                 "HAPLO_MT_CONTIGS": "{dataset_id}.{assembly_version}_HAPLO/organelle_contamination_recommendations/{dataset_id}.{assembly_version}_HAPLO-{dataset_id}.{assembly_version}_MITO.contamination_recommendation",
                 "MITO_ABNORMAL_CHECK": "{dataset_id}.{assembly_version}_MITO/autofilter/{dataset_id}.{assembly_version}_MITO_ABNORMAL_CHECK.csv",
-                "MITO_REMOVED_SEQUENCES": "{dataset_id}.{assembly_version}_MITO/autofilter/assembly_filtering_removed_sequences.txt"
+                "MITO_REMOVED_SEQUENCES": "{dataset_id}.{assembly_version}_MITO/autofilter/assembly_filtering_removed_sequences.txt",
+                "BTK_PRIMARY": "{dataset_id}.{assembly_version}_PRIMARY/create_btk_dataset/btk_datasets_CBD",
+                "BTK_HAPLO": "{dataset_id}.{assembly_version}_HAPLO/create_btk_dataset/btk_datasets_CBD"
             },
             "treeval": {
                 "HIRES_PRETEXT": "hic_files/{dataset_id}_{assembly_version}_hr.pretext",

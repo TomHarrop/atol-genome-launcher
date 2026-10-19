@@ -202,7 +202,6 @@ class CanopySession(requests.Session):
 
     def get_assembly_run_id_by_hash(
         self,
-        assembly_id: str,
         github_repo: str,
         git_commit: str,
     ) -> str | None:
@@ -215,6 +214,33 @@ class CanopySession(requests.Session):
                 return assembly_run.get("id", None)
 
         return None
+
+    def get_assembly_run_by_stage_name(
+        self, assembly_id: str, stage_name: str
+    ) -> dict[str, str] | None:
+        assembly_runs = self.list_assembly_runs(assembly_id=assembly_id)
+        matching_runs = []
+
+        for assembly_run in assembly_runs.json():
+            for stage_run in assembly_run.get("stage_runs", []):
+                if (
+                    stage_run.get("stage_name") == stage_name
+                    and len(stage_run.get("files", [])) > 0
+                ):
+                    matching_runs.append(assembly_run)
+
+        if len(matching_runs) > 1:
+            logger.warning(
+                (
+                    f"Multiple assembly_runs with stage_name {stage_name} are registered for "
+                    f"assembly_id {assembly_id}. Using the first."
+                )
+            )
+
+        if len(matching_runs) == 0:
+            return None
+
+        return matching_runs[0]
 
     def get_biosample_id(
         self,
@@ -246,6 +272,34 @@ class CanopySession(requests.Session):
                     return accession
 
         return None
+
+    def get_data_portal_code_from_bioplatforms_project_id(
+        self, bioplatforms_project_id: str
+    ) -> str | None:
+        # This is currently hardcoded, because the data_portal_code is defined in a
+        # Word document. Once that field is added to Canopy this should be a lookup by
+        # the launcher. See
+        # https://github.com/AustralianBioCommons/atol-canopy/issues/74
+        _bioplatforms_project_id_to_data_portal_code = {
+            "ausarg": "AusARG",
+            "animal-disease": "AD",
+            "aus-avian": "AVIAN",
+            "aus-fish": "FISH",
+            "grasslands": "AG",
+            "australian-microbiome": "AM",
+            "aus-venom": "AVID",
+            "forest-resilience": "FOR",
+            "fungi": "FUN",
+            "bpa-plants": "GAP",
+            "bpa-ipm": "IPM",
+            "bpa-omg": "OMG",
+            "plant-pathogen": "PP",
+            "ppa": "PPA",
+            "threatened-species": "TSI",
+        }
+        return _bioplatforms_project_id_to_data_portal_code.get(
+            bioplatforms_project_id, None
+        )
 
     def get_experiment_accession(
         self,
@@ -285,6 +339,15 @@ class CanopySession(requests.Session):
         url_suffix = _endpoints.get(endpoint, "")
         return self._get(url=url_suffix, params={"bpa_package_id": bpa_package_id})
 
+    def get_git_info_by_stage_name(
+        self, assembly_id: str, stage_name: str
+    ) -> dict[str, str] | None:
+        assembly_run = self.get_assembly_run_by_stage_name(
+            assembly_id=assembly_id, stage_name=stage_name
+        )
+
+        return {k: assembly_run[k] for k in ["github_repo", "git_commit"]}
+
     def get_qc_read(
         self,
         qc_read_id: str,
@@ -309,6 +372,24 @@ class CanopySession(requests.Session):
                     return accession
 
         return None
+
+    def get_read_ids(
+        self,
+        experiment_id: str,
+        endpoint: str = "read_reads",
+    ) -> list[str | None]:
+        url_suffix = _endpoints.get(endpoint, "")
+
+        params = {"experiment_id": experiment_id}
+
+        read_ids = []
+        reads_json = self._get(url=url_suffix, params=params).json()
+        for read in reads_json:
+            read_id = read.get("id", None)
+            if read_id is not None:
+                read_ids.append(read_id)
+
+        return read_ids
 
     def get_sample_id(
         self,
@@ -487,6 +568,16 @@ class CanopySession(requests.Session):
 
         return self._get(url=url_suffix, params=params)
 
+    def read_read(
+        self,
+        read_id: str,
+        endpoint: str = "read_read",
+    ) -> requests.Response:
+        url_template = _endpoints.get(endpoint, "")
+        url_suffix = url_template.format(read_id=read_id)
+
+        return self._get(url=url_suffix)
+
     def read_sample(
         self,
         sample_id: str,
@@ -615,6 +706,8 @@ _endpoints = {
     "read_experiment": "/api/v1/experiments/{experiment_id}",
     "read_project": "/api/v1/projects/{project_id}",
     "read_projects": "/api/v1/projects/",
+    "read_read": "/api/v1/reads/{read_id}",
+    "read_reads": "/api/v1/reads/",
     "read_sample_submissions": "/api/v1/sample-submissions/",
     "read_sample": "/api/v1/samples/{sample_id}",
     "report_assembly_qc_read": "/api/v1/assemblies/{assembly_id}/qc-reads/report",
