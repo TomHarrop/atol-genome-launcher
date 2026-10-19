@@ -86,6 +86,13 @@ def parse_arguments() -> argparse.Namespace:
         type=existing_file,
     )
 
+    _ = inputs_parser.add_argument(
+        "--email_template",
+        help="Template for the DP notification email",
+        default=my_files.joinpath("templates/email.txt.j2"),
+        type=existing_file,
+    )
+
     _ = outputs_parser.add_argument(
         "--dp_filelist",
         type=Path,
@@ -174,28 +181,15 @@ def main():
 
     assembly_id_serial = "FIXME"
 
-    # Generate a line for the Data Transfer Summary spreadsheet at
-    # https://docs.google.com/spreadsheets/d/19mYU8QGtb0g6JZTlSiRkht9USKxSRSVw4I_cEsTUMLI/edit?pli=1&gid=1078712152#gid=1078712152.
-    # Paste, then choose split text into columns from the popup.
-    logger.info(f"Writing data transfer spreadsheet line to {args.dp_transfer_line}")
+    # Today's date - the data portal uses three different formats
     today = date.today()
-    # needs two different formats
-    today1 = today.strftime("%d/%m/%Y")
-    today2 = today.strftime("%Y%m%d")
-    with open(args.dp_transfer_line, "wt") as f:
-        out_line = ",".join(
-            [
-                "AToL",
-                today1,
-                f"{today2}_{data_portal_code}_AToL_{assembly_id_serial}",
-                "",
-                "Draft Genome Assembly",
-                "\n",
-            ]
-        )
-        f.write(out_line)
 
-    raise ValueError(out_line)
+    today1 = today.strftime("%d/%m/%Y")  # 19/10/2026
+    today2 = today.strftime("%Y%m%d")  # 20261019
+    today3 = today.strftime("%Y-%m-%d")  # 2026-10-19
+
+    # folder name where the files are deposited
+    folder_name = f"{today3}_{data_portal_code}_AToL_{assembly_id_serial}"
 
     # write the filenames
     logger.info("Generating filepaths.")
@@ -207,6 +201,7 @@ def main():
             manifest.get_dir("treeval"), "curation.tar.gz"
         ).as_posix(),
         read_qc_results=[x.stats_path("qc").as_posix() for x in manifest.read_files],
+        folder_name=folder_name,
         **manifest.treeval_assembly.outputs,
     )
 
@@ -221,7 +216,7 @@ def main():
         )
 
     # write json
-    args.dp_filelist.parent.mkdir(parents=True, exist_ok=True)
+    _ = args.dp_filelist.parent.mkdir(parents=True, exist_ok=True)
     logger.info(f"Writing filename list to {args.dp_filelist}")
     with open(args.dp_filelist, "wt") as f:
         json.dump(filepaths_json, f)
@@ -254,6 +249,38 @@ def main():
         draft_assembly_metadata.model_dump(), orient="index"
     )
     _ = spreadsheet.transpose().to_excel(args.dp_metadata, index=False)
+
+    # Generate a line for the Data Transfer Summary spreadsheet at
+    # https://docs.google.com/spreadsheets/d/19mYU8QGtb0g6JZTlSiRkht9USKxSRSVw4I_cEsTUMLI/edit?pli=1&gid=1078712152#gid=1078712152.
+    # Paste, then choose split text into columns from the popup.
+    logger.info(f"Writing data transfer spreadsheet line to {args.dp_transfer_line}")
+    with open(args.dp_transfer_line, "wt") as f:
+        out_line = ",".join(
+            [
+                "AToL",
+                today1,
+                f"{today2}_{data_portal_code}_AToL_{assembly_id_serial}",
+                "",
+                "Draft Genome Assembly",
+                "\n",
+            ]
+        )
+        f.write(out_line)
+
+    logger.info(out_line.rstrip())
+
+    # Generate an email
+    email_text = manifest.render_template_file(
+        args.email_template,
+        data_portal_code=data_portal_code,
+        folder_name=folder_name,
+    )
+
+    # write email
+    _ = args.dp_email.parent.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Writing email to {args.dp_email}")
+    with open(args.dp_email, "wt") as f:
+        f.write(email_text)
 
 
 if __name__ == "__main__":
