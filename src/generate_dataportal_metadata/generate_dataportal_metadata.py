@@ -9,7 +9,7 @@ from pathlib import Path
 import canopy_client
 from common import existing_file, generate_parser, logger
 from generate_dataportal_metadata.models import DraftAssemblyMetadata
-from numpy import float64, nan
+from numpy import nan
 import pandas as pd
 from yaml_manifest import Manifest
 
@@ -167,11 +167,9 @@ def process_stats(stats_file: Path, manifest: Manifest) -> dict[str, str | int |
         )
     )
 
-    assembly_size_secondary, n50_length_secondary, _ = (
-        lookup_assembly_stats(
-            seq_stats=seq_stats,
-            assembly_file=genomeassembly_outputs.get("HAPLO").as_posix(),
-        )
+    assembly_size_secondary, n50_length_secondary, _ = lookup_assembly_stats(
+        seq_stats=seq_stats,
+        assembly_file=genomeassembly_outputs.get("HAPLO").as_posix(),
     )
 
     return {
@@ -214,7 +212,7 @@ def main():
     today = date.today()
 
     today1 = today.strftime("%d/%m/%Y")  # 19/10/2026
-    today2 = today.strftime("%Y%m%d")  # 20261019
+    today2 = today.strftime("%Y%m%d")    # 20261019
     today3 = today.strftime("%Y-%m-%d")  # 2026-10-19
 
     # folder name where the files are deposited
