@@ -8,7 +8,8 @@ from pathlib import Path
 
 import canopy_client
 from common import existing_file, generate_parser, logger
-from generate_dataportal_filenames.models import DraftAssemblyMetadata
+from generate_dataportal_metadata.models import DraftAssemblyMetadata
+from numpy import float64, nan
 import pandas as pd
 from yaml_manifest import Manifest
 
@@ -17,9 +18,15 @@ def assembly_size(line: pd.core.series.Series) -> int:
     return line["sum_len"] - (line["sum_n"])
 
 
-def busco_string(busco_file: Path) -> str:
+def busco_string(busco_file: Path) -> str | None:
     with open(busco_file, "rb") as f:
-        return json.load(f).get("results", {}).get("one_line_summary", "")
+        try:
+            busco_line = json.load(f).get("results", {}).get("one_line_summary", "")
+        except json.decoder.JSONDecodeError:
+            logger.warning(f"Could not read BUSCO result from {busco_file}.")
+            busco_line = None
+
+    return busco_line
 
 
 def lookup_data_portal_code(
@@ -131,38 +138,60 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def process_stats(stats_file: Path, manifest: Manifest) -> dict[str, str | int]:
+def lookup_assembly_stats(
+    seq_stats: pd.DataFrame, assembly_file: str
+) -> tuple[int | float, int | float, int | float]:
+
+    try:
+        assembly_loc = seq_stats.loc[assembly_file]
+    except KeyError:
+        logger.warning(f"No seq stats for {assembly_file}")
+        return (nan, nan, nan)
+
+    return (
+        assembly_size(assembly_loc),
+        assembly_loc["N50"],
+        assembly_loc["sequencing_depth"],
+    )
+
+
+def process_stats(stats_file: Path, manifest: Manifest) -> dict[str, str | int | float]:
+    logger.info(f"Processing stats_file {stats_file}")
     seq_stats = pd.read_csv(stats_file, sep="\t", header=0, index_col=1)
     genomeassembly_outputs = manifest.treeval_assembly.outputs_for("genomeassembly")
-    PRIMARY = seq_stats.loc[genomeassembly_outputs.get("PRIMARY").as_posix()]
-    HAPLO = seq_stats.loc[genomeassembly_outputs.get("HAPLO").as_posix()]
+
+    assembly_size_primary, n50_length_primary, sequencing_depth_primary = (
+        lookup_assembly_stats(
+            seq_stats=seq_stats,
+            assembly_file=genomeassembly_outputs.get("PRIMARY").as_posix(),
+        )
+    )
+
+    assembly_size_secondary, n50_length_secondary, _ = (
+        lookup_assembly_stats(
+            seq_stats=seq_stats,
+            assembly_file=genomeassembly_outputs.get("HAPLO").as_posix(),
+        )
+    )
+
     return {
-        "assembly_size_primary": assembly_size(PRIMARY),
-        "assembly_size_secondary": assembly_size(HAPLO),
-        "n50_length_primary": PRIMARY["N50"],
-        "n50_length_secondary": HAPLO["N50"],
-        "sequencing_depth": PRIMARY["sequencing_depth"],
+        "assembly_size_primary": assembly_size_primary,
+        "assembly_size_secondary": assembly_size_secondary,
+        "n50_length_primary": n50_length_primary,
+        "n50_length_secondary": n50_length_secondary,
+        "sequencing_depth": sequencing_depth_primary,
     }
 
 
 def main():
 
-    logger.name = "generate-dataportal-filenames"
+    logger.name = "generate-dataportal-metadata"
     args = parse_arguments()
 
     canopy_session = canopy_client.CanopySession()
 
     with open(args.manifest, "rb") as f:
         manifest = Manifest.model_validate_json(f.read())
-
-    # raise ValueError(manifest.treeval_assembly.is_phased)
-
-    # raise ValueError(
-    #     [
-    #         canopy_session.get_experiment_id(bpa_package_id=x)
-    #         for x in manifest.all_filenames
-    #     ]
-    # )
 
     # get the bioplatforms_project_id
     logger.info(f"Looking up Initiatives for assembly_id {manifest.assembly_id}.")
@@ -266,8 +295,7 @@ def main():
             ]
         )
         f.write(out_line)
-
-    logger.info(out_line.rstrip())
+        logger.info(out_line.rstrip())
 
     # Generate an email
     email_text = manifest.render_template_file(

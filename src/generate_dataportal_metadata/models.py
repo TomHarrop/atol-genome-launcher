@@ -19,20 +19,20 @@ class DraftAssemblyMetadata(BaseModel):
     assembly_id: str | None = Field(exclude=True)
 
     # output fields that are passed e.g. from the Manifest
-    assembly_size_primary: int
-    assembly_size_secondary: int
+    assembly_size_primary: int | float
+    assembly_size_secondary: int | float
     assembly_tolid: str
     assembly_version: int
     bioplatforms_assembly_id: str
     bioplatforms_project: str
     bpa_package_id: list[str]
-    busco_string_primary: str
-    busco_string_secondary: str
-    n50_length_primary: int
-    n50_length_secondary: int
+    busco_string_primary: str | None
+    busco_string_secondary: str | None
+    n50_length_primary: int | float
+    n50_length_secondary: int | float
     scientific_name: str
     sequence_data_types: list[str]
-    sequencing_depth: int
+    sequencing_depth: int | float
     taxon_id: int
 
     # Lookups (don't print these)
