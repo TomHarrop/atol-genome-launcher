@@ -29,6 +29,28 @@ def busco_string(busco_file: Path) -> str | None:
     return busco_line
 
 
+def lookup_assembly_stats(
+    seq_stats: pd.DataFrame, assembly_file: str
+) -> tuple[int | float, int | float, int | float]:
+
+    if isinstance(assembly_file, Path):
+        _assembly_file = assembly_file.as_posix()
+    else:
+        _assembly_file = assembly_file
+
+    try:
+        assembly_loc = seq_stats.loc[_assembly_file]
+    except KeyError:
+        logger.warning(f"No seq stats for {_assembly_file}")
+        return (nan, nan, nan)
+
+    return (
+        assembly_size(assembly_loc),
+        assembly_loc["N50"],
+        assembly_loc["sequencing_depth"],
+    )
+
+
 def lookup_data_portal_code(
     canopy_session: canopy_client.CanopySession, manifest: Manifest
 ) -> tuple[str, str | None]:
@@ -138,23 +160,6 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def lookup_assembly_stats(
-    seq_stats: pd.DataFrame, assembly_file: str
-) -> tuple[int | float, int | float, int | float]:
-
-    try:
-        assembly_loc = seq_stats.loc[assembly_file]
-    except KeyError:
-        logger.warning(f"No seq stats for {assembly_file}")
-        return (nan, nan, nan)
-
-    return (
-        assembly_size(assembly_loc),
-        assembly_loc["N50"],
-        assembly_loc["sequencing_depth"],
-    )
-
-
 def process_stats(stats_file: Path, manifest: Manifest) -> dict[str, str | int | float]:
     logger.info(f"Processing stats_file {stats_file}")
     seq_stats = pd.read_csv(stats_file, sep="\t", header=0, index_col=1)
@@ -212,7 +217,7 @@ def main():
     today = date.today()
 
     today1 = today.strftime("%d/%m/%Y")  # 19/10/2026
-    today2 = today.strftime("%Y%m%d")    # 20261019
+    today2 = today.strftime("%Y%m%d")  # 20261019
     today3 = today.strftime("%Y-%m-%d")  # 2026-10-19
 
     # folder name where the files are deposited
