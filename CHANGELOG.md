@@ -1,6 +1,22 @@
 Changelog
 =========
 
+0.22.0 (2026-10-19)
+-------------------
+
+New
+
+~~~
+- Generate metadata and filename list for BPA DP draft assembly package.
+  [Tom Harrop]
+
+Other
+~~~~~
+
+- Working draft script for generating Bioplatforms content. [Tom Harrop]
+- Add excel output. [Tom Harrop]
+- Merge branch 'main' into generate-dataportal-filenames. [Tom Harrop]
+
 0.21.6 (2026-10-15)
 -------------------
 
