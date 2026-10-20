@@ -40,8 +40,9 @@ def lookup_assembly_stats(
 
     try:
         assembly_loc = seq_stats.loc[_assembly_file]
-    except KeyError:
+    except KeyError as e:
         logger.warning(f"No seq stats for {_assembly_file}")
+        raise e
         return (nan, nan, nan)
 
     return (
@@ -163,6 +164,7 @@ def parse_arguments() -> argparse.Namespace:
 def process_stats(stats_file: Path, manifest: Manifest) -> dict[str, str | int | float]:
     logger.info(f"Processing stats_file {stats_file}")
     seq_stats = pd.read_csv(stats_file, sep="\t", header=0, index_col=1)
+    logger.info(f"Keys: {seq_stats.index}")
     genomeassembly_outputs = manifest.treeval_assembly.outputs_for("genomeassembly")
 
     assembly_size_primary, n50_length_primary, sequencing_depth_primary = (
