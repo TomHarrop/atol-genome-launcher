@@ -163,7 +163,7 @@ def parse_arguments() -> argparse.Namespace:
 
 def process_stats(stats_file: Path, manifest: Manifest) -> dict[str, str | int | float]:
     logger.info(f"Processing stats_file {stats_file}")
-    seq_stats = pd.read_csv(stats_file, sep="\t", header=0, index_col=1)
+    seq_stats = pd.read_csv(stats_file, sep="\t", header=0, index_col="file")
     logger.info(f"Keys: {seq_stats.index}")
     genomeassembly_outputs = manifest.treeval_assembly.outputs_for("genomeassembly")
 
