@@ -13,7 +13,7 @@ def parse_arguments():
 
     parser.add_argument("manifest", type=Path)
     parser.add_argument("pipeline_config", type=Path)
-    inputs_parser.add_argument(
+    _ = inputs_parser.add_argument(
         "--template",
         default=my_files.joinpath("templates/sanger-tol_genomeassembly_0.50.0.yaml.j2"),
         type=Path,
@@ -28,13 +28,20 @@ def template_dir():
 
 def render_template(manifest, template_path, outfile):
 
+    _genomeassembly_outputs_for_ascc = ["PRIMARY", "HAPLO", "MITO"]
+
     # ReadFileCollection properties aren't included in model_dump(),
     # so pass them explicitly for templates that need resolved read paths.
     context = {
         "pacbio_reads": manifest.pacbio_reads.flat_paths("qc"),
         "ont_reads": manifest.ont_reads.flat_paths("qc"),
         "hic_reads": manifest.hic_reads.flat_paths("qc"),
-        "ascc_inputs": manifest.treeval_assembly.outputs.get("genomeassembly", {}),
+        "ascc_inputs": {
+            k: manifest.treeval_assembly.outputs.get("genomeassembly", {}).get(
+                k, Path()
+            )
+            for k in _genomeassembly_outputs_for_ascc
+        },
     }
 
     # render template
