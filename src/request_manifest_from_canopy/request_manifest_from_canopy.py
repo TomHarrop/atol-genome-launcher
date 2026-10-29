@@ -200,8 +200,9 @@ def write_manifest(manifest: Manifest, outdir: Path) -> None:
 
     json_file = Path(outdir, f"{dataset_id}.{assembly_version}.json")
 
+    exclude = manifest._exclude_from_dumps.get("exclude")
     dump = manifest.model_dump_json(
-        exclude=manifest._exclude_from_dumps,
+        exclude=exclude,
         exclude_computed_fields=True,
         exclude_defaults=True,
         exclude_none=True,
