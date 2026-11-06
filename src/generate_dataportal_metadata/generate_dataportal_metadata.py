@@ -191,10 +191,60 @@ def process_stats(stats_file: Path, manifest: Manifest) -> dict[str, str | int |
     }
 
 
+# todo this should be elsewhere
+# URL: http://demo.identifiers.ardc.edu.au/pids (test)
+# URL: https://identifiers.ardc.edu.au/pids/ (prod)
+# example:
+# https://identifiers.ardc.edu.au/pids/mint?type=URL&value=""
+# https://data.bioplatforms.com/dataset/?q=bioplatforms_assembly_id:%E2%80%9C102.100.100/756291%E2%80%9C
+
+# POST to get the identifier, then add the URL as follows:
+# https://identifiers.ardc.edu.au/pids/addValue?handle=10378.2/1234&type=DESC&value=ARDC Home Page
+
+# NOT WORKING. the following returns "Authentication Failed"
+# curl -X POST -d @test-data/mint.xml "https://demo.identifiers.ardc.edu.au/pids/mint?type=URL&value=test"
+
+
+from lxml import etree
+import requests
+
+def generate_ardc_xml(app_id: str, shared_secret: str) -> etree._Element:
+    root = etree.Element("request", name="mint")
+    properties = etree.SubElement(root, "properties")
+    _ = etree.SubElement(properties, "property", name="appId", value=app_id)
+    _ = etree.SubElement(
+        properties, "property", name="sharedSecret", value=shared_secret
+    )
+    _ = etree.SubElement(properties, "property", name="identifier", value="ExampleUser")
+    _ = etree.SubElement(
+        properties, "property", name="authDomain", value="ExampleAuthDomain"
+    )
+
+    return root
+
+
+def get_ardc_handle():
+    post_params = {"type": "URL", "value": "http://test.com"}
+    xml = generate_ardc_xml(app_id="blah", shared_secret="blah")
+
+    body=etree.tostring(xml, xml_declaration=True, encoding="UTF-8")
+    raise ValueError(body.decode())
+
+    response = requests.post(
+        url="http://demo.identifiers.ardc.edu.au/pids/mint",
+        params=post_params,
+        data=body.decode(),
+        headers={"Content-Type": "text/xml"},
+    )
+    raise ValueError(response.text)
+
+
 def main():
 
     logger.name = "generate-dataportal-metadata"
     args = parse_arguments()
+
+    get_ardc_handle()
 
     canopy_session = canopy_client.CanopySession()
 
