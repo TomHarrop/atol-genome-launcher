@@ -49,7 +49,7 @@ def generate_ardc_xml(
     return root
 
 
-def get_ardc_handle(dry_run: bool = True) -> str:
+def get_ardc_handle(dry_run: bool = True) -> tuple[str, str]:
     ardc_base_url = check_env_var("ARDC_BASE_URL")
     _bpa_url_prefix = (
         "https://data.bioplatforms.com/dataset/?q=bioplatforms_assembly_id:"
@@ -125,8 +125,13 @@ def get_ardc_handle(dry_run: bool = True) -> str:
 
     logger.info(f"Added Data Portal URL to ARDC handle.\n{modify_response.text}")
 
-    return new_handle
+    # Get the serial from the handle (BPA requires both)
+    _, sep, assembly_id_serial = new_handle.strip().rpartition("/")
+    if not sep:
+        assembly_id_serial = new_handle.strip()
+    logger.info(f"Got serial {assembly_id_serial} from handle.")
 
+    return new_handle, assembly_id_serial
 
 def lookup_assembly_stats(
     seq_stats: pd.DataFrame, assembly_file: str
@@ -316,18 +321,13 @@ def main():
     )
 
     try:
-        handle = get_ardc_handle(dry_run=args.dry_run)
-        logger.info(f"Using ARDC handle {handle}.")
-        _, sep, assembly_id_serial = handle.strip().rpartition("/")
-        if not sep:
-            assembly_id_serial = handle.strip()
-        logger.info(f"Got assembly_id_serial {assembly_id_serial} from handle.")
+        handle, assembly_id_serial = get_ardc_handle(dry_run=args.dry_run)
     except Exception as e:
         logger.warning(f"Failed to mint ARDC handle.\n{e}")
         handle = "FIXME"
         assembly_id_serial = "FIXME"
 
-    logger.info(f"Using assembly_id_serial {assembly_id_serial}.")
+    logger.info(f"Using ARDC handle {handle}, containing assembly_id_serial {assembly_id_serial}.")
 
     # Today's date - the data portal uses three different formats
     today = date.today()
