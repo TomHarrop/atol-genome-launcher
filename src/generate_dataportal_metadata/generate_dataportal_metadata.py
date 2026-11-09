@@ -7,10 +7,12 @@ import json
 from pathlib import Path
 
 import canopy_client
-from common import existing_file, generate_parser, logger
+from common import check_env_var, existing_file, generate_parser, logger
 from generate_dataportal_metadata.models import DraftAssemblyMetadata
+from lxml import etree
 from numpy import nan
 import pandas as pd
+import requests
 from yaml_manifest import Manifest
 
 
@@ -28,6 +30,108 @@ def busco_string(busco_file: Path) -> str | None:
 
     return busco_line
 
+
+def generate_ardc_xml(
+    app_id: str,
+    shared_secret: str,
+    auth_domain: str = "data.bioplatforms.com",
+    identifier: str = "atol-bioinformatics",
+) -> etree._Element:
+    root = etree.Element("request", name="mint")
+    properties = etree.SubElement(root, "properties")
+    _ = etree.SubElement(properties, "property", name="appId", value=app_id)
+    _ = etree.SubElement(
+        properties, "property", name="sharedSecret", value=shared_secret
+    )
+    _ = etree.SubElement(properties, "property", name="identifier", value=identifier)
+    _ = etree.SubElement(properties, "property", name="authDomain", value=auth_domain)
+
+    return root
+
+
+def get_ardc_handle(dry_run: bool = True) -> tuple[str, str]:
+    ardc_base_url = check_env_var("ARDC_BASE_URL")
+    _bpa_url_prefix = (
+        "https://data.bioplatforms.com/dataset/?q=bioplatforms_assembly_id:"
+    )
+
+    logger.info("Generating XML for ARDC handle request.")
+    xml = generate_ardc_xml(
+        app_id=check_env_var("ARDC_APPID"),
+        shared_secret=check_env_var("ARDC_SHARED_SECRET"),
+    )
+    body = etree.tostring(xml, xml_declaration=True, standalone=False, encoding="UTF-8")
+
+    # for testing we will get the handle we created and try to modify it. This
+    # is similar to the mint repsonse
+    if dry_run == True:
+        test_handle = "102.100.100/779144"
+        logger.warning(f"Using dummy handle {test_handle}.")
+        response = requests.get(
+            url=ardc_base_url + "/getHandle", params={"handle": test_handle}
+        )
+        logger.info(f"GET {response.request.url}")
+        response.raise_for_status()
+
+    if dry_run == False:
+        post_params = {"type": "URL", "value": _bpa_url_prefix}
+
+        logger.info("POSTing ARDC handle request.")
+        response = requests.post(
+            url=ardc_base_url + "/mint",
+            params=post_params,
+            data=body,
+        )
+        logger.info(f"POST {response.request.url}")
+        response.raise_for_status()
+
+    logger.info(f"Minted new ARDC handle.\n{response.text}")
+
+    root = etree.fromstring(response.content)
+    identifier_element = root.xpath("//response/identifier")
+
+    if len(identifier_element) == 1:
+        identifier_element = identifier_element[0]
+    else:
+        raise ValueError(f"Mint returned multiple identifiers.\n{response.text}")
+
+    new_handle = identifier_element.get("handle")
+    logger.info(f"Using ARDC Handle {new_handle}.")
+
+    # get the index for the URL element
+    property_index = None
+    for property in identifier_element.xpath("//identifier/property"):
+        if property.get("type") == "URL":
+            property_index = int(property.get("index"))
+            break
+
+    if property_index is None:
+        raise ValueError(
+            f"Mint response doesn't contain a property with type=URL.\n{response.text}"
+        )
+
+    # Update the record with the URL BPA uses
+    new_url = _bpa_url_prefix + f'"{new_handle}"'
+
+    new_params = {"handle": new_handle, "value": new_url, "index": property_index}
+
+    modify_response = requests.post(
+        url=ardc_base_url + "/modifyValueByIndex",
+        params=new_params,
+        data=body,
+    )
+    logger.info(f"POST {modify_response.request.url}")
+    modify_response.raise_for_status()
+
+    logger.info(f"Added Data Portal URL to ARDC handle.\n{modify_response.text}")
+
+    # Get the serial from the handle (BPA requires both)
+    _, sep, assembly_id_serial = new_handle.strip().rpartition("/")
+    if not sep:
+        assembly_id_serial = new_handle.strip()
+    logger.info(f"Got serial {assembly_id_serial} from handle.")
+
+    return new_handle, assembly_id_serial
 
 def lookup_assembly_stats(
     seq_stats: pd.DataFrame, assembly_file: str
@@ -216,7 +320,14 @@ def main():
         )
     )
 
-    assembly_id_serial = "FIXME"
+    try:
+        handle, assembly_id_serial = get_ardc_handle(dry_run=args.dry_run)
+    except Exception as e:
+        logger.warning(f"Failed to mint ARDC handle.\n{e}")
+        handle = "FIXME"
+        assembly_id_serial = "FIXME"
+
+    logger.info(f"Using ARDC handle {handle}, containing assembly_id_serial {assembly_id_serial}.")
 
     # Today's date - the data portal uses three different formats
     today = date.today()
@@ -265,7 +376,7 @@ def main():
         "sequence_data_types": manifest.all_data_types,
         "bpa_package_id": manifest.all_filenames,
         "bioplatforms_project": bioplatforms_project_id,
-        "bioplatforms_assembly_id": assembly_id_serial,
+        "bioplatforms_assembly_id": handle,
         "busco_string_primary": busco_string(args.busco_primary),
         "busco_string_secondary": busco_string(args.busco_secondary),
     }

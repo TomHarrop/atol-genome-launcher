@@ -11,6 +11,18 @@ test_bpa_file_downloader: $(outdir)/bpa_file_downloader/testout.fq.gz $(outdir)/
 test_rnaseq_manifest_generator: $(outdir)/rnaseq_manifest_generator/manifest.csv $(outdir)/rnaseq_manifest_generator/cProfile.stats
 test_rnaseq_reads_downloader: $(outdir)/rnaseq_reads_downloader/file.r1.fastq.gz $(outdir)/rnaseq_reads_downloader/file.r2.fastq.gz $(outdir)/rnaseq_reads_downloader/cProfile.stats
 
+test_generate_package:
+	generate-dataportal-metadata \
+		-n \
+		--stats test-data/stats.with_depth.tsv \
+		--busco_primary test-data/short_summary.specific.lepidoptera_odb12.asm_hap1_scaffolds_final.fa.json \
+		--busco_secondary test-data/short_summary.specific.lepidoptera_odb12.asm_hap2_scaffolds_final.fa.json \
+		--dp_filelist test-output/generate_assembly_package/ilOchLuni1/filelist.json \
+		--dp_metadata test-output/generate_assembly_package/ilOchLuni1/metadata.xlsx \
+		--dp_transfer_line test-output/generate_assembly_package/ilOchLuni1/transfer_line.txt \
+		--dp_email test-output/generate_assembly_package/ilOchLuni1/email.txt \
+		test-data/ilOchLuni1.2.json	
+
 changelog: CHANGELOG.md
 
 %/cProfile.stats %/testout.fq.gz:
