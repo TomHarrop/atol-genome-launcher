@@ -202,6 +202,7 @@ class CanopySession(requests.Session):
 
     def get_assembly_run_id_by_hash(
         self,
+        assembly_id: str,
         github_repo: str,
         git_commit: str,
     ) -> str | None:
