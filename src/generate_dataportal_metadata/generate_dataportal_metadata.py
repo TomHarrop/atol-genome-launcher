@@ -375,7 +375,7 @@ def main():
         "assembly_tolid": manifest.dataset_id,
         "sequence_data_types": manifest.all_data_types,
         "bpa_package_id": manifest.all_filenames,
-        "bioplatforms_project": bioplatforms_project_id,
+        "bioplatforms_project_id": bioplatforms_project_id,
         "bioplatforms_assembly_id": handle,
         "busco_string_primary": busco_string(args.busco_primary),
         "busco_string_secondary": busco_string(args.busco_secondary),

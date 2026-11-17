@@ -24,7 +24,7 @@ class DraftAssemblyMetadata(BaseModel):
     assembly_tolid: str
     assembly_version: int
     bioplatforms_assembly_id: str
-    bioplatforms_project: str
+    bioplatforms_project_id: str
     bpa_package_id: list[str]
     busco_string_primary: str | None
     busco_string_secondary: str | None
@@ -174,6 +174,15 @@ class DraftAssemblyMetadata(BaseModel):
     @property
     def ncbi_family(self) -> str:
         return self.canopy_taxonomy_info.get("ncbi_family", "")
+
+    @computed_field
+    @property
+    def ncbi_species(self) -> str:
+        ncbi_lineage = self.canopy_taxonomy_info.get("ncbi_lineage")
+        for rank in ncbi_lineage:
+            if rank.get("rank") == "species":
+                return rank.get("name", "")
+        return ""
 
     @computed_field
     @property
