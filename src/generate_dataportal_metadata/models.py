@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
+import datetime as dt
 from functools import cached_property
-import json
 
 from canopy_client import CanopySession
 from common import logger
 from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic.json_schema import SkipJsonSchema
 
 
 class DraftAssemblyMetadata(BaseModel):
@@ -15,7 +16,7 @@ class DraftAssemblyMetadata(BaseModel):
     )
 
     # require a Canopy session at init for lookups
-    canopy_session: CanopySession = Field(exclude=True)
+    canopy_session: SkipJsonSchema[CanopySession] = Field(exclude=True)
     assembly_id: str | None = Field(exclude=True)
 
     # output fields that are passed e.g. from the Manifest
@@ -24,8 +25,8 @@ class DraftAssemblyMetadata(BaseModel):
     assembly_tolid: str
     assembly_version: int
     bioplatforms_assembly_id: str
+    bioplatforms_package_id: list[str]
     bioplatforms_project_id: str
-    bpa_package_id: list[str]
     busco_string_primary: str | None
     busco_string_secondary: str | None
     n50_length_primary: int | float
@@ -66,7 +67,7 @@ class DraftAssemblyMetadata(BaseModel):
         logger.info("Looking up experiment_id values.")
         return [
             self.canopy_session.get_experiment_id(bpa_package_id=x)
-            for x in self.bpa_package_id
+            for x in self.bioplatforms_package_id
         ]
 
     @cached_property
@@ -110,7 +111,7 @@ class DraftAssemblyMetadata(BaseModel):
         logger.info(f"Looking up sample_id values.")
         return [
             self.canopy_session.get_sample_id(bpa_package_id=x)
-            for x in self.bpa_package_id
+            for x in self.bioplatforms_package_id
         ]
 
     @cached_property
@@ -201,9 +202,13 @@ class DraftAssemblyMetadata(BaseModel):
     @computed_field
     @property
     def insdc_hold_date(self) -> str:
-        # TODO. Currently not possible to retrieve from Canopy. See
-        # https://github.com/AustralianBioCommons/atol-canopy/issues/75
-        return "TODO. Currently not possible to retrieve from Canopy"
+        # Just use the latest date in all the experiments for now
+        release_dates = []
+        for canopy_experiment in self.canopy_experiments:
+            raw_data_release_date = canopy_experiment.get("raw_data_release_date")
+            if raw_data_release_date is not None:
+                release_dates.append(dt.date.fromisoformat(raw_data_release_date))
+        return max(release_dates).isoformat()
 
     @computed_field
     @property

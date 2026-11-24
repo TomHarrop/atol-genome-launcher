@@ -374,7 +374,7 @@ def main():
     metadata_context = {
         "assembly_tolid": manifest.dataset_id,
         "sequence_data_types": manifest.all_data_types,
-        "bpa_package_id": manifest.all_filenames,
+        "bioplatforms_package_id": manifest.all_filenames,
         "bioplatforms_project_id": bioplatforms_project_id,
         "bioplatforms_assembly_id": handle,
         "busco_string_primary": busco_string(args.busco_primary),
