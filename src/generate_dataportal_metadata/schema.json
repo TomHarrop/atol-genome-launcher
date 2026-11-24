@@ -1,0 +1,150 @@
+{
+  "properties": {
+    "assembly_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Assembly Id"
+    },
+    "assembly_size_primary": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Assembly Size Primary"
+    },
+    "assembly_size_secondary": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Assembly Size Secondary"
+    },
+    "assembly_tolid": {
+      "title": "Assembly Tolid",
+      "type": "string"
+    },
+    "assembly_version": {
+      "title": "Assembly Version",
+      "type": "integer"
+    },
+    "bioplatforms_assembly_id": {
+      "title": "Bioplatforms Assembly Id",
+      "type": "string"
+    },
+    "bioplatforms_package_id": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Bioplatforms Package Id",
+      "type": "array"
+    },
+    "bioplatforms_project_id": {
+      "title": "Bioplatforms Project Id",
+      "type": "string"
+    },
+    "busco_string_primary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Busco String Primary"
+    },
+    "busco_string_secondary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Busco String Secondary"
+    },
+    "n50_length_primary": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "N50 Length Primary"
+    },
+    "n50_length_secondary": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "N50 Length Secondary"
+    },
+    "scientific_name": {
+      "title": "Scientific Name",
+      "type": "string"
+    },
+    "sequence_data_types": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Sequence Data Types",
+      "type": "array"
+    },
+    "sequencing_depth": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Sequencing Depth"
+    },
+    "taxon_id": {
+      "title": "Taxon Id",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "assembly_id",
+    "assembly_size_primary",
+    "assembly_size_secondary",
+    "assembly_tolid",
+    "assembly_version",
+    "bioplatforms_assembly_id",
+    "bioplatforms_package_id",
+    "bioplatforms_project_id",
+    "busco_string_primary",
+    "busco_string_secondary",
+    "n50_length_primary",
+    "n50_length_secondary",
+    "scientific_name",
+    "sequence_data_types",
+    "sequencing_depth",
+    "taxon_id"
+  ],
+  "title": "DraftAssemblyMetadata",
+  "type": "object"
+}
